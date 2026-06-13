@@ -35,6 +35,8 @@ package-lock.json
 
 # Celery
 celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
 celerybeat.pid
 
 # Docker
