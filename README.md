@@ -64,7 +64,7 @@ Then open `.env` and fill in the required values:
 | `DJANGO_SECRET_KEY` | **Yes** | Generate with `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` |
 | `POSTGRES_PASSWORD` | **Yes** | Password for the local PostgreSQL user |
 | `DJANGO_DEBUG` | No | `True` for local (default) |
-| `REDIS_URL` | No | Defaults to `redis://localhost:6379/0` |
+| `REDIS_URL` | No | Defaults to `redis://localhost:6380/0` (Docker Redis on port 6380) |
 
 > **Never commit `.env` or put real secrets in `.env.example`.**
 

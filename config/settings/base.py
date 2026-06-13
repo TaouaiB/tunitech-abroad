@@ -102,7 +102,7 @@ DATABASES = {
 # Cache (Redis)
 # ─────────────────────────────────────────────────────────────────────────────
 
-REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6380/0")
 
 CACHES = {
     "default": {
