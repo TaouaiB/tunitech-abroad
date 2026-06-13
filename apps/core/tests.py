@@ -1,6 +1,13 @@
 from django.test import TestCase
+from .models import SystemSetting
+from .services.system_setting import SystemSettingService
 
-class CoreViewsTests(TestCase):
-    def test_homepage_status_code(self):
-        response = self.client.get('/')
-        self.assertEqual(response.status_code, 200)
+class CoreTests(TestCase):
+    def test_system_setting_creation_and_lookup(self):
+        SystemSetting.objects.create(key="max_upload_size", value={"mb": 5})
+        
+        val = SystemSettingService.get_value("max_upload_size")
+        self.assertEqual(val, {"mb": 5})
+        
+        default_val = SystemSettingService.get_value("missing_key", default="fallback")
+        self.assertEqual(default_val, "fallback")

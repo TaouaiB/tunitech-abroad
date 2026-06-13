@@ -59,6 +59,10 @@ INSTALLED_APPS = [
     "apps.accounts.apps.AccountsConfig",
     "apps.core.apps.CoreConfig",
     "apps.dashboard.apps.DashboardConfig",
+    "apps.profiles.apps.ProfilesConfig",
+    "apps.notifications.apps.NotificationsConfig",
+    "apps.privacy.apps.PrivacyConfig",
+    "apps.analytics.apps.AnalyticsConfig",
 ]
 
 MIDDLEWARE = [
