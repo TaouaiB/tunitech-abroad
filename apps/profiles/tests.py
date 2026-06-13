@@ -28,5 +28,7 @@ class ProfileModelsTests(TestCase):
             ProfileSkill.objects.create(profile=profile, raw_name="Python 3", normalized_name="python")
 
     def test_phase_boundary(self):
-        # Ensure Phase 3 apps/models do not exist
-        self.assertIsNone(importlib.util.find_spec("apps.skills"))
+        # Phase 3 introduced apps.skills
+        self.assertIsNotNone(importlib.util.find_spec("apps.skills"))
+        # Ensure Phase 4 apps/models do not exist yet
+        self.assertIsNone(importlib.util.find_spec("apps.jobs"))

@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "apps.notifications.apps.NotificationsConfig",
     "apps.privacy.apps.PrivacyConfig",
     "apps.analytics.apps.AnalyticsConfig",
+    "apps.skills.apps.SkillsConfig",
 ]
 
 MIDDLEWARE = [
