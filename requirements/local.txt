@@ -1,0 +1,9 @@
+-r base.txt
+
+# ─── Dev / Debug ──────────────────────────────────────────────
+django-extensions==3.2.3
+ipython==8.30.0
+
+# ─── Tailwind (local watcher) ─────────────────────────────────
+# Installed via npm; pytailwindcss is the Python wrapper
+pytailwindcss==0.2.0
