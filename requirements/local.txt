@@ -9,4 +9,4 @@ ipython==8.30.0
 pytailwindcss==0.2.0
 
 # ─── Type checking / stubs ─────────────────────────────────────
-django-stubs>=5.1,<5.2
+django-stubs>=5.2,<5.3

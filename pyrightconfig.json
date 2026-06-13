@@ -1,18 +1,19 @@
 {
-  "venvPath": ".",
-  "venv": ".venv",
-  "pythonVersion": "3.12",
-  "include": ["config", "apps", "manage.py"],
+  "include": [
+    "apps",
+    "config"
+  ],
   "exclude": [
     ".venv",
-    "staticfiles",
+    "**/__pycache__",
     "media",
-    "**/__pycache__"
+    "staticfiles"
   ],
-  "executionEnvironments": [
-    {
-      "root": ".",
-      "extraPaths": ["."]
-    }
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.14",
+  "typeCheckingMode": "basic",
+  "extraPaths": [
+    "."
   ]
 }
