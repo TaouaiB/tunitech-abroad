@@ -1,12 +1,11 @@
 -r base.txt
 
-# ─── Dev / Debug ──────────────────────────────────────────────
+# Dev / Debug
 django-extensions==3.2.3
 ipython==8.30.0
 
-# ─── Tailwind (local watcher) ─────────────────────────────────
-# Installed via npm; pytailwindcss is the Python wrapper
+# Tailwind local watcher
 pytailwindcss==0.2.0
 
-# ─── Type checking / stubs ─────────────────────────────────────
+# Type checking / stubs
 django-stubs>=5.2,<5.3

@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "apps.analytics.apps.AnalyticsConfig",
     "apps.skills.apps.SkillsConfig",
     "apps.jobs.apps.JobsConfig",
+    "apps.cvs.apps.CVsConfig",
 ]
 
 MIDDLEWARE = [
@@ -178,6 +179,10 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
+MAX_CV_UPLOAD_SIZE_MB = int(os.environ.get("MAX_CV_UPLOAD_SIZE_MB", "5"))
+CV_LLM_EXTRACTION_ENABLED = False
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Default primary key type

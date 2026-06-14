@@ -19,6 +19,7 @@ build/
 # Django
 db.sqlite3
 media/
+private_media/
 staticfiles/
 *.log
 
