@@ -30,5 +30,7 @@ class ProfileModelsTests(TestCase):
     def test_phase_boundary(self):
         # Phase 3 introduced apps.skills
         self.assertIsNotNone(importlib.util.find_spec("apps.skills"))
-        # Ensure Phase 4 apps/models do not exist yet
-        self.assertIsNone(importlib.util.find_spec("apps.jobs"))
+        # Phase 4 introduced apps.jobs
+        self.assertIsNotNone(importlib.util.find_spec("apps.jobs"))
+        # Ensure Phase 5+ apps/models do not exist yet
+        self.assertIsNone(importlib.util.find_spec("apps.matches"))

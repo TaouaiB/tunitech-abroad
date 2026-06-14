@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django.contrib.postgres",
 
     # Third-party
     "allauth",
@@ -64,6 +65,7 @@ INSTALLED_APPS = [
     "apps.privacy.apps.PrivacyConfig",
     "apps.analytics.apps.AnalyticsConfig",
     "apps.skills.apps.SkillsConfig",
+    "apps.jobs.apps.JobsConfig",
 ]
 
 MIDDLEWARE = [
