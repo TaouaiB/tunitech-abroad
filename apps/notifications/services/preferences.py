@@ -30,11 +30,13 @@ class EmailPreferenceService:
         
         if new_digest_enabled and not old_digest_enabled:
             # record consent
-            ConsentService.record_consent(
+            ConsentService.record(
                 user=user,
                 consent_type="email_digest",
+                consent_text="Consentement aux emails hebdomadaires de recommandations.",
                 consent_version="1.0",
-                accepted=True
+                request_meta={"source_path": "email_preferences"},
+                accepted=True,
             )
             
         return pref

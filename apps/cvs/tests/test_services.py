@@ -47,7 +47,7 @@ class CVServiceTests(TestCase):
         self.assertTrue(cv.is_active)
         self.assertEqual(CVUpload.objects.count(), 1)
         mock_delay.assert_called_once_with(cv.id)
-        
+
     def test_upload_cv_no_consent(self):
         file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
         with self.assertRaises(ValueError):
@@ -130,17 +130,37 @@ class CVServiceTests(TestCase):
         self.assertEqual(profile.location, "Tunis")
         self.assertEqual(profile.linkedin_url, "https://linkedin.com/in/amina")
         self.assertEqual(ProfileSkill.objects.filter(profile=profile, normalized_name="python").count(), 1)
-        
-    def test_deletion_service(self):
+
+    @patch('os.remove')
+    @patch('os.path.exists')
+    def test_deletion_service(self, mock_exists, mock_remove):
+        mock_exists.return_value = True
+
         file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
         cv = CVUpload.objects.create(
             user=self.user, file=file, original_filename="test.pdf",
             file_hash="hash", file_size=1, is_active=True
         )
+        file_path = cv.file.path
+
         result = CVDeletionService.delete_cv(self.user, cv.public_id)
         self.assertTrue(result['success'])
         self.assertEqual(CVUpload.objects.count(), 0)
         self.assertEqual(CVUpload.all_objects.count(), 1)
+        mock_exists.assert_called_with(file_path)
+        mock_remove.assert_called_with(file_path)
+
+    def test_deletion_service_wrong_user(self):
+        other_user = create_test_user(username="other", email="other@test.com", password="pw")
+        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
+        cv = CVUpload.objects.create(
+            user=other_user, file=file, original_filename="test.pdf",
+            file_hash="hash_other", file_size=1, is_active=True
+        )
+        result = CVDeletionService.delete_cv(self.user, cv.public_id)
+        self.assertFalse(result['success'])
+        self.assertEqual(result['error'], 'CV not found')
+        self.assertEqual(CVUpload.objects.count(), 1)
 
     def _pdf_file(self, text: str) -> SimpleUploadedFile:
         doc = fitz.open()

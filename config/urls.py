@@ -26,4 +26,5 @@ urlpatterns = [
     path("", include("apps.matching.urls")),
     path("", include("apps.core.urls")),
     path("", include("apps.notifications.urls")),
+    path("", include("apps.privacy.urls")),
 ]

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white shadow sm:rounded-lg mb-6">
+    <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Paramètres de confidentialité et de compte</h3>
+        <div class="mt-2 max-w-xl text-sm text-gray-500">
+            <p>Gérez votre adresse email, vos préférences de communication et vos données personnelles.</p>
+        </div>
+        <div class="mt-5 space-y-4">
+            <div>
+                <p class="text-sm font-medium text-gray-900">Adresse email :</p>
+                <p class="text-sm text-gray-500">{{ request.user.email }}</p>
+            </div>
+            <hr>
+            <div>
+                <a href="{% url 'dashboard:email_preferences' %}" class="text-blue-600 hover:text-blue-500 text-sm font-medium">Gérer les préférences d'emails</a>
+            </div>
+            <div>
+                <a href="{% url 'dashboard:cv' %}" class="text-blue-600 hover:text-blue-500 text-sm font-medium">Gérer mes CVs</a>
+            </div>
+            <div>
+                <a href="{% url 'privacy:privacy_policy' %}" class="text-blue-600 hover:text-blue-500 text-sm font-medium" target="_blank">Politique de Confidentialité</a>
+            </div>
+            <div>
+                <a href="{% url 'privacy:terms' %}" class="text-blue-600 hover:text-blue-500 text-sm font-medium" target="_blank">Conditions d'Utilisation</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-red-50 shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-red-800">Zone de danger</h3>
+        <div class="mt-2 max-w-xl text-sm text-red-700">
+            <p>Une fois que vous avez supprimé votre compte, il n'y a pas de retour en arrière possible. Soyez certain de votre choix.</p>
+            
+            {% if deletion_request %}
+            <div class="mt-4 p-4 bg-yellow-100 text-yellow-800 rounded">
+                Une demande de suppression est actuellement en cours de traitement (Statut: {{ deletion_request.status }}).
+            </div>
+            {% endif %}
+        </div>
+        <div class="mt-5">
+            <a href="{% url 'dashboard:delete_account' %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm">
+                Supprimer le compte
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -12,4 +12,6 @@ urlpatterns = [
     path("recommendations/", views.dashboard_recommendations, name="recommendations"),
     path("saved-jobs/", views.dashboard_saved_jobs, name="saved_jobs"),
     path("email-preferences/", notification_views.email_preferences_view, name="email_preferences"),
+    path("account/", views.dashboard_account, name="account"),
+    path("settings/delete-account/", views.dashboard_delete_account, name="delete_account"),
 ]
