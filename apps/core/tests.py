@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.core.management import call_command
 from .models import SystemSetting
 from .services.system_setting import SystemSettingService
 
@@ -93,3 +94,34 @@ class ErrorPageTests(TestCase):
         self.assertTemplateUsed(response, '404.html')
         self.assertContains(response, '404', status_code=404)
         self.assertContains(response, 'trouver la page', status_code=404)
+
+
+class DemoSeedCommandTests(TestCase):
+    def test_seed_demo_data_creates_searchable_demo_jobs_idempotently(self):
+        from apps.jobs.models import JobStatus, NormalizedJob
+
+        call_command("seed_demo_data", verbosity=0)
+
+        demo_jobs = NormalizedJob.objects.filter(
+            status=JobStatus.ACTIVE,
+            title__startswith="[DEMO]",
+            source__slug="france_travail",
+        )
+        first_count = demo_jobs.count()
+
+        self.assertGreaterEqual(first_count, 5)
+        self.assertTrue(demo_jobs.filter(description__icontains="Offre fictive").exists())
+        response = self.client.get("/jobs/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "[DEMO]", count=first_count)
+
+        call_command("seed_demo_data", verbosity=0)
+
+        self.assertEqual(
+            NormalizedJob.objects.filter(
+                status=JobStatus.ACTIVE,
+                title__startswith="[DEMO]",
+                source__slug="france_travail",
+            ).count(),
+            first_count,
+        )

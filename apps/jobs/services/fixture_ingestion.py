@@ -110,3 +110,27 @@ class JobFixtureIngestionService:
                 cast(Any, normalize_raw_job_record).delay(record_id)
 
         return f"Fixture ingestion complete: {run.status}. Fetched {run.fetched_count}."
+
+    @staticmethod
+    def ingest_fixture_and_normalize(path: str, source_slug: str = "france_travail") -> tuple[IngestionRun, int, int]:
+        from apps.jobs.services.normalization import JobNormalizationService
+
+        run = JobFixtureIngestionService.load_fixture_file(path, source_slug=source_slug)
+        normalized_count = 0
+        failed_count = 0
+
+        if run.status != IngestionRunStatus.SUCCESS:
+            return run, normalized_count, failed_count
+
+        pending_records = RawJobRecord.objects.filter(
+            ingestion_run=run,
+            normalization_status=NormalizationStatus.PENDING,
+        )
+
+        for raw_record in pending_records.iterator():
+            if JobNormalizationService.normalize_record_by_id(raw_record.id).startswith("Normalized raw record"):
+                normalized_count += 1
+            else:
+                failed_count += 1
+
+        return run, normalized_count, failed_count

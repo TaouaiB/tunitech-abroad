@@ -16,7 +16,7 @@ class Command(BaseCommand):
         fixture_path = os.path.join(settings.BASE_DIR, 'apps', 'jobs', 'fixtures', 'france_travail_sample_jobs.json')
         if os.path.exists(fixture_path):
             self.stdout.write(self.style.NOTICE(f"Ingesting job fixtures from {fixture_path}..."))
-            call_command('ingest_job_fixtures', fixture_path)
+            call_command('ingest_job_fixtures', fixture_path, '--normalize')
         else:
             self.stdout.write(self.style.WARNING(f"Fixture file not found: {fixture_path}"))
             
