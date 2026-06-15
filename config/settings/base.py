@@ -269,4 +269,27 @@ LOGGING = {
 LLM_ENABLED = os.environ.get("LLM_ENABLED", "False") == "True"
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_DEFAULT_MODEL = os.environ.get("OPENROUTER_DEFAULT_MODEL", "google/gemini-2.5-pro")
+# France Travail API
+FRANCE_TRAVAIL_CLIENT_ID = os.environ.get("FRANCE_TRAVAIL_CLIENT_ID", "")
+FRANCE_TRAVAIL_CLIENT_SECRET = os.environ.get("FRANCE_TRAVAIL_CLIENT_SECRET", "")
+
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+
+# Email SMTP configuration
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "webmaster@localhost")
+
+# OAuth provider credentials
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+GITHUB_CLIENT_ID = os.environ.get("GITHUB_CLIENT_ID", "")
+GITHUB_CLIENT_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "")
