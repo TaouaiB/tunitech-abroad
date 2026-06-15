@@ -1,4 +1,4 @@
-from apps.profiles.models import CandidateProfile
+from apps.profiles.models import CandidateProfile, ProfileSkill
 
 class ProfileCompletenessService:
     @classmethod
@@ -19,7 +19,7 @@ class ProfileCompletenessService:
         if profile.target_roles:
             score += 1
             
-        if profile.profile_skills.exists():
+        if ProfileSkill.objects.filter(profile=profile).exists():
             score += 1
             
         completion_percentage = int((score / total_fields) * 100)

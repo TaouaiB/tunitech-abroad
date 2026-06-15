@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import uuid
+from typing import TYPE_CHECKING
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -63,6 +66,11 @@ class CVUpload(models.Model):
 
     objects = ActiveCVManager()
     all_objects = models.Manager()
+
+    # Reverse accessor declared by CVParsedData.cv_upload (related_name="parsed_data").
+    # This annotation exists only for static analysis; Django creates the descriptor at runtime.
+    if TYPE_CHECKING:
+        parsed_data: CVParsedData
 
     class Meta:
         constraints = [

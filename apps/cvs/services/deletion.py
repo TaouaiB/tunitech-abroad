@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.core.exceptions import ObjectDoesNotExist
 from apps.cvs.models import CVUpload, CVParsedData
 from apps.profiles.models import ProfileSkill
 import uuid
@@ -23,11 +22,7 @@ class CVDeletionService:
                 except Exception:
                     pass
             
-            try:
-                parsed_data = cv.parsed_data
-                parsed_data.delete()
-            except ObjectDoesNotExist:
-                pass
+            CVParsedData.objects.filter(cv_upload=cv).delete()
 
             if hasattr(user, 'candidate_profile'):
                 ProfileSkill.objects.filter(

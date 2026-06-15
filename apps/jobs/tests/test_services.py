@@ -120,6 +120,7 @@ class JobServicesTest(TestCase):
 
         job = JobNormalizationService.normalize(raw)
         self.assertIsNotNone(job)
+        assert job is not None
         self.assertEqual(job.title, "Dev Python")
         raw.refresh_from_db()
         self.assertEqual(raw.normalization_status, NormalizationStatus.SUCCESS.value)
@@ -129,6 +130,7 @@ class JobServicesTest(TestCase):
         raw.save(update_fields=["raw_payload_json"])
         same_job = JobNormalizationService.normalize(raw)
         self.assertIsNotNone(same_job)
+        assert same_job is not None
         self.assertEqual(same_job.id, job.id)
         self.assertEqual(NormalizedJob.objects.filter(source=self.source, source_job_id="123").count(), 1)
 
@@ -155,6 +157,7 @@ class JobServicesTest(TestCase):
 
         job = JobNormalizationService.normalize(raw)
         self.assertIsNotNone(job)
+        assert job is not None
         self.assertEqual(NormalizedJob.objects.filter(source=self.source, source_job_id="skill-json-refresh").count(), 1)
         self.assertEqual(job.required_skills_json, ["Python"])
         self.assertEqual(job.optional_skills_json, ["Docker"])
@@ -171,6 +174,7 @@ class JobServicesTest(TestCase):
 
         same_job = JobNormalizationService.normalize(raw)
         self.assertIsNotNone(same_job)
+        assert same_job is not None
         self.assertEqual(same_job.id, job.id)
         self.assertEqual(same_job.required_skills_json, ["Django"])
         self.assertNotIn("Python", same_job.required_skills_json)
@@ -210,6 +214,7 @@ class JobServicesTest(TestCase):
         )
         job = JobNormalizationService.normalize(raw)
         self.assertIsNotNone(job)
+        assert job is not None
         job.required_skills_json = ["Python"]
         job.optional_skills_json = ["TunitechScript"]
         job.save(update_fields=["required_skills_json", "optional_skills_json"])
@@ -243,6 +248,7 @@ class JobServicesTest(TestCase):
         )
         job = JobNormalizationService.normalize(raw)
         self.assertIsNotNone(job)
+        assert job is not None
         JobSkillExtractionService.extract_for_job(job)
 
         self.assertTrue(
@@ -264,6 +270,8 @@ class JobServicesTest(TestCase):
             last_fetched_at=now,
         )
         job = JobNormalizationService.normalize(raw)
+        self.assertIsNotNone(job)
+        assert job is not None
 
         # Active
         JobFreshnessService.mark_stale_and_expired(now=now)

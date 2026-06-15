@@ -1,5 +1,7 @@
 import hashlib
 from pathlib import Path
+from typing import Any, cast
+
 from django.conf import settings
 from django.db import transaction
 from apps.cvs.models import CVUpload
@@ -49,7 +51,8 @@ class CVUploadService:
             except (ImportError, AttributeError, Exception):
                 pass
 
-            transaction.on_commit(lambda: parse_cv.delay(cv_upload.id))
+            # Celery task proxy exposes delay() at runtime; cast keeps Pyright clean.
+            transaction.on_commit(lambda: cast(Any, parse_cv).delay(cv_upload.id))
         
         return cv_upload
 

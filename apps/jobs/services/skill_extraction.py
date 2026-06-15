@@ -75,7 +75,10 @@ class JobSkillExtractionService:
                 # We need to find which raw skill mapped to this canonical skill
                 # Then map that raw skill to requirement type
                 req_type = RequirementType.DETECTED.value
-                skill_aliases = [normalize_skill_text(a.normalized_alias) for a in skill.aliases.all()]
+                skill_aliases = [
+                    normalize_skill_text(alias.normalized_alias)
+                    for alias in SkillAlias.objects.filter(skill=skill)
+                ]
                 
                 # Check which of our raw_skills mapped to it
                 for raw, type_ in raw_skills_dict.items():

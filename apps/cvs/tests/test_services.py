@@ -9,7 +9,7 @@ from apps.cvs.services.text_extraction import CVTextExtractionService
 from apps.cvs.services.deterministic_extractor import CVDeterministicExtractorService
 from apps.cvs.services.deletion import CVDeletionService
 from apps.cvs.services.parsing import CVParsingService
-from apps.profiles.models import CandidateProfile
+from apps.profiles.models import CandidateProfile, ProfileSkill
 from apps.skills.models import Skill, SkillAlias
 from apps.skills.services.normalizer import normalize_skill_text
 import fitz
@@ -129,7 +129,7 @@ class CVServiceTests(TestCase):
         self.assertEqual(profile.phone, "+216 11 111 111")
         self.assertEqual(profile.location, "Tunis")
         self.assertEqual(profile.linkedin_url, "https://linkedin.com/in/amina")
-        self.assertEqual(profile.profile_skills.filter(normalized_name="python").count(), 1)
+        self.assertEqual(ProfileSkill.objects.filter(profile=profile, normalized_name="python").count(), 1)
         
     def test_deletion_service(self):
         file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")

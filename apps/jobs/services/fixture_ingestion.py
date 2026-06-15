@@ -1,4 +1,6 @@
 import json
+from typing import Any, cast
+
 from django.utils import timezone
 from apps.jobs.models import (
     JobSource,
@@ -104,6 +106,7 @@ class JobFixtureIngestionService:
             ).values_list("id", flat=True)
 
             for record_id in pending_record_ids:
-                normalize_raw_job_record.delay(record_id)
+                # Celery task proxy exposes delay() at runtime; cast keeps Pyright clean.
+                cast(Any, normalize_raw_job_record).delay(record_id)
 
         return f"Fixture ingestion complete: {run.status}. Fetched {run.fetched_count}."

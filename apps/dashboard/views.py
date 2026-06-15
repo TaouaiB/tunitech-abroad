@@ -43,7 +43,7 @@ def dashboard_cv(request):
             if result.get("success"):
                 messages.success(request, "CV deleted successfully.")
             else:
-                messages.error(request, result.get("error", "Error deleting CV."))
+                messages.error(request, str(result.get("error", "Error deleting CV.")))
             return redirect("dashboard:cv")
             
         form = CVUploadForm(request.POST, request.FILES)

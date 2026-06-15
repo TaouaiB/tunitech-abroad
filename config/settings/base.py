@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "apps.skills.apps.SkillsConfig",
     "apps.jobs.apps.JobsConfig",
     "apps.cvs.apps.CVsConfig",
+    "apps.matching.apps.MatchingConfig",
 ]
 
 MIDDLEWARE = [

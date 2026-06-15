@@ -11,7 +11,7 @@ def create_test_user(
     *,
     username: str,
     email: str,
-    password: str = "pw",
+    password: str = "password",
     is_staff: bool = False,
 ) -> AbstractBaseUser:
     user = UserModel.objects.create(
@@ -22,7 +22,6 @@ def create_test_user(
     user.set_password(password)
     user.save(update_fields=["password"])
     return user
-
 
 class CVModelTests(TestCase):
     def setUp(self):
@@ -65,7 +64,7 @@ class CVModelTests(TestCase):
             file_hash="hash1", file_size=1, is_active=True
         )
         parsed = CVParsedData.objects.create(cv_upload=cv, raw_text="hello")
-        self.assertEqual(cv.parsed_data, parsed)
+        self.assertEqual(CVParsedData.objects.get(cv_upload=cv), parsed)
 
     def test_cv_file_has_no_public_url(self):
         cv = CVUpload.objects.create(
