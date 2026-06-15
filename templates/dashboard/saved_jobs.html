@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Saved Jobs | Dashboard{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow p-6">
+    <h1 class="text-2xl font-bold mb-4">Saved Jobs</h1>
+
+    <div class="flex flex-col gap-4">
+        {% for saved_job in saved_jobs %}
+            <div class="border rounded-md p-4 flex justify-between items-center">
+                <div>
+                    <a href="{% url 'jobs:detail' saved_job.job.public_id %}" class="text-lg font-semibold text-blue-600 hover:underline">
+                        {{ saved_job.job.title }}
+                    </a>
+                    <p class="text-gray-600">{{ saved_job.job.company_name }} - {{ saved_job.job.location|default:saved_job.job.country }}</p>
+                    {% if saved_job.job.status != 'active' %}
+                        <span class="inline-block bg-red-100 text-red-800 text-xs px-2 rounded-full uppercase font-semibold tracking-wide mt-1">
+                            {{ saved_job.job.status }}
+                        </span>
+                    {% endif %}
+                </div>
+                <div>
+                    {% include 'jobs/partials/save_button.html' with job=saved_job.job is_saved=True %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-center py-8">
+                <p class="text-gray-500 mb-4">Vous n'avez pas encore sauvegardé d'offres.</p>
+                <a href="{% url 'jobs:list' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    Parcourir les offres
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

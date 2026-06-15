@@ -20,7 +20,7 @@
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Profile</button>
+            <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="this.disabled=true; this.innerHTML='Saving...'; this.form.submit();">Save Profile</button>
         </form>
     </div>
 </div>

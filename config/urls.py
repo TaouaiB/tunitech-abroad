@@ -10,11 +10,15 @@ from django.http import JsonResponse
 from django.urls import path, include
 
 
+from apps.core.services.health import HealthCheckService
+
 def health(request):
     """
-    Minimal health endpoint.
+    Detailed health endpoint using HealthCheckService.
     """
-    return JsonResponse({"status": "ok", "phase": 1})
+    health_data = HealthCheckService.check()
+    status_code = 200 if health_data.get("status") == "ok" else 503
+    return JsonResponse(health_data, status=status_code)
 
 
 urlpatterns = [
@@ -25,4 +29,6 @@ urlpatterns = [
     path("jobs/", include("apps.jobs.urls")),
     path("", include("apps.matching.urls")),
     path("", include("apps.core.urls")),
+    path("", include("apps.notifications.urls")),
+    path("", include("apps.privacy.urls")),
 ]

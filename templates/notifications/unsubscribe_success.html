@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Unsubscribed Successfully{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-16 max-w-2xl text-center">
+    <div class="bg-white p-8 rounded shadow-sm border border-gray-100">
+        <h1 class="text-3xl font-bold mb-4 text-gray-800">Unsubscribed Successfully</h1>
+        <p class="text-gray-600 mb-6">
+            You have been successfully unsubscribed. You will no longer receive these emails.
+        </p>
+        <a href="{% url 'core:home' %}" class="inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+            Return to Homepage
+        </a>
+    </div>
+</div>
+{% endblock %}

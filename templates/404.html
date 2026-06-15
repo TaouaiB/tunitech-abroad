@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Page non trouvée - TuniTech Abroad{% endblock title %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
+    <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
+        404
+    </h1>
+    <p class="mt-4 text-xl text-gray-500">
+        Désolé, nous n'avons pas pu trouver la page que vous recherchez.
+    </p>
+    <div class="mt-8">
+        <a href="{% url 'core:home' %}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            Retour à l'accueil
+        </a>
+    </div>
+</div>
+{% endblock content %}

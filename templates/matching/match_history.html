@@ -45,8 +45,11 @@
         {% endfor %}
     </ul>
     {% else %}
-    <div class="p-6 text-center text-gray-500">
-        You haven't run any matches yet. Go to <a href="{% url 'jobs:list' %}" class="text-indigo-600 hover:text-indigo-500">Job Search</a> to find jobs to match with.
+    <div class="p-8 text-center text-gray-500">
+        <p class="mb-4 text-lg">Vous n'avez pas encore effectué d'évaluations de compatibilité.</p>
+        <a href="{% url 'jobs:list' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+            Trouver des offres à évaluer
+        </a>
     </div>
     {% endif %}
 </div>

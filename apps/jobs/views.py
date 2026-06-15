@@ -1,11 +1,14 @@
 import logging
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 
 from apps.jobs.forms import JobSearchForm
 from apps.jobs.services.search import JobSearchService
 from apps.jobs.services.query import JobQueryService
 from apps.jobs.services.revalidation import JobRevalidationService
+from apps.recommendations.services.saved_jobs import SavedJobService
 
 try:
     from apps.analytics.services.user_event import UserEventService
@@ -57,6 +60,29 @@ def job_detail(request, public_id):
 
     safe_record_event("job_detail_view", request.user, metadata={"public_id": str(public_id)})
 
+    is_saved = False
+    if request.user.is_authenticated:
+        is_saved = SavedJobService.is_saved(request.user, public_id)
+
     return render(request, "jobs/job_detail.html", {
         "job": job,
+        "is_saved": is_saved,
     })
+
+@login_required
+@require_POST
+def save_job(request, public_id):
+    SavedJobService.save_job(request.user, public_id)
+    if request.headers.get("HX-Request") == "true":
+        job = JobQueryService.get_public_job(public_id)
+        return render(request, "jobs/partials/save_button.html", {"job": job, "is_saved": True})
+    return redirect("jobs:detail", public_id=public_id)
+
+@login_required
+@require_POST
+def unsave_job(request, public_id):
+    SavedJobService.remove_saved_job(request.user, public_id)
+    if request.headers.get("HX-Request") == "true":
+        job = JobQueryService.get_public_job(public_id)
+        return render(request, "jobs/partials/save_button.html", {"job": job, "is_saved": False})
+    return redirect("jobs:detail", public_id=public_id)

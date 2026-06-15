@@ -6,6 +6,19 @@ from apps.cvs.services.upload import CVUploadService
 from apps.cvs.services.deletion import CVDeletionService
 from apps.cvs.models import CVUpload
 from apps.profiles.services.profile_update import ProfileUpdateService
+from apps.recommendations.services.query import RecommendationQueryService
+from apps.recommendations.services.saved_jobs import SavedJobService
+from apps.privacy.services.account_deletion import AccountDeletionService
+
+@login_required
+def dashboard_recommendations(request):
+    result = RecommendationQueryService.get_dashboard_recommendations(request.user)
+    return render(request, "dashboard/recommendations.html", {"result": result})
+
+@login_required
+def dashboard_saved_jobs(request):
+    saved_jobs = SavedJobService.get_saved_jobs(request.user)
+    return render(request, "dashboard/saved_jobs.html", {"saved_jobs": saved_jobs})
 
 @login_required
 def dashboard_home(request):
@@ -15,7 +28,7 @@ def dashboard_home(request):
 def dashboard_profile(request):
     user = request.user
     profile = getattr(user, 'candidate_profile', None)
-    
+
     if request.method == "POST":
         from apps.profiles.forms import ProfileForm
         form = ProfileForm(request.POST, instance=profile)
@@ -26,7 +39,7 @@ def dashboard_profile(request):
     else:
         from apps.profiles.forms import ProfileForm
         form = ProfileForm(instance=profile)
-        
+
     return render(request, "dashboard/profile.html", {
         "form": form,
         "profile": profile
@@ -35,7 +48,7 @@ def dashboard_profile(request):
 @login_required
 def dashboard_cv(request):
     user = request.user
-    
+
     if request.method == "POST":
         if "delete_cv_id" in request.POST:
             cv_public_id = request.POST.get("delete_cv_id")
@@ -45,13 +58,13 @@ def dashboard_cv(request):
             else:
                 messages.error(request, str(result.get("error", "Error deleting CV.")))
             return redirect("dashboard:cv")
-            
+
         form = CVUploadForm(request.POST, request.FILES)
         if form.is_valid():
             try:
                 CVUploadService.upload_cv(
-                    user, 
-                    form.cleaned_data['file'], 
+                    user,
+                    form.cleaned_data['file'],
                     consent_accepted=form.cleaned_data['consent_accepted']
                 )
                 messages.success(request, "CV uploaded successfully. It is now being parsed.")
@@ -60,9 +73,9 @@ def dashboard_cv(request):
                 messages.error(request, str(e))
     else:
         form = CVUploadForm()
-        
+
     active_cv = CVUpload.objects.filter(user=user, is_active=True).first()
-    
+
     return render(request, "dashboard/cv_manage.html", {
         "form": form,
         "active_cv": active_cv
@@ -74,3 +87,29 @@ def dashboard_cv_status(request, public_id):
     return render(request, "cvs/partials/cv_status.html", {
         "cv": cv_upload
     })
+
+@login_required
+def dashboard_account(request):
+    try:
+        deletion_request = request.user.deletion_requests.filter(status__in=['pending', 'processing']).first()
+    except Exception:
+        deletion_request = None
+
+    return render(request, "dashboard/account.html", {
+        "deletion_request": deletion_request
+    })
+
+@login_required
+def dashboard_delete_account(request):
+    if request.method == "POST":
+        confirmation = request.POST.get("confirmation", "")
+        if confirmation.strip().upper() == "DELETE":
+            AccountDeletionService.request_deletion(request.user)
+            from django.contrib.auth import logout
+            logout(request)
+            return redirect("core:home")
+        else:
+            messages.error(request, "Please type DELETE to confirm.")
+            return redirect("dashboard:delete_account")
+
+    return render(request, "dashboard/delete_account.html")

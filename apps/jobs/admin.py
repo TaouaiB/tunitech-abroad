@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib import messages
 from apps.jobs.models import (
     JobSource,
     IngestionRun,
@@ -6,7 +7,16 @@ from apps.jobs.models import (
     NormalizedJob,
     NormalizedJobSkill,
 )
+from apps.jobs.tasks import normalize_raw_job_record
 
+
+@admin.action(description="Reprocess selected raw jobs")
+def reprocess_raw_jobs(modeladmin, request, queryset):
+    count = 0
+    for record in queryset:
+        normalize_raw_job_record.delay(record.id)
+        count += 1
+    modeladmin.message_user(request, f"Queued {count} raw jobs for reprocessing.", messages.SUCCESS)
 
 @admin.register(JobSource)
 class JobSourceAdmin(admin.ModelAdmin):
@@ -29,6 +39,7 @@ class RawJobRecordAdmin(admin.ModelAdmin):
     list_filter = ("normalization_status", "source")
     search_fields = ("source_job_id",)
     readonly_fields = ("created_at", "updated_at")
+    actions = [reprocess_raw_jobs]
 
 
 @admin.register(NormalizedJob)

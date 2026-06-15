@@ -1,0 +1,28 @@
+{% if result.is_pending %}
+    <div class="bg-blue-50 text-blue-800 p-4 rounded-md mb-4 border border-blue-200">
+        <p class="font-semibold">Refreshing your recommendations...</p>
+        <p class="text-sm mt-1">We are actively generating new job recommendations for you. Please check back shortly.</p>
+    </div>
+{% elif result.is_stale %}
+    <div class="bg-yellow-50 text-yellow-800 p-4 rounded-md mb-4 border border-yellow-200">
+        <p class="font-semibold">Update in progress</p>
+        <p class="text-sm mt-1">We noticed your profile changed. Your recommendations are being refreshed. Showing older results below.</p>
+    </div>
+{% endif %}
+
+<div class="flex flex-col gap-4 mt-4">
+    {% for rec in result.recommendations %}
+        {% include 'recommendations/partials/recommendation_card.html' with rec=rec %}
+    {% empty %}
+        {% if not result.is_pending %}
+            <div class="p-8 border rounded-md text-center text-gray-500 bg-gray-50">
+                <p class="text-lg">Aucune recommandation active trouvée.</p>
+                <p class="text-sm mt-2 mb-4">Assurez-vous que votre profil candidat est complet et que votre CV est téléchargé pour recevoir des recommandations personnalisées.</p>
+                <div class="flex justify-center gap-4 mt-4">
+                    <a href="{% url 'dashboard:profile' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Compléter le profil</a>
+                    <a href="{% url 'jobs:list' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Parcourir les offres</a>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>

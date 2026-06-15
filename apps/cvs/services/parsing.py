@@ -139,4 +139,10 @@ class CVParsingService:
             cv_upload.parsed_at = timezone.now()
             cv_upload.save(update_fields=['parse_status', 'parsed_at', 'text_extraction_status', 'extracted_text_length'])
             
+            try:
+                from apps.recommendations.services.staleness import RecommendationStalenessService
+                RecommendationStalenessService.mark_user_recommendations_stale(cv_upload.user, reason="cv_parsed")
+            except ImportError:
+                pass
+                
             return parsed_data

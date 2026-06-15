@@ -14,4 +14,11 @@ class ProfileUpdateService:
                 
         profile.save()
         ProfileCompletenessService.calculate(profile)
+
+        try:
+            from apps.recommendations.services.staleness import RecommendationStalenessService
+            RecommendationStalenessService.mark_user_recommendations_stale(user, reason="profile_updated")
+        except ImportError:
+            pass
+
         return profile

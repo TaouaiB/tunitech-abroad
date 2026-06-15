@@ -40,19 +40,36 @@ class CVUploadService:
             
             try:
                 from apps.privacy.services.consent import ConsentService
-                ConsentService.record_consent(user, "cv_processing")
-            except (ImportError, AttributeError, Exception):
+                ConsentService.record(
+                    user=user,
+                    consent_type="cv_processing",
+                    consent_text="Consentement au traitement du CV pour analyse et matching.",
+                    consent_version="1.0",
+                    request_meta={"source_path": "dashboard_cv_upload"},
+                )
+            except Exception:
                 pass
                 
             try:
-                from apps.analytics.services.events import UserEventService
-                if UserEventService is not None:
-                    UserEventService.record(user, "cv_uploaded", {"cv_public_id": str(cv_upload.public_id)})
-            except (ImportError, AttributeError, Exception):
+                from apps.analytics.services.user_event import UserEventService
+                UserEventService.record_event(
+                    event_type="cv_uploaded",
+                    user=user,
+                    metadata={"cv_public_id": str(cv_upload.public_id)},
+                )
+            except Exception:
                 pass
 
             # Celery task proxy exposes delay() at runtime; cast keeps Pyright clean.
             transaction.on_commit(lambda: cast(Any, parse_cv).delay(cv_upload.id))
+            
+            def mark_stale():
+                try:
+                    from apps.recommendations.services.staleness import RecommendationStalenessService
+                    RecommendationStalenessService.mark_user_recommendations_stale(user, reason="cv_uploaded")
+                except ImportError:
+                    pass
+            transaction.on_commit(mark_stale)
         
         return cv_upload
 
