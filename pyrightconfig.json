@@ -1,0 +1,19 @@
+{
+  "include": [
+    "apps",
+    "config"
+  ],
+  "exclude": [
+    ".venv",
+    "**/__pycache__",
+    "media",
+    "staticfiles"
+  ],
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.14",
+  "typeCheckingMode": "basic",
+  "extraPaths": [
+    "."
+  ]
+}

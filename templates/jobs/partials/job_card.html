@@ -1,0 +1,56 @@
+<a href="{% url 'jobs:detail' job.public_id %}" class="block bg-white shadow rounded-lg hover:shadow-md transition-shadow duration-200">
+    <div class="p-6">
+        <div class="flex justify-between items-start">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-xl font-semibold text-gray-900 truncate">{{ job.title }}</h2>
+                <p class="text-sm font-medium text-gray-600 mt-1">{{ job.company_name }}</p>
+            </div>
+            <div class="ml-4 flex-shrink-0 flex flex-col items-end">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {{ job.get_status_display }}
+                </span>
+                <span class="text-xs text-gray-500 mt-2">{{ job.published_at|date:"M d, Y" }}</span>
+            </div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-500">
+            <div class="flex items-center">
+                <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                </svg>
+                {{ job.location|default:job.city|default:"Location unspecified" }}
+            </div>
+            <div class="flex items-center">
+                <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" />
+                </svg>
+                {{ job.get_job_type_display }}
+            </div>
+            <div class="flex items-center">
+                <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                </svg>
+                {{ job.get_remote_type_display }}
+            </div>
+        </div>
+        <div class="mt-4">
+            <p class="text-sm text-gray-700 line-clamp-2">
+                {{ job.description|truncatewords:40 }}
+            </p>
+        </div>
+        {% if job.required_skills_json %}
+        <div class="mt-4 flex flex-wrap gap-2">
+            {% for skill in job.required_skills_json|slice:":5" %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                    {{ skill }}
+                </span>
+            {% endfor %}
+            {% if job.required_skills_json|length > 5 %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-gray-500">
+                    +{{ job.required_skills_json|length|add:"-5" }} more
+                </span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</a>

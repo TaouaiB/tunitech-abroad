@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{% url 'matching:history' %}" class="text-indigo-600 hover:text-indigo-900 font-medium">&larr; Back to Match History</a>
+</div>
+
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+        <h3 class="text-2xl font-bold text-gray-900">
+            {{ match.job_snapshot_json.title }}
+        </h3>
+        <p class="mt-1 text-lg text-gray-600">
+            {{ match.job_snapshot_json.company_name }}
+        </p>
+    </div>
+
+    <div class="p-6">
+        <!-- Overall Score -->
+        <div class="mb-8 flex items-center">
+            <div class="text-5xl font-extrabold {% if match.fit_score >= 80 %}text-green-600{% elif match.fit_score >= 60 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                {{ match.fit_score }}%
+            </div>
+            <div class="ml-4 text-xl text-gray-700">
+                Overall Fit Score
+            </div>
+        </div>
+
+        <!-- Component Scores -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+            <div class="bg-gray-50 p-4 rounded-lg text-center">
+                <div class="text-sm text-gray-500 font-medium">Technical</div>
+                <div class="text-2xl font-bold text-gray-900">{{ match.technical_skills_score }}%</div>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg text-center">
+                <div class="text-sm text-gray-500 font-medium">Experience</div>
+                <div class="text-2xl font-bold text-gray-900">{{ match.experience_score }}%</div>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg text-center">
+                <div class="text-sm text-gray-500 font-medium">Role/Title</div>
+                <div class="text-2xl font-bold text-gray-900">{{ match.role_title_score }}%</div>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg text-center">
+                <div class="text-sm text-gray-500 font-medium">Language</div>
+                <div class="text-2xl font-bold text-gray-900">{{ match.language_score }}%</div>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg text-center">
+                <div class="text-sm text-gray-500 font-medium">Location</div>
+                <div class="text-2xl font-bold text-gray-900">{{ match.location_score }}%</div>
+            </div>
+        </div>
+
+        <!-- Strong Skills -->
+        <div class="mb-6">
+            <h4 class="text-lg font-semibold text-gray-900 mb-2">Strong Skills</h4>
+            {% if match.strong_skills_json %}
+            <div class="flex flex-wrap gap-2">
+                {% for skill in match.strong_skills_json %}
+                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">{{ skill.name }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500">No strong skills matched.</p>
+            {% endif %}
+        </div>
+
+        <!-- Missing Skills -->
+        <div class="mb-6">
+            <h4 class="text-lg font-semibold text-gray-900 mb-2">Missing Skills</h4>
+            {% if match.missing_required_skills_json or match.missing_optional_skills_json %}
+            <div class="flex flex-wrap gap-2">
+                {% for skill in match.missing_required_skills_json %}
+                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">{{ skill.name }} (Required)</span>
+                {% endfor %}
+                {% for skill in match.missing_optional_skills_json %}
+                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">{{ skill.name }} (Optional)</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500">No missing skills detected.</p>
+            {% endif %}
+        </div>
+
+        <!-- Risk Flags & Signals -->
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <h4 class="text-lg font-semibold text-gray-900 mb-2">Risk Flags</h4>
+                {% if match.risk_flags_json %}
+                <ul class="list-disc pl-5 text-red-600">
+                    {% for flag in match.risk_flags_json %}
+                    <li>{{ flag }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-500">No risk flags.</p>
+                {% endif %}
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold text-gray-900 mb-2">Profile Signals</h4>
+                {% if match.profile_signals_json %}
+                <ul class="list-disc pl-5 text-indigo-600">
+                    {% for signal in match.profile_signals_json %}
+                    <li>{{ signal }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-500">No profile signals.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recommended Actions -->
+        <div>
+            <h4 class="text-lg font-semibold text-gray-900 mb-2">Recommended Actions</h4>
+            {% if match.recommended_actions_json %}
+            <ul class="list-disc pl-5 text-gray-700">
+                {% for action in match.recommended_actions_json %}
+                <li>{{ action }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-gray-500">You are good to go!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white shadow rounded-lg overflow-hidden">
+    <div class="p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ job.title }}</h1>
+                <p class="text-lg text-gray-700 font-semibold">{{ job.company_name }}</p>
+                <p class="text-gray-500">{{ job.location|default:job.city }}</p>
+            </div>
+            <div class="flex flex-col items-end">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mb-2">
+                    {{ job.get_status_display }}
+                </span>
+                <span class="text-sm text-gray-500">
+                    Published: {{ job.published_at|date:"M d, Y" }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Job Meta -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 pb-8 border-b border-gray-200">
+            <div>
+                <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Contract</h3>
+                <p class="mt-1 text-gray-900">{{ job.contract_type|default:"N/A" }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Job Type</h3>
+                <p class="mt-1 text-gray-900">{{ job.get_job_type_display }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Remote</h3>
+                <p class="mt-1 text-gray-900">{{ job.get_remote_type_display }}</p>
+            </div>
+            <div>
+                <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Experience</h3>
+                <p class="mt-1 text-gray-900">{{ job.get_experience_level_display }}</p>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Skills Required</h2>
+            {% if job.required_skills_json %}
+                <div class="flex flex-wrap gap-2 mb-4">
+                    {% for skill in job.required_skills_json %}
+                        <span class="inline-flex items-center px-3 py-1 rounded bg-indigo-100 text-indigo-800 text-sm font-medium">
+                            {{ skill }}
+                        </span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 mb-4">No specific required skills listed.</p>
+            {% endif %}
+
+            {% if job.optional_skills_json %}
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Nice to have</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for skill in job.optional_skills_json %}
+                        <span class="inline-flex items-center px-3 py-1 rounded bg-gray-100 text-gray-800 text-sm font-medium">
+                            {{ skill }}
+                        </span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Language Requirements -->
+        {% if job.language_requirements_json %}
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Language Requirements</h2>
+            <ul class="list-disc pl-5">
+                {% for lang, code in job.language_requirements_json.items %}
+                    <li class="text-gray-700">{{ lang }}: {{ code }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Description -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Job Description</h2>
+            <div class="prose max-w-none text-gray-700 whitespace-pre-wrap">
+                {{ job.description }}
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-4 border-t border-gray-200 pt-8">
+            {% if job.source_url %}
+            <a href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Apply on {{ job.source.name }}
+            </a>
+            {% endif %}
+            
+            {% if user.is_authenticated %}
+            <form action="{% url 'matching:create' public_id=job.public_id %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Match with my profile
+                </button>
+            </form>
+            {% else %}
+            <button onclick="document.getElementById('quick-match-container').classList.remove('hidden')" class="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Quick Match (Anonymous)
+            </button>
+            {% endif %}
+        </div>
+
+        {% if not user.is_authenticated %}
+        <div id="quick-match-container" class="hidden mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Quick Match</h3>
+            <p class="text-sm text-gray-600 mb-4">See how well your skills match this job without creating an account.</p>
+            {% include "matching/partials/quick_match_form.html" with job=job %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

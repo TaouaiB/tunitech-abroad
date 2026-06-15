@@ -1,0 +1,11 @@
+-r base.txt
+
+# Dev / Debug
+django-extensions==3.2.3
+ipython==8.30.0
+
+# Tailwind local watcher
+pytailwindcss==0.2.0
+
+# Type checking / stubs
+django-stubs>=5.2,<5.3

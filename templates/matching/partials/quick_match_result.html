@@ -1,0 +1,40 @@
+<div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+    {% if error %}
+        <div class="text-red-600 font-medium">{{ error }}</div>
+    {% else %}
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Estimated Fit Score: {{ session.estimated_fit_score }}%</h3>
+        
+        <div class="mb-4">
+            <h4 class="font-semibold text-gray-800">Matched Skills:</h4>
+            {% if session.matched_skills_json %}
+                <ul class="list-disc pl-5">
+                    {% for skill in session.matched_skills_json %}
+                        <li class="text-green-600">{{ skill.name }} ({{ skill.type }})</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-sm text-gray-500">None</p>
+            {% endif %}
+        </div>
+        
+        <div class="mb-4">
+            <h4 class="font-semibold text-gray-800">Missing Skills:</h4>
+            {% if session.missing_skills_json %}
+                <ul class="list-disc pl-5">
+                    {% for skill in session.missing_skills_json %}
+                        <li class="text-red-600">{{ skill.name }} ({{ skill.requirement_type }})</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-sm text-gray-500">None</p>
+            {% endif %}
+        </div>
+        
+        <div class="mt-6 p-4 bg-indigo-50 rounded-md">
+            <p class="text-sm text-indigo-800 mb-3">Want a more accurate match with your full profile?</p>
+            <a href="{% url 'account_signup' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                Create an Account
+            </a>
+        </div>
+    {% endif %}
+</div>

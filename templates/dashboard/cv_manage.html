@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage CV{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <h1 class="text-3xl font-bold mb-6">Manage CV</h1>
+    
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="p-4 mb-2 bg-blue-100 text-blue-800 rounded">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if active_cv %}
+        <div class="bg-white p-6 rounded shadow-sm mb-6 border border-gray-200">
+            <h2 class="text-xl font-semibold mb-4">Current CV</h2>
+            <p><strong>Filename:</strong> {{ active_cv.original_filename }}</p>
+            <p><strong>Uploaded At:</strong> {{ active_cv.uploaded_at }}</p>
+            <div hx-get="{% url 'dashboard:cv_status' active_cv.public_id %}" hx-trigger="load, every 5s" id="cv-status-container">
+            </div>
+            
+            <form method="post" class="mt-4" onsubmit="return confirm('Are you sure you want to delete this CV?');">
+                {% csrf_token %}
+                <input type="hidden" name="delete_cv_id" value="{{ active_cv.public_id }}">
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete CV</button>
+            </form>
+        </div>
+    {% endif %}
+
+    <div class="bg-white p-6 rounded shadow-sm">
+        <h2 class="text-xl font-semibold mb-4">Upload New CV (PDF)</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Upload</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
