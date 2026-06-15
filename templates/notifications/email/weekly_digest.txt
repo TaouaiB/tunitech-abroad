@@ -1,0 +1,17 @@
+Hello {{ user.username|default:"there" }},
+
+Here are your top recommended jobs for the week:
+
+{% for rec in recommendations %}
+- {{ rec.job.title }} at {{ rec.job.company_name }} ({{ rec.job.location }})
+  Fit Score: {{ rec.fit_score }}%
+  Link: {{ site_url }}/jobs/{{ rec.job.public_id }}/
+{% endfor %}
+
+Please note: These recommendations do not guarantee employment, visa, relocation, or legal outcome.
+
+Manage your recommendations:
+{{ recommendations_url }}
+
+To unsubscribe from the weekly digest, visit:
+{{ unsubscribe_url }}

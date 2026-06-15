@@ -1,0 +1,21 @@
+<p>Hello {{ user.username|default:"there" }},</p>
+
+<p>Here are your top recommended jobs for the week:</p>
+
+<ul>
+{% for rec in recommendations %}
+  <li>
+    <strong>{{ rec.job.title }}</strong> at {{ rec.job.company_name }} ({{ rec.job.location }})<br>
+    Fit Score: {{ rec.fit_score }}%<br>
+    <a href="{{ site_url }}/jobs/{{ rec.job.public_id }}/">View Job Details</a>
+  </li>
+{% endfor %}
+</ul>
+
+<p><em>Please note: These recommendations do not guarantee employment, visa, relocation, or legal outcome.</em></p>
+
+<p>
+  <small>
+    <a href="{{ recommendations_url }}">Manage your recommendations</a> or <a href="{{ unsubscribe_url }}">unsubscribe from the weekly digest</a>.
+  </small>
+</p>

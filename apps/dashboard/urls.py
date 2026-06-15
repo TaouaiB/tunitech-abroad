@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from apps.notifications import views as notification_views
 
 app_name = "dashboard"
 
@@ -10,4 +11,5 @@ urlpatterns = [
     path("cv/status/<uuid:public_id>/", views.dashboard_cv_status, name="cv_status"),
     path("recommendations/", views.dashboard_recommendations, name="recommendations"),
     path("saved-jobs/", views.dashboard_saved_jobs, name="saved_jobs"),
+    path("email-preferences/", notification_views.email_preferences_view, name="email_preferences"),
 ]
