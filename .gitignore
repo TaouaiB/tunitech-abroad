@@ -42,6 +42,7 @@ celerybeat.pid
 
 # Docker
 .docker/
+docker-compose.yml
 
 # Local test artifacts
 /tmp/
