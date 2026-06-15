@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "apps.cvs.apps.CVsConfig",
     "apps.matching.apps.MatchingConfig",
     "apps.recommendations.apps.RecommendationsConfig",
+    "apps.llm.apps.LlmConfig",
 ]
 
 MIDDLEWARE = [
@@ -259,3 +260,12 @@ LOGGING = {
         },
     },
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LLM Integration
+# ─────────────────────────────────────────────────────────────────────────────
+
+LLM_ENABLED = os.environ.get("LLM_ENABLED", "False") == "True"
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_DEFAULT_MODEL = os.environ.get("OPENROUTER_DEFAULT_MODEL", "google/gemini-2.5-pro")
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
