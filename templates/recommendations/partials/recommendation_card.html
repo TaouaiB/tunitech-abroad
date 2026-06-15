@@ -1,0 +1,27 @@
+<div class="border rounded-md p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-md transition-shadow">
+    <div class="flex-1">
+        <div class="flex items-center gap-2">
+            <h3 class="text-lg font-semibold">
+                <a href="{% url 'jobs:detail' rec.job.public_id %}" class="text-blue-600 hover:text-blue-800 hover:underline">
+                    {{ rec.job.title }}
+                </a>
+            </h3>
+            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                {{ rec.fit_score }}% Match
+            </span>
+        </div>
+        <p class="text-gray-600 mt-1">
+            {{ rec.job.company_name }}
+            {% if rec.job.location %}
+                <span class="mx-2">&bull;</span> {{ rec.job.location }}
+            {% endif %}
+        </p>
+        {% if rec.reason_summary %}
+            <p class="text-sm text-gray-500 mt-2 italic">{{ rec.reason_summary }}</p>
+        {% endif %}
+    </div>
+    
+    <div class="flex-shrink-0 w-full sm:w-auto">
+        {% include 'jobs/partials/save_button.html' with job=rec.job is_saved=rec.is_saved %}
+    </div>
+</div>

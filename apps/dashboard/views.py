@@ -6,6 +6,18 @@ from apps.cvs.services.upload import CVUploadService
 from apps.cvs.services.deletion import CVDeletionService
 from apps.cvs.models import CVUpload
 from apps.profiles.services.profile_update import ProfileUpdateService
+from apps.recommendations.services.query import RecommendationQueryService
+from apps.recommendations.services.saved_jobs import SavedJobService
+
+@login_required
+def dashboard_recommendations(request):
+    result = RecommendationQueryService.get_dashboard_recommendations(request.user)
+    return render(request, "dashboard/recommendations.html", {"result": result})
+
+@login_required
+def dashboard_saved_jobs(request):
+    saved_jobs = SavedJobService.get_saved_jobs(request.user)
+    return render(request, "dashboard/saved_jobs.html", {"saved_jobs": saved_jobs})
 
 @login_required
 def dashboard_home(request):

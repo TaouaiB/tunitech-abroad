@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.jobs.apps.JobsConfig",
     "apps.cvs.apps.CVsConfig",
     "apps.matching.apps.MatchingConfig",
+    "apps.recommendations.apps.RecommendationsConfig",
 ]
 
 MIDDLEWARE = [

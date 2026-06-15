@@ -53,6 +53,14 @@ class CVUploadService:
 
             # Celery task proxy exposes delay() at runtime; cast keeps Pyright clean.
             transaction.on_commit(lambda: cast(Any, parse_cv).delay(cv_upload.id))
+            
+            def mark_stale():
+                try:
+                    from apps.recommendations.services.staleness import RecommendationStalenessService
+                    RecommendationStalenessService.mark_user_recommendations_stale(user, reason="cv_uploaded")
+                except ImportError:
+                    pass
+            transaction.on_commit(mark_stale)
         
         return cv_upload
 

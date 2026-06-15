@@ -38,4 +38,10 @@ class CVDeletionService:
             except (ImportError, AttributeError, Exception):
                 pass
                 
+            try:
+                from apps.recommendations.services.staleness import RecommendationStalenessService
+                RecommendationStalenessService.mark_user_recommendations_stale(user, reason="cv_deleted")
+            except ImportError:
+                pass
+
         return {"success": True}
