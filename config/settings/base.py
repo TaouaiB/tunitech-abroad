@@ -31,6 +31,11 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
 
+raw_trusted_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in raw_trusted_origins.split(",") if origin.strip()]
+
+SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000")
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Application definition
 #

@@ -5,7 +5,7 @@ from django.conf import settings
 class CVUploadForm(forms.ModelForm):
     consent_accepted = forms.BooleanField(
         required=True,
-        label="I consent to the processing of my CV for profile completion."
+        label="Je consens au traitement de mon CV pour la création de mon profil."
     )
 
     class Meta:
@@ -16,7 +16,7 @@ class CVUploadForm(forms.ModelForm):
         file = self.cleaned_data.get('file')
         if file:
             if file.size > settings.MAX_CV_UPLOAD_SIZE_MB * 1024 * 1024:
-                raise forms.ValidationError(f"File size must be under {settings.MAX_CV_UPLOAD_SIZE_MB}MB.")
+                raise forms.ValidationError(f"La taille du fichier doit être inférieure à {settings.MAX_CV_UPLOAD_SIZE_MB} Mo.")
             if not file.name.lower().endswith('.pdf') or file.content_type != 'application/pdf':
-                raise forms.ValidationError("Only PDF files are allowed.")
+                raise forms.ValidationError("Seuls les fichiers PDF sont autorisés.")
         return file

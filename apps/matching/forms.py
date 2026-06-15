@@ -41,10 +41,10 @@ class QuickMatchForm(forms.Form):
         skills_list = [s.strip() for s in re.split(r'[,\n]+', raw_skills) if s.strip()]
         
         if len(skills_list) > 30:
-            raise forms.ValidationError("You cannot enter more than 30 skills.")
+            raise forms.ValidationError("Vous ne pouvez pas entrer plus de 30 compétences.")
             
         for skill in skills_list:
             if len(skill) > 80:
-                raise forms.ValidationError(f"Skill '{skill[:20]}...' is too long (max 80 characters).")
+                raise forms.ValidationError(f"La compétence '{skill[:20]}...' est trop longue (max 80 caractères).")
                 
         return skills_list

@@ -25,7 +25,12 @@
                 </div>
             </div>
         {% empty %}
-            <p class="text-gray-500">You haven't saved any jobs yet.</p>
+            <div class="text-center py-8">
+                <p class="text-gray-500 mb-4">Vous n'avez pas encore sauvegardé d'offres.</p>
+                <a href="{% url 'jobs:list' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    Parcourir les offres
+                </a>
+            </div>
         {% endfor %}
     </div>
 </div>

@@ -85,3 +85,11 @@ class AdminAccessTests(TestCase):
 
         messages = list(response.context['messages'])
         self.assertTrue(any("Queued 1 CVs for reparsing" in str(m) for m in messages))
+
+class ErrorPageTests(TestCase):
+    def test_custom_404_page(self):
+        response = self.client.get('/this-url-does-not-exist-12345/')
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, '404.html')
+        self.assertContains(response, '404', status_code=404)
+        self.assertContains(response, 'trouver la page', status_code=404)
