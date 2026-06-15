@@ -45,5 +45,6 @@ class EmailEventAdmin(admin.ModelAdmin):
 class EmailUnsubscribeTokenAdmin(admin.ModelAdmin):
     list_display = ("public_id", "user", "email_type", "used_at", "created_at", "expires_at")
     list_filter = ("email_type", "used_at")
-    readonly_fields = ("public_id", "token", "created_at", "used_at")
-    search_fields = ("public_id", "token", "user__email", "user__username")
+    readonly_fields = ("public_id", "created_at", "used_at")
+    search_fields = ("public_id", "user__email", "user__username")
+    exclude = ("token",)

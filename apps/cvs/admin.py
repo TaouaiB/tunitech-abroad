@@ -1,5 +1,17 @@
 from django.contrib import admin
+from django.contrib import messages
 from .models import CVUpload, CVParsedData
+from .tasks import parse_cv
+
+@admin.action(description="Reparse selected CVs")
+def reparse_cvs(modeladmin, request, queryset):
+    count = 0
+    for cv in queryset:
+        if cv.is_active:
+            parse_cv.delay(cv.id)
+            count += 1
+    modeladmin.message_user(request, f"Queued {count} CVs for reparsing.", messages.SUCCESS)
+
 
 @admin.register(CVUpload)
 class CVUploadAdmin(admin.ModelAdmin):
@@ -8,6 +20,7 @@ class CVUploadAdmin(admin.ModelAdmin):
     search_fields = ("user__email", "original_filename", "public_id")
     readonly_fields = ("public_id", "uploaded_at", "parsed_at", "deleted_at", "file_hash", "file_size", "mime_type")
     exclude = ("file",)
+    actions = [reparse_cvs]
 
     def get_queryset(self, request):
         return self.model.all_objects.get_queryset()
