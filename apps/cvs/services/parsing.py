@@ -84,9 +84,19 @@ class CVParsingService:
                 profile = user.candidate_profile
                 
                 update_fields = []
-                if not profile.full_name and det_result.get('extracted_name'):
-                    profile.full_name = det_result.get('extracted_name')
-                    update_fields.append('full_name')
+                extracted_name = det_result.get('extracted_name')
+                if extracted_name:
+                    if not profile.full_name:
+                        profile.full_name = extracted_name
+                        update_fields.append('full_name')
+                    elif profile.full_name != extracted_name:
+                        warning_msg = f"Profile name '{profile.full_name}' differs from CV name '{extracted_name}'."
+                        if not isinstance(parsed_data.warnings_json, list):
+                            parsed_data.warnings_json = []
+                        if warning_msg not in parsed_data.warnings_json:
+                            parsed_data.warnings_json.append(warning_msg)
+                            parsed_data.save(update_fields=['warnings_json'])
+
                 if not profile.phone and det_result.get('extracted_phone'):
                     profile.phone = det_result.get('extracted_phone')
                     update_fields.append('phone')

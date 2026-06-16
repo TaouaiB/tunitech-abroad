@@ -59,7 +59,9 @@ class CVServiceTests(TestCase):
             CVUploadService.upload_cv(self.user, file, consent_accepted=True)
 
     def test_upload_cv_rejects_oversized_file_in_service(self):
-        file = SimpleUploadedFile("large.pdf", b"x" * (6 * 1024 * 1024), content_type="application/pdf")
+        from django.conf import settings
+        oversize_bytes = (settings.MAX_CV_UPLOAD_SIZE_MB + 1) * 1024 * 1024
+        file = SimpleUploadedFile("large.pdf", b"x" * oversize_bytes, content_type="application/pdf")
         with self.assertRaises(ValueError):
             CVUploadService.upload_cv(self.user, file, consent_accepted=True)
 
@@ -110,9 +112,9 @@ class CVServiceTests(TestCase):
             "Location: Tunis\n"
             "Email: amina@example.com\n"
             "Phone: +33 6 12 34 56 78\n"
-            "LinkedIn: https://linkedin.com/in/amina\n"
-            "GitHub: https://github.com/amina\n"
-            "Portfolio: https://amina.dev\n"
+            "LinkedIn: linkedin.com/in/amina\n"
+            "GitHub: github.com/amina\n"
+            "Portfolio: amina.dev\n"
             "Skills:\n"
             "Python\n"
         )
@@ -121,15 +123,32 @@ class CVServiceTests(TestCase):
             file_hash="hash3", file_size=pdf.size, is_active=True
         )
 
-        CVParsingService.parse(cv)
-        CVParsingService.parse(cv)
+        parsed_data = CVParsingService.parse(cv)
 
         profile.refresh_from_db()
         self.assertEqual(profile.full_name, "Existing Name")
         self.assertEqual(profile.phone, "+216 11 111 111")
         self.assertEqual(profile.location, "Tunis")
         self.assertEqual(profile.linkedin_url, "https://linkedin.com/in/amina")
+        self.assertEqual(profile.github_url, "https://github.com/amina")
+        self.assertEqual(profile.portfolio_url, "https://amina.dev")
         self.assertEqual(ProfileSkill.objects.filter(profile=profile, normalized_name="python").count(), 1)
+        
+        self.assertIsNotNone(parsed_data)
+        # Check warning was added
+        self.assertTrue(any("differs from CV name 'Amina Ben Ali'" in w for w in parsed_data.warnings_json))
+
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    def test_parsing_prefills_empty_profile(self, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        profile = CandidateProfile.objects.create(user=self.user)
+        pdf = self._pdf_file("Amina Ben Ali\nPhone: +33 6 12 34 56 78\nSome extra text to bypass the minimum text length requirement of 50 characters.")
+        cv = CVUpload.objects.create(user=self.user, file=pdf, original_filename="cv2.pdf", file_hash="hash4", file_size=pdf.size, is_active=True)
+        CVParsingService.parse(cv)
+        
+        profile.refresh_from_db()
+        self.assertEqual(profile.full_name, "Amina Ben Ali")
+        self.assertEqual(profile.phone, "+33 6 12 34 56 78")
 
     @patch('os.remove')
     @patch('os.path.exists')

@@ -87,13 +87,24 @@ class AdminAccessTests(TestCase):
         messages = list(response.context['messages'])
         self.assertTrue(any("Queued 1 CVs for reparsing" in str(m) for m in messages))
 
+from django.test import override_settings
+
 class ErrorPageTests(TestCase):
+    @override_settings(DEBUG=False)
     def test_custom_404_page(self):
         response = self.client.get('/this-url-does-not-exist-12345/')
         self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, '404.html')
         self.assertContains(response, '404', status_code=404)
         self.assertContains(response, 'trouver la page', status_code=404)
+        self.assertNotContains(response, 'Using the URLconf defined in', status_code=404)
+
+    @override_settings(DEBUG=False)
+    def test_recommendations_root_returns_404(self):
+        # We explicitly don't have a /recommendations/ URL, it should be /dashboard/recommendations/
+        response = self.client.get('/recommendations/')
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, '404.html')
 
 
 class DemoSeedCommandTests(TestCase):

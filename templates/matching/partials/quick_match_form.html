@@ -1,4 +1,4 @@
-<form action="{% url 'matching:quick_match' public_id=job.public_id %}" method="post" class="space-y-4" hx-post="{% url 'matching:quick_match' public_id=job.public_id %}" hx-target="#quick-match-container" hx-swap="innerHTML">
+<form action="{% url 'matching:quick_match' public_id=job.public_id %}" method="post" class="space-y-4" hx-post="{% url 'matching:quick_match' public_id=job.public_id %}" hx-target="#quick-match-result" hx-swap="innerHTML">
     {% csrf_token %}
     <div>
         <label for="id_skills" class="block text-sm font-medium text-gray-700">Skills (comma separated)</label>
@@ -30,8 +30,62 @@
     </div>
 
     <div>
-        <button type="submit" id="qm-btn" class="inline-flex justify-center items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="this.innerHTML='Processing...';">
-            Run Quick Match
+        <button type="submit" id="qm-btn" class="inline-flex justify-center items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <span class="btn-text">Run Quick Match</span>
+            <span class="btn-loading hidden ml-2">Processing...</span>
         </button>
     </div>
 </form>
+
+<div id="quick-match-result" class="mt-4"></div>
+
+<script>
+    // Reset loading state on pageshow (e.g., when returning via Back button/BFCache)
+    window.addEventListener('pageshow', function(event) {
+        var btn = document.getElementById('qm-btn');
+        if (btn) {
+            btn.disabled = false;
+            var textSpan = btn.querySelector('.btn-text');
+            var loadingSpan = btn.querySelector('.btn-loading');
+            if (textSpan) textSpan.classList.remove('hidden');
+            if (loadingSpan) loadingSpan.classList.add('hidden');
+        }
+    });
+
+    document.body.addEventListener('htmx:beforeRequest', function(evt) {
+        if (evt.target.id === 'qm-btn' || evt.detail.elt.querySelector('#qm-btn')) {
+            var btn = document.getElementById('qm-btn');
+            if (btn) {
+                btn.disabled = true;
+                var textSpan = btn.querySelector('.btn-text');
+                var loadingSpan = btn.querySelector('.btn-loading');
+                if (textSpan) textSpan.classList.add('hidden');
+                if (loadingSpan) loadingSpan.classList.remove('hidden');
+            }
+        }
+    });
+
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.target.id === 'qm-btn' || evt.detail.elt.querySelector('#qm-btn')) {
+            var btn = document.getElementById('qm-btn');
+            if (btn) {
+                btn.disabled = false;
+                var textSpan = btn.querySelector('.btn-text');
+                var loadingSpan = btn.querySelector('.btn-loading');
+                if (textSpan) textSpan.classList.remove('hidden');
+                if (loadingSpan) loadingSpan.classList.add('hidden');
+            }
+        }
+    });
+
+    // Clear result when input changes
+    var form = document.querySelector('#quick-match-container form');
+    if (form) {
+        form.addEventListener('input', function() {
+            var resultContainer = document.getElementById('quick-match-result');
+            if (resultContainer) {
+                resultContainer.innerHTML = '';
+            }
+        });
+    }
+</script>

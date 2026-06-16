@@ -390,6 +390,14 @@ class MatchingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(QuickMatchSession.objects.exists())
 
+    def test_quick_match_form_includes_reset_scripts(self):
+        url = reverse("jobs:detail", kwargs={"public_id": self.job.public_id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'window.addEventListener(\'pageshow\'')
+        self.assertContains(response, 'htmx:beforeRequest')
+        self.assertContains(response, 'hx-target="#quick-match-result"')
+
     def test_match_history_and_detail_are_owner_filtered(self):
         match = MatchResultService.create_match_result(self.user, self.job)
         other_match = MatchResultService.create_match_result(self.other_user, self.job)
