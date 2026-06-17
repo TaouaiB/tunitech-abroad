@@ -1,0 +1,5 @@
+- [ ] Ticket 14E-001 & 14E-002 — Fix Google OAuth existing-account login and confirmation UX
+- [ ] Ticket 14E-003 — Immediate account deletion for MVP
+- [ ] Ticket 14E-004 — Fix profile completeness gating
+- [ ] Ticket 14E-006 — UI copy cleanup
+- [ ] Verification and tests execution

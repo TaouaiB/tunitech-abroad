@@ -19,3 +19,16 @@ def mark_stale_and_expired_jobs():
 @shared_task
 def ingest_fixture_jobs(path: str, source_slug: str = "france_travail"):
     return JobFixtureIngestionService.ingest_fixture_and_dispatch_normalization(path, source_slug=source_slug)
+
+
+@shared_task
+def run_it_job_ingestion(config_name: str = "default"):
+    from apps.jobs.models import JobIngestionConfig
+    from apps.jobs.services.ingestion import JobIngestionService
+
+    try:
+        config = JobIngestionConfig.objects.get(name=config_name, enabled=True)
+        JobIngestionService.run(config, trigger="celery")
+        return f"Ingestion completed for config {config_name}"
+    except JobIngestionConfig.DoesNotExist:
+        return f"Config {config_name} not found or disabled."

@@ -2,9 +2,24 @@ import json
 import logging
 import urllib.request
 import urllib.error
+from typing import Any
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_usage(value: Any) -> dict[str, int]:
+    if not isinstance(value, dict):
+        return {}
+    normalized = {}
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+        raw_count = value.get(key, 0)
+        try:
+            normalized[key] = int(raw_count)
+        except (TypeError, ValueError):
+            normalized[key] = 0
+    return normalized
+
 
 class OpenRouterClient:
     """
@@ -16,7 +31,7 @@ class OpenRouterClient:
         self.default_model = default_model or settings.OPENROUTER_DEFAULT_MODEL
         self.enabled = settings.LLM_ENABLED
 
-    def _make_request(self, messages, model=None, response_format=None, max_tokens=1024, temperature=0.7):
+    def _make_request(self, messages, model=None, response_format=None, max_tokens=1024, temperature=0.7) -> dict[str, Any]:
         if not self.enabled:
             logger.info("LLM is disabled. Returning mock response.")
             return self._get_mock_response(messages)
@@ -59,7 +74,7 @@ class OpenRouterClient:
             logger.error("OpenRouter Error: %s", str(e))
             raise
 
-    def chat(self, messages, model=None, response_format=None, max_tokens=1024, temperature=0.7):
+    def chat(self, messages, model=None, response_format=None, max_tokens=1024, temperature=0.7) -> tuple[str, dict[str, int]]:
         """
         Sends a chat request and returns the parsed message content and usage info.
         """
@@ -69,11 +84,18 @@ class OpenRouterClient:
             choices = response.get("choices", [])
             if not choices:
                 return "", {}
-            content = choices[0].get("message", {}).get("content", "")
-            usage = response.get("usage", {})
+            message = choices[0].get("message", {})
+            content = message.get("content", "") if isinstance(message, dict) else ""
+            if not isinstance(content, str):
+                content = ""
+            usage = _normalize_usage(response.get("usage", {}))
             return content, usage
         else:
-            return response.get("content", ""), response.get("usage", {})
+            content = response.get("content", "")
+            if not isinstance(content, str):
+                content = ""
+            usage = _normalize_usage(response.get("usage", {}))
+            return content, usage
 
     def _get_mock_response(self, messages):
         """

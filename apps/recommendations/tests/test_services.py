@@ -680,7 +680,49 @@ class RecommendationQueryServiceTests(TestCase):
 
         self.assertFalse(result.is_pending)
         self.assertEqual(result.recommendations, [])
-        self.assertIn("Votre profil est incomplet pour générer des recommandations. Champs manquants :", result.blocked_reason)
+        self.assertIn("Votre profil est incomplet pour générer des recommandations (minimum 50% requis). Champs manquants :", result.blocked_reason)
+
+    def test_profile_score_49_blocks_recommendation_gate(self):
+        with (
+            patch("apps.profiles.services.completeness.ProfileCompletenessService.calculate", return_value=49),
+            patch(
+                "apps.profiles.services.completeness.ProfileCompletenessService.get_recommendation_report",
+                return_value={"missing": ["Rôles ciblés"], "invalid": [], "score": 49},
+            ),
+            patch("apps.recommendations.services.query.RecommendationQueryService._enqueue_refresh"),
+        ):
+            result = RecommendationQueryService.get_dashboard_recommendations(self.user)
+
+        self.assertIsNotNone(result.blocked_reason)
+        self.assertIn("minimum 50% requis", result.blocked_reason)
+
+    def test_profile_score_50_unlocks_recommendation_gate(self):
+        with (
+            patch("apps.profiles.services.completeness.ProfileCompletenessService.calculate", return_value=50),
+            patch(
+                "apps.profiles.services.completeness.ProfileCompletenessService.get_recommendation_report",
+                return_value={"missing": ["Rôles ciblés"], "invalid": [], "score": 50},
+            ),
+            patch("apps.recommendations.services.query.RecommendationQueryService._enqueue_refresh"),
+        ):
+            result = RecommendationQueryService.get_dashboard_recommendations(self.user)
+
+        self.assertIsNone(result.blocked_reason)
+        self.assertTrue(result.is_pending)
+
+    def test_profile_score_above_50_unlocks_recommendation_gate(self):
+        with (
+            patch("apps.profiles.services.completeness.ProfileCompletenessService.calculate", return_value=75),
+            patch(
+                "apps.profiles.services.completeness.ProfileCompletenessService.get_recommendation_report",
+                return_value={"missing": ["Rôles ciblés"], "invalid": [], "score": 75},
+            ),
+            patch("apps.recommendations.services.query.RecommendationQueryService._enqueue_refresh"),
+        ):
+            result = RecommendationQueryService.get_dashboard_recommendations(self.user)
+
+        self.assertIsNone(result.blocked_reason)
+        self.assertTrue(result.is_pending)
 
     def test_profile_db_state_matches_recommendation_missing_fields(self):
         self.profile.full_name = ""
@@ -711,6 +753,12 @@ class RecommendationQueryServiceTests(TestCase):
         self.assertNotIn("Localisation", result.blocked_reason)
 
     def test_recommendations_do_not_require_optional_preferences_or_job_types(self):
+        self.profile.full_name = "User"
+        self.profile.phone = "123"
+        self.profile.location = "Tunis"
+        self.profile.target_roles = ["dev"]
+        self.profile.french_level = "native"
+        self.profile.english_level = "fluent"
         self.profile.years_experience = None
         self.profile.current_level = "junior"
         self.profile.target_job_types = []

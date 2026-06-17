@@ -30,19 +30,29 @@
         </div>
     </div>
 
-    {% if missing_fields %}
+    {% if not is_complete_enough and missing_fields %}
     <div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200 shadow-sm mb-8 flex flex-col sm:flex-row items-start gap-4">
         <div class="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center flex-shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         </div>
         <div>
-            <h3 class="text-lg font-bold text-yellow-900 mb-1">Profil Incomplet (minimum 50% requis)</h3>
-            <p class="text-sm text-yellow-800 mb-2">Les recommandations d'emploi sont actuellement bloquées. Veuillez remplir ces champs pour débloquer le service :</p>
+            <h3 class="text-lg font-bold text-yellow-900 mb-1">Complétez votre profil pour améliorer vos recommandations</h3>
+            <p class="text-sm text-yellow-800 mb-2">Les recommandations d'emploi sont actuellement bloquées (minimum 50% requis). Veuillez remplir ces champs pour débloquer le service :</p>
             <ul class="list-disc list-inside text-sm text-yellow-700 font-medium space-y-1">
                 {% for field in missing_fields %}
                 <li>{{ field }}</li>
                 {% endfor %}
             </ul>
+        </div>
+    </div>
+    {% elif is_complete_enough %}
+    <div class="bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm mb-8 flex flex-col sm:flex-row items-start gap-4">
+        <div class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <div>
+            <h3 class="text-lg font-bold text-green-900 mb-1">Profil prêt pour les recommandations</h3>
+            <p class="text-sm text-green-800 mb-2">Votre profil est suffisamment complet pour recevoir des recommandations pertinentes.</p>
         </div>
     </div>
     {% endif %}

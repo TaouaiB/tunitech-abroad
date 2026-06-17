@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.http import require_GET
 from apps.cvs.forms import CVUploadForm
 from apps.cvs.services.upload import CVUploadService
 from apps.cvs.services.deletion import CVDeletionService
@@ -70,15 +71,18 @@ def dashboard_profile(request):
 
     from apps.profiles.services.completeness import ProfileCompletenessService
     missing_fields = []
+    is_complete_enough = False
     if profile:
         completeness_report = ProfileCompletenessService.get_report(profile)
+        is_complete_enough = completeness_report["score"] >= 50
         missing_fields = completeness_report["missing"] + completeness_report["invalid"]
 
     return render(request, "dashboard/profile.html", {
         "form": form,
         "profile": profile,
         "suggestions": suggestions,
-        "missing_fields": missing_fields
+        "missing_fields": missing_fields,
+        "is_complete_enough": is_complete_enough
     })
 
 @login_required
@@ -141,15 +145,22 @@ def dashboard_delete_account(request):
     if request.method == "POST":
         confirmation = request.POST.get("confirmation", "")
         if confirmation.strip().upper() == "DELETE":
-            AccountDeletionService.request_deletion(request.user)
+            deletion_request = AccountDeletionService.request_deletion(request.user)
+            if deletion_request.status != "completed":
+                messages.error(request, "La suppression du compte n'a pas pu être finalisée. Veuillez réessayer.")
+                return redirect("dashboard:delete_account")
             from django.contrib.auth import logout
             logout(request)
-            return redirect("core:home")
+            return redirect("dashboard:delete_account_done")
         else:
             messages.error(request, "Please type DELETE to confirm.")
             return redirect("dashboard:delete_account")
 
     return render(request, "dashboard/delete_account.html")
+
+@require_GET
+def dashboard_delete_account_done(request):
+    return render(request, "dashboard/delete_account_done.html")
 
 @login_required
 def dashboard_connections(request):

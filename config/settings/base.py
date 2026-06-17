@@ -217,6 +217,10 @@ LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "TuniTech Abroad <noreply@localhost>")
 
+SOCIALACCOUNT_ADAPTER = "apps.accounts.adapters.TuniTechSocialAccountAdapter"
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = False
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+
 # Social auth placeholders
 SOCIALACCOUNT_PROVIDERS = {
     "google": {

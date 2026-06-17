@@ -6,6 +6,8 @@ from apps.jobs.models import (
     RawJobRecord,
     NormalizedJob,
     NormalizedJobSkill,
+    JobIngestionConfig,
+    JobIngestionRun,
 )
 from apps.jobs.tasks import normalize_raw_job_record
 
@@ -31,6 +33,63 @@ class IngestionRunAdmin(admin.ModelAdmin):
     list_filter = ("status", "trigger_type", "source")
     search_fields = ("source__name",)
     readonly_fields = ("started_at", "finished_at", "created_at")
+
+
+@admin.register(JobIngestionConfig)
+class JobIngestionConfigAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "enabled",
+        "preset",
+        "frequency_minutes",
+        "normalize_after_fetch",
+        "enrichment_enabled",
+        "enrich_every_fetched_it_job",
+        "enrichment_limit_per_run",
+        "last_run_at",
+        "last_success_at",
+    )
+    list_filter = ("enabled", "preset", "normalize_after_fetch", "enrichment_enabled", "enrich_every_fetched_it_job")
+    search_fields = ("name", "preset")
+    fieldsets = (
+        (None, {"fields": ("name", "enabled", "preset", "custom_keywords")}),
+        ("Fetch limits", {"fields": ("limit_per_keyword", "max_total_per_run", "max_pages_per_keyword")}),
+        ("Schedule", {"fields": ("frequency_minutes", "nightly_enabled", "nightly_max_total")}),
+        (
+            "Processing",
+            {
+                "fields": (
+                    "normalize_after_fetch",
+                    "enrichment_enabled",
+                    "enrich_every_fetched_it_job",
+                    "enrichment_limit_per_run",
+                )
+            },
+        ),
+        ("Expiry", {"fields": ("expire_after_days", "mark_missing_as_stale_after_days")}),
+        ("Runtime", {"fields": ("dry_run", "last_run_at", "last_success_at", "last_error")}),
+    )
+    readonly_fields = ("last_run_at", "last_success_at", "last_error")
+
+
+@admin.register(JobIngestionRun)
+class JobIngestionRunAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "config",
+        "status",
+        "trigger",
+        "started_at",
+        "fetched_count",
+        "normalized_count",
+        "duplicates_skipped_count",
+        "enrichment_queued_count",
+        "enrichment_skipped_count",
+        "error_count",
+    )
+    list_filter = ("status", "trigger", "config")
+    search_fields = ("public_id",)
+    readonly_fields = ("started_at", "finished_at", "public_id")
 
 
 @admin.register(RawJobRecord)

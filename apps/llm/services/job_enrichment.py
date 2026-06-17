@@ -2,6 +2,7 @@ import json
 import logging
 import hashlib
 from decimal import Decimal
+from typing import Any
 from django.conf import settings
 from django.utils import timezone
 from apps.llm.services.client import OpenRouterClient
@@ -10,22 +11,30 @@ from apps.jobs.models import JobStatus
 
 logger = logging.getLogger(__name__)
 
-def job_qualifies_for_enrichment(job):
+__all__ = [
+    "job_qualifies_for_enrichment_with_reason",
+    "job_qualifies_for_enrichment",
+    "enrich_job",
+    "validate_enrichment_schema",
+]
+
+
+def job_qualifies_for_enrichment_with_reason(job) -> tuple[bool, str]:
     """
-    Check if a NormalizedJob qualifies for LLM enrichment.
+    Check if a NormalizedJob qualifies for LLM enrichment, returning (qualifies, reason).
     """
     if not settings.JOB_ENRICHMENT_ENABLED:
-        return False
+        return False, "JOB_ENRICHMENT_ENABLED is False"
         
     if job.status != JobStatus.ACTIVE:
-        return False
+        return False, f"Job status is {job.status}, not ACTIVE"
 
     if job.country != "FR":
-        return False
+        return False, f"Job country is {job.country}, not FR"
 
     classification = job.classification_json or {}
     if classification.get("confidence") != "high":
-        return False
+        return False, "Job classification confidence is not high"
 
     # Payload hash check to avoid duplicate enrichment
     payload_hash = _compute_payload_hash(job)
@@ -33,7 +42,7 @@ def job_qualifies_for_enrichment(job):
     # Check if a successful enrichment already exists for this hash
     if hasattr(job, "enrichment") and job.enrichment.status == JobEnrichment.Status.SUCCESS:
         if job.enrichment.payload_hash == payload_hash:
-            return False
+            return False, "Successful enrichment already exists for this payload hash"
 
     # Check daily limit
     today = timezone.now().date()
@@ -42,15 +51,22 @@ def job_qualifies_for_enrichment(job):
     ).exclude(status=JobEnrichment.Status.PENDING).count()
     
     if daily_count >= settings.JOB_ENRICHMENT_DAILY_LIMIT:
-        return False
+        return False, "Daily enrichment limit reached"
 
-    return True
+    return True, ""
 
-def _compute_payload_hash(job):
+def job_qualifies_for_enrichment(job) -> bool:
+    """
+    Check if a NormalizedJob qualifies for LLM enrichment.
+    """
+    qualifies, _ = job_qualifies_for_enrichment_with_reason(job)
+    return qualifies
+
+def _compute_payload_hash(job) -> str:
     text = f"{job.title}\n{job.description}"
     return hashlib.md5(text.encode('utf-8')).hexdigest()
 
-def enrich_job(job, force=False):
+def enrich_job(job, force: bool = False):
     """
     Enriches a job using the LLM and validates the output.
     Updates or creates the JobEnrichment record.
@@ -132,6 +148,9 @@ Respond with a JSON object strictly matching this shape:
             content, usage = client.chat(messages, response_format={"type": "json_object"})
             
             enrichment.raw_response_text = content
+            if not isinstance(usage, dict):
+                usage = {}
+
             enrichment.prompt_tokens = usage.get("prompt_tokens", 0)
             enrichment.completion_tokens = usage.get("completion_tokens", 0)
             enrichment.total_tokens = usage.get("total_tokens", 0)
@@ -173,9 +192,9 @@ Respond with a JSON object strictly matching this shape:
     enrichment.save()
     return enrichment
 
-def validate_enrichment_schema(data, original_text):
-    errors = []
-    validated = {}
+def validate_enrichment_schema(data: Any, original_text: str) -> tuple[dict[str, Any] | None, list[str]]:
+    errors: list[str] = []
+    validated: dict[str, Any] = {}
     
     original_text_lower = original_text.lower()
 
@@ -205,8 +224,8 @@ def validate_enrichment_schema(data, original_text):
     # Skills validation
     soft_skills = ["rigueur", "autonomie", "bon relationnel", "esprit d'équipe", "communication", "curiosité"]
     
-    def validate_skills(skills_list, list_name):
-        valid_skills = []
+    def validate_skills(skills_list: Any, list_name: str) -> list[dict[str, str]]:
+        valid_skills: list[dict[str, str]] = []
         if not isinstance(skills_list, list):
             errors.append(f"{list_name} is not a list")
             return valid_skills
@@ -216,8 +235,8 @@ def validate_enrichment_schema(data, original_text):
                 errors.append(f"Item in {list_name} is not an object")
                 continue
             
-            name = skill.get("name", "").strip()
-            evidence = skill.get("evidence", "").strip()
+            name = str(skill.get("name", "")).strip()
+            evidence = str(skill.get("evidence", "")).strip()
             
             if not name:
                 errors.append(f"Missing skill name in {list_name}")
@@ -254,7 +273,23 @@ def validate_enrichment_schema(data, original_text):
     except (ValueError, TypeError):
         validated["years_experience_min"] = None
 
-    validated["languages"] = data.get("languages", [])
+    languages = data.get("languages", [])
+    validated_languages: list[dict[str, str]] = []
+    if not isinstance(languages, list):
+        errors.append("languages is not a list")
+    else:
+        for language_item in languages:
+            if not isinstance(language_item, dict):
+                errors.append("Item in languages is not an object")
+                continue
+            language = str(language_item.get("language", "")).strip()
+            level = str(language_item.get("level", "")).strip()
+            evidence = str(language_item.get("evidence", "")).strip()
+            if not language:
+                errors.append("Missing language name")
+                continue
+            validated_languages.append({"language": language, "level": level, "evidence": evidence})
+    validated["languages"] = validated_languages
 
     remote_policy_allowed = ["remote", "hybrid", "onsite", "unknown"]
     remote_policy = data.get("remote_policy", "unknown")

@@ -47,20 +47,22 @@ class RecommendationQueryService:
         active_cv = CVUpload.objects.filter(user=user, is_active=True).first()
         
         blocked_reason = None
+        score = 0
         if profile:
             from apps.profiles.services.completeness import ProfileCompletenessService
             ProfileCompletenessService.calculate(profile)
             recommendation_report = ProfileCompletenessService.get_recommendation_report(profile)
             recommendation_missing = recommendation_report["missing"] + recommendation_report["invalid"]
+            score = recommendation_report["score"]
         else:
             recommendation_missing = []
 
-        if not profile or recommendation_missing:
+        if not profile or score < 50:
             missing = []
             if profile:
                 missing = recommendation_missing
             missing_str = ", ".join(missing) if missing else "plusieurs champs"
-            blocked_reason = f"Votre profil est incomplet pour générer des recommandations. Champs manquants : {missing_str}."
+            blocked_reason = f"Votre profil est incomplet pour générer des recommandations (minimum 50% requis). Champs manquants : {missing_str}."
         elif not active_cv or not hasattr(active_cv, 'parsed_data'):
             blocked_reason = "Aucun CV analysé n'est disponible."
             

@@ -3,6 +3,14 @@ from apps.accounts.models import User
 from django.db.utils import IntegrityError
 from django.db import connection
 from types import SimpleNamespace
+from unittest.mock import patch
+
+from allauth.account.models import EmailAddress
+from allauth.socialaccount.models import SocialAccount, SocialLogin
+from django.contrib.sessions.backends.db import SessionStore
+from django.test import RequestFactory
+
+from .adapters import TuniTechSocialAccountAdapter
 from .services.account_provisioning import AccountProvisioningService
 from .signals import populate_profile_from_social_data
 
@@ -72,6 +80,72 @@ class AccountProvisioningServiceTests(TestCase):
         except ImportError:
             pass
 
+class SocialAccountAdapterTests(TestCase):
+    def setUp(self):
+        self.request_factory = RequestFactory()
+
+    def _request(self):
+        request = self.request_factory.get("/")
+        request.session = SessionStore()
+        return request
+
+    def _social_login(self, provider="google", email="oauth@example.test", verified=True):
+        user = User(username=email.split("@")[0], email=email)
+        account = SocialAccount(
+            provider=provider,
+            uid=f"{provider}-uid",
+            extra_data={"email": email, "email_verified": verified, "name": "OAuth User"},
+        )
+        email_address = EmailAddress(email=email, verified=verified, primary=True)
+        return SocialLogin(user=user, account=account, email_addresses=[email_address])
+
+    def test_existing_local_user_google_verified_email_authenticates_by_email(self):
+        existing_user = create_test_user(username="existinggoogle", email="same@gmail.test")
+        login = self._social_login(provider="google", email="same@gmail.test", verified=True)
+
+        login.lookup()
+
+        self.assertEqual(login.user, existing_user)
+        self.assertEqual(login._did_authenticate_by_email, "same@gmail.test")
+
+    def test_unverified_provider_email_does_not_auto_link_existing_user(self):
+        existing_user = create_test_user(username="existingunverified", email="same-unverified@example.test")
+        login = self._social_login(provider="github", email="same-unverified@example.test", verified=False)
+
+        login.lookup()
+
+        self.assertNotEqual(login.user, existing_user)
+        self.assertIsNone(login._did_authenticate_by_email)
+
+    def test_future_provider_is_not_trusted_for_email_authentication_by_default(self):
+        create_test_user(username="existingfuture", email="future@example.test")
+        login = self._social_login(provider="example", email="future@example.test", verified=True)
+
+        login.lookup()
+
+        self.assertIsNone(login._did_authenticate_by_email)
+
+    def test_new_google_verified_email_creates_provisioned_account_without_confirmation(self):
+        login = self._social_login(provider="google", email="new-google@gmail.test", verified=True)
+
+        TuniTechSocialAccountAdapter().save_user(self._request(), login)
+
+        user = User.objects.get(email="new-google@gmail.test")
+        self.assertFalse(user.has_usable_password())
+        self.assertTrue(hasattr(user, "candidate_profile"))
+        self.assertTrue(hasattr(user, "email_preferences"))
+        self.assertTrue(EmailAddress.objects.filter(user=user, email=user.email, verified=True).exists())
+
+    def test_social_adapter_does_not_send_duplicate_signup_warning_for_existing_google_email(self):
+        create_test_user(username="existingwarning", email="warning@gmail.test")
+        login = self._social_login(provider="google", email="warning@gmail.test", verified=True)
+
+        with patch("allauth.account.adapter.DefaultAccountAdapter.send_mail") as send_mail:
+            login.lookup()
+
+        self.assertEqual(send_mail.call_count, 0)
+        self.assertEqual(login._did_authenticate_by_email, "warning@gmail.test")
+
     def test_oauth_socialaccount_extra_data_mapping(self):
         user = create_test_user(username="oauthuser", email="oauth@example.test", password="password123")
         AccountProvisioningService.provision_new_user(user)
@@ -124,6 +198,33 @@ class AuthViewsTests(TestCase):
     def test_signup_page_status_code(self):
         response = self.client.get('/accounts/signup/')
         self.assertEqual(response.status_code, 200)
+
+    def test_existing_normal_email_password_login_still_works(self):
+        user = create_test_user(username="normal-login", email="normal-login@example.test", password="password123")
+        EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+
+        response = self.client.post(
+            "/accounts/login/",
+            {"login": "normal-login@example.test", "password": "password123"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "/dashboard/")
+
+    def test_normal_email_signup_still_requires_email_confirmation(self):
+        response = self.client.post(
+            "/accounts/signup/",
+            {
+                "email": "normal-signup@example.test",
+                "password1": "SafePassword123!",
+                "password2": "SafePassword123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/confirm-email/", response["Location"])
+        user = User.objects.get(email="normal-signup@example.test")
+        self.assertTrue(EmailAddress.objects.filter(user=user, email=user.email, verified=False).exists())
 
     def test_confirm_email_route_uses_project_layout(self):
         response = self.client.get("/accounts/confirm-email/")

@@ -2,6 +2,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import patch, MagicMock
+from typing import Any, cast
 
 from apps.jobs.models import NormalizedJob, JobStatus, RequirementType, JobSource, RawJobRecord
 from apps.skills.models import Skill
@@ -88,6 +89,8 @@ class EnrichmentTests(TestCase):
             "optional_skills": []
         }
         validated_data, errors = validate_enrichment_schema(data, "être autonome, Python developer")
+        self.assertIsNotNone(validated_data)
+        validated_data = cast(dict[str, Any], validated_data)
         self.assertEqual(len(validated_data["required_skills"]), 1)
         self.assertEqual(validated_data["required_skills"][0]["name"], "Python")
 
@@ -141,7 +144,9 @@ class EnrichmentTests(TestCase):
     def test_match_scoring_uses_enriched_data(self):
         from django.contrib.auth import get_user_model
         User = get_user_model()
-        user = User.objects.create_user(username="test", password="123")
+        user = User(username="test", email="test@example.com")
+        user.set_password("123")
+        user.save()
         JobEnrichment.objects.create(
             job=self.job,
             status=JobEnrichment.Status.SUCCESS,
@@ -165,7 +170,9 @@ class EnrichmentTests(TestCase):
     def test_match_scoring_ignores_enriched_data_when_flag_disabled(self):
         from django.contrib.auth import get_user_model
         User = get_user_model()
-        user = User.objects.create_user(username="flagoff", password="123")
+        user = User(username="flagoff", email="flagoff@example.com")
+        user.set_password("123")
+        user.save()
         JobEnrichment.objects.create(
             job=self.job,
             status=JobEnrichment.Status.SUCCESS,
@@ -183,7 +190,7 @@ class EnrichmentTests(TestCase):
 
     @override_settings(JOB_ENRICHMENT_ENABLED=False)
     def test_celery_task_skips_when_enrichment_disabled(self):
-        status = enrich_job_task.run(self.job.id)
+        status = cast(Any, enrich_job_task).run(self.job.id)
         enrichment = JobEnrichment.objects.get(job=self.job)
 
         self.assertEqual(status, JobEnrichment.Status.SKIPPED)
