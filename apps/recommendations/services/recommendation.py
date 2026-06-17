@@ -37,9 +37,10 @@ class RecommendationService:
         try:
             profile = CandidateProfile.objects.filter(user=user).first()
             if not profile or profile.profile_completion_score < 50:
-                run.status = "success"
+                run.status = "skipped"
+                run.error_message = "profile_incomplete"
                 run.finished_at = timezone.now()
-                run.save(update_fields=["status", "finished_at"])
+                run.save(update_fields=["status", "finished_at", "error_message"])
                 return RecommendationResult(
                     run_id=run.id,
                     recommendations_created=0,
@@ -83,6 +84,8 @@ class RecommendationService:
             scored_results = []
             for job in candidate_jobs:
                 score_res = MatchScoringService.calculate(profile, job, active_cv)
+                if score_res.match_confidence == MatchScoringService.CONFIDENCE_UNAVAILABLE:
+                    continue
                 
                 # Ranking formula is deterministic:
                 # fit_score + freshness_boost + target_type_boost
@@ -116,12 +119,14 @@ class RecommendationService:
                 )
                 ranking_score = max(0, min(100, ranking_score))
                 
-                scored_results.append((job, score_res, Decimal(str(ranking_score))))
+                confidence_rank = 0 if score_res.match_confidence == MatchScoringService.CONFIDENCE_RELIABLE else 1
+                scored_results.append((job, score_res, Decimal(str(ranking_score)), confidence_rank))
             
             scored_jobs_count = len(scored_results)
             
             scored_results.sort(
                 key=lambda item: (
+                    item[3],
                     -item[2],
                     -(item[0].published_at.timestamp() if item[0].published_at else 0),
                     item[0].title.lower(),
@@ -145,7 +150,7 @@ class RecommendationService:
                 stale_count = old_active.update(status="stale", updated_at=now)
                 
                 # Store top recommendations
-                for rank, (job, score_res, ranking_score) in enumerate(top_recommendations, start=1):
+                for rank, (job, score_res, ranking_score, _confidence_rank) in enumerate(top_recommendations, start=1):
                     rec, created = JobRecommendation.objects.update_or_create(
                         user=user,
                         job=job,

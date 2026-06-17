@@ -7,6 +7,15 @@ class Command(BaseCommand):
     help = "Run all seed commands to initialize the demo data (skills, sources, and job fixtures)."
 
     def handle(self, *args, **options):
+        from django.contrib.sites.models import Site
+        Site.objects.update_or_create(
+            id=1,
+            defaults={
+                'domain': 'localhost:8000',
+                'name': 'TuniTech Abroad'
+            }
+        )
+
         self.stdout.write(self.style.NOTICE("Seeding skills..."))
         call_command('seed_skills')
         

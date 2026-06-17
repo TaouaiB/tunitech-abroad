@@ -274,6 +274,14 @@ LOGGING = {
 LLM_ENABLED = os.environ.get("LLM_ENABLED", "False") == "True"
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_DEFAULT_MODEL = os.environ.get("OPENROUTER_DEFAULT_MODEL", "google/gemini-2.5-pro")
+
+JOB_ENRICHMENT_ENABLED = os.environ.get("JOB_ENRICHMENT_ENABLED", "False") == "True"
+JOB_RECOMMENDATIONS_USE_ENRICHED_DATA = os.environ.get("JOB_RECOMMENDATIONS_USE_ENRICHED_DATA", "False") == "True"
+JOB_ENRICHMENT_MODEL = os.environ.get("JOB_ENRICHMENT_MODEL", OPENROUTER_DEFAULT_MODEL)
+JOB_ENRICHMENT_DAILY_LIMIT = int(os.environ.get("JOB_ENRICHMENT_DAILY_LIMIT", "50"))
+JOB_ENRICHMENT_MAX_CHARS = int(os.environ.get("JOB_ENRICHMENT_MAX_CHARS", "6000"))
+JOB_ENRICHMENT_MAX_RETRIES = int(os.environ.get("JOB_ENRICHMENT_MAX_RETRIES", "2"))
+
 # France Travail API
 FRANCE_TRAVAIL_CLIENT_ID = os.environ.get("FRANCE_TRAVAIL_CLIENT_ID", "")
 FRANCE_TRAVAIL_CLIENT_SECRET = os.environ.get("FRANCE_TRAVAIL_CLIENT_SECRET", "")
@@ -291,7 +299,7 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "webmaster@localhost")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "TuniTech Abroad <noreply@localhost>")
 
 # OAuth provider credentials
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")

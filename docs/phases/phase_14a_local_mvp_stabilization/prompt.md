@@ -156,7 +156,7 @@ Improve deterministic extraction before relying on LLM.
 Handle examples:
 
 ```text
-Tunis, Tunisia | +216 55 123 456 | aymen.bensalah.test@example.com | LinkedIn: linkedin.com/in/aymen-bensalah-test | GitHub: github.com/aymen-bensalah-test | Portfolio: aymen-dev.example.com
+Tunis, Tunisia | +216 55 123 456 | aymen.bensalah.test@example.test | LinkedIn: linkedin.com/in/aymen-bensalah-test | GitHub: github.com/aymen-bensalah-test | Portfolio: aymen-dev.example.test
 ```
 
 Normalize URLs:
@@ -164,7 +164,7 @@ Normalize URLs:
 ```text
 linkedin.com/in/x -> https://linkedin.com/in/x
 github.com/x -> https://github.com/x
-aymen-dev.example.com -> https://aymen-dev.example.com
+aymen-dev.example.test -> https://aymen-dev.example.test
 ```
 
 Do not mark random phrases like `and role`, `PROJECTS`, `March 2025`, or `Added filters by location` as confirmed skills.

@@ -1,0 +1,12 @@
+Amira Khelil
+Tunis, Tunisia
+amira.k@example.test
++216 55 666 777
+
+SKILLS
+Java, Spring Boot, MySQL, Angular, TypeScript
+
+EXPERIENCE
+Private University of Tunis
+Student
+Sep 2020 - Jun 2024

@@ -11,7 +11,7 @@ def create_test_user(username: str, email: str, password: str = "password123") -
 
 class AnalyticsTests(TestCase):
     def test_user_event_service(self):
-        user = create_test_user(username="analyticsuser", email="analytics@example.com", password="pw")
+        user = create_test_user(username="analyticsuser", email="analytics@example.test", password="pw")
         
         event = UserEventService.record_event(
             event_type="test_event",

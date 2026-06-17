@@ -1,5 +1,10 @@
 from django.conf import settings
 from django.db import models
+from apps.matching.models import (
+    confidence_from_flags,
+    human_profile_signal_labels,
+    human_risk_labels,
+)
 
 
 class JobRecommendation(models.Model):
@@ -52,6 +57,22 @@ class JobRecommendation(models.Model):
 
     def __str__(self):
         return f"Rec for {self.user} - {self.job} (Rank: {self.rank})"
+
+    @property
+    def match_confidence(self):
+        return confidence_from_flags(self.risk_flags_json)
+
+    @property
+    def is_match_low_confidence(self):
+        return self.match_confidence == "low_confidence"
+
+    @property
+    def human_risk_flags(self):
+        return human_risk_labels(self.risk_flags_json)
+
+    @property
+    def human_profile_signals(self):
+        return human_profile_signal_labels(self.profile_signals_json)
 
 
 class RecommendationRun(models.Model):

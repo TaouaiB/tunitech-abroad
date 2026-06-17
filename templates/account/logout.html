@@ -1,12 +1,33 @@
 {% extends 'base.html' %}
 
+{% block title %}Déconnexion - TuniTech Abroad{% endblock %}
+
 {% block content %}
-<div class="max-w-md mx-auto bg-white rounded-lg shadow p-6 text-center">
-    <h1 class="text-2xl font-bold mb-6">Sign Out</h1>
-    <p class="mb-6">Are you sure you want to sign out?</p>
-    <form method="post" action="{% url 'account_logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Sign Out</button>
-    </form>
+<div class="min-h-[60vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <div class="w-16 h-16 bg-gray-100 text-gray-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-gray-200">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        </div>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
+            Déconnexion
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600 mb-8">
+            Êtes-vous sûr de vouloir vous déconnecter ?
+        </p>
+    </div>
+
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow-card sm:rounded-xl sm:px-10 border border-gray-100 text-center">
+            <form method="post" action="{% url 'account_logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="w-full btn-danger py-2.5 text-base shadow-md mb-4">
+                    Se déconnecter
+                </button>
+                <a href="{% url 'dashboard:home' %}" class="w-full btn-secondary py-2.5 text-base">
+                    Annuler
+                </a>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

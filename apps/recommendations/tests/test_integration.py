@@ -17,7 +17,7 @@ from apps.profiles.services.profile_update import ProfileUpdateService
 
 User = get_user_model()
 
-def make_user(email="test@example.com"):
+def make_user(email="test@example.test"):
     username = email.split('@')[0] + str(uuid.uuid4())[:8]
     return User.objects.create(username=username, email=email, is_active=True)
 
@@ -49,7 +49,7 @@ class DashboardIntegrationTests(TestCase):
     def setUp(self):
         self.client = Client()
         self.user = make_user()
-        self.other_user = make_user(email="other@example.com")
+        self.other_user = make_user(email="other@example.test")
         self.job = create_job(status="active")
 
     def test_dashboard_recommendations_requires_login(self):

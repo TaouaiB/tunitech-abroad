@@ -1,8 +1,196 @@
 {% extends 'base.html' %}
 
+{% block title %}TuniTech Abroad - Emplois IT en France{% endblock %}
+
 {% block content %}
-<div class="text-center py-12">
-    <h1 class="text-4xl font-bold mb-4">Welcome to TuniTech Abroad</h1>
-    <p class="text-xl text-gray-600">The France-first job intelligence platform for Tunisian IT professionals.</p>
+<!-- Hero Section -->
+<div class="relative overflow-hidden bg-white mt-0 md:-mt-8 py-16 md:py-24 lg:py-32 border-b border-gray-100">
+    <div class="absolute inset-0 bg-brand-50/50 -z-10" style="clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-4xl mx-auto">
+            <span class="badge badge-brand mb-6 px-4 py-1 text-sm inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                Objectif France
+            </span>
+            <h1 class="text-4xl md:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight mb-6">
+                Propulsez votre carrière IT de la <span class="text-brand-600">Tunisie</span> vers la <span class="text-brand-600">France</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto font-light">
+                La première plateforme intelligente conçue pour les développeurs, étudiants et jeunes diplômés tunisiens ciblant le marché français.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <a href="{% url 'jobs:list' %}" class="btn-primary text-lg px-8 py-4 w-full sm:w-auto shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                    Explorer les offres
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </a>
+                <a href="{% if user.is_authenticated %}{% url 'dashboard:cv' %}{% else %}{% url 'account_login' %}{% endif %}" class="btn-secondary text-lg px-8 py-4 w-full sm:w-auto">
+                    Analyser mon CV
+                    <svg class="w-5 h-5 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </a>
+            </div>
+            
+            <div class="mt-12 flex justify-center items-center gap-8 text-sm text-gray-500 font-medium">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Marché Français
+                </div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Profils Tunisiens
+                </div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Matching Intelligent
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Target Users -->
+<div class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Conçu pour vos ambitions</h2>
+            <p class="text-lg text-gray-600">Que vous cherchiez un CDI ou un stage PFE en France</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="card p-6 bg-white hover:border-brand-300 transition-colors">
+                <div class="w-12 h-12 bg-blue-100 text-brand-600 rounded-lg flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"></path><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Étudiants & PFE</h3>
+                <p class="text-gray-600">Trouvez le stage de fin d'études idéal pour démarrer votre carrière en France avec les bons mots-clés dans votre CV.</p>
+            </div>
+            <div class="card p-6 bg-white hover:border-brand-300 transition-colors">
+                <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Juniors & Bootcamps</h3>
+                <p class="text-gray-600">Identifiez les compétences manquantes (Missing Skills) par rapport aux offres CDI françaises pour cibler vos efforts.</p>
+            </div>
+            <div class="card p-6 bg-white hover:border-brand-300 transition-colors">
+                <div class="w-12 h-12 bg-green-100 text-green-600 rounded-lg flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Développeurs Confirmés</h3>
+                <p class="text-gray-600">Bénéficiez de recommandations ciblées basées sur votre stack technologique pour des postes qualifiés.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Comment ça marche ?</h2>
+            <p class="text-lg text-gray-600">Un processus simple et intelligent pour maximiser vos chances</p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-sm font-bold">1</span>
+                    Parsing de CV Avancé
+                </h3>
+                <p class="text-gray-600 text-lg mb-6 leading-relaxed">
+                    Uploadez votre CV et laissez notre système analyser vos compétences, votre expérience et votre niveau. Nous identifions avec précision votre profil technique pour le comparer au marché français.
+                </p>
+                <ul class="space-y-3">
+                    <li class="flex items-center text-gray-700">
+                        <svg class="w-5 h-5 text-brand-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Extraction automatique des compétences
+                    </li>
+                    <li class="flex items-center text-gray-700">
+                        <svg class="w-5 h-5 text-brand-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Sécurisé et privé
+                    </li>
+                </ul>
+            </div>
+            <div class="bg-gray-100 rounded-2xl p-8 shadow-inner border border-gray-200">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                    <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900">cv_developpeur_python.pdf</div>
+                                <div class="text-xs text-gray-500">Analysé avec succès</div>
+                            </div>
+                        </div>
+                        <span class="badge badge-green">Actif</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="badge badge-brand bg-brand-50 text-brand-700 border border-brand-200">Python</span>
+                        <span class="badge badge-brand bg-brand-50 text-brand-700 border border-brand-200">Django</span>
+                        <span class="badge badge-brand bg-brand-50 text-brand-700 border border-brand-200">PostgreSQL</span>
+                        <span class="badge badge-brand bg-brand-50 text-brand-700 border border-brand-200">Docker</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="bg-gray-100 rounded-2xl p-8 shadow-inner border border-gray-200 lg:order-1 order-2">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                    <div class="flex items-center justify-between mb-6">
+                        <h4 class="font-bold text-gray-900">Score de compatibilité</h4>
+                        <div class="text-2xl font-bold text-brand-600">85%</div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
+                        <div class="bg-brand-500 h-2 rounded-full" style="width: 85%"></div>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-gray-700 mb-2">Compétences manquantes (Missing Skills) :</div>
+                        <div class="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded border border-red-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            AWS (souvent demandé en France)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:order-2 order-1">
+                <h3 class="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-sm font-bold">2</span>
+                    Matching & Missing Skills
+                </h3>
+                <p class="text-gray-600 text-lg mb-6 leading-relaxed">
+                    Découvrez instantanément votre score de compatibilité avec les offres. Plus important encore : nous identifions les compétences manquantes ("Missing Skills") qui vous séparent de votre job idéal en France.
+                </p>
+                <ul class="space-y-3">
+                    <li class="flex items-center text-gray-700">
+                        <svg class="w-5 h-5 text-brand-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Calcul de score déterministe
+                    </li>
+                    <li class="flex items-center text-gray-700">
+                        <svg class="w-5 h-5 text-brand-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Recommandations sur mesure
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA -->
+<div class="bg-brand-600 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto">
+            <h2 class="text-3xl font-extrabold text-white mb-6">Prêt à lancer votre carrière en France ?</h2>
+            <p class="text-xl text-brand-100 mb-8">Rejoignez la communauté des talents IT tunisiens qui ont déjà franchi le pas.</p>
+            {% if not user.is_authenticated %}
+            <a href="{% url 'account_signup' %}" class="btn-secondary text-lg px-8 py-3 bg-white text-brand-600 hover:bg-gray-50 border-none shadow-lg">
+                Créer un compte gratuitement
+            </a>
+            {% else %}
+            <a href="{% url 'dashboard:home' %}" class="btn-secondary text-lg px-8 py-3 bg-white text-brand-600 hover:bg-gray-50 border-none shadow-lg">
+                Accéder à mon tableau de bord
+            </a>
+            {% endif %}
+            <p class="mt-4 text-sm text-brand-200">Aucune carte de crédit requise.</p>
+        </div>
+    </div>
 </div>
 {% endblock %}

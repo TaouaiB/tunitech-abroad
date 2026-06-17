@@ -16,13 +16,13 @@ apps/cvs/tests/test_profile_prefill.py
 
 Required assertions:
 
-- Extracts `aymen.bensalah.test@example.com`.
+- Extracts `aymen.bensalah.test@example.test`.
 - Extracts `+216 55 123 456`.
 - Extracts `Aymen Ben Salah`.
 - Extracts `Tunis, Tunisia` or normalized equivalent.
 - Extracts and normalizes `https://linkedin.com/in/aymen-bensalah-test`.
 - Extracts and normalizes `https://github.com/aymen-bensalah-test`.
-- Extracts and normalizes `https://aymen-dev.example.com`.
+- Extracts and normalizes `https://aymen-dev.example.test`.
 - Extracts skills including JavaScript, React, Next.js, Node.js, Express.js, MongoDB, PostgreSQL, Docker, Git, GitHub, Tailwind CSS.
 - Does not treat section titles and random phrases as confirmed skills.
 - Profile fields are prefilled when empty.

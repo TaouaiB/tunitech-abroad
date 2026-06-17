@@ -13,7 +13,7 @@ User = get_user_model()
 
 class LLMServicesTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create(email="test@example.com")
+        self.user = User.objects.create(email="test@example.test")
         self.user.set_password("password123")
         self.user.save()
 
@@ -24,12 +24,12 @@ class LLMServicesTests(TestCase):
         mock_client.default_model = "test-model"
 
         result = suggest_cv_extraction(
-            "My CV with Python, test@example.com, +216 12 345 678",
+            "My CV with Python, test@example.test, +216 12 345 678",
             self.user,
         )
         self.assertEqual(result, {"skills": ["Python"]})
         sent_messages = mock_client.chat.call_args.args[0]
-        self.assertNotIn("test@example.com", sent_messages[1]["content"])
+        self.assertNotIn("test@example.test", sent_messages[1]["content"])
         self.assertNotIn("+216 12 345 678", sent_messages[1]["content"])
         
         log = LLMRequestLog.objects.first()
@@ -93,12 +93,12 @@ class LLMServicesTests(TestCase):
 
     def test_mask_sensitive_data_removes_direct_identifiers(self):
         masked = mask_sensitive_data(
-            "Email test@example.com phone +216 12 345 678 portfolio https://example.com/me"
+            "Email test@example.test phone +216 12 345 678 portfolio https://example.test/me"
         )
 
-        self.assertNotIn("test@example.com", masked)
+        self.assertNotIn("test@example.test", masked)
         self.assertNotIn("+216 12 345 678", masked)
-        self.assertNotIn("https://example.com/me", masked)
+        self.assertNotIn("https://example.test/me", masked)
         self.assertIn("[email redacted]", masked)
         self.assertIn("[phone redacted]", masked)
         self.assertIn("[url redacted]", masked)

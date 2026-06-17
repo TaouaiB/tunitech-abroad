@@ -1,0 +1,14 @@
+{% load socialaccount %}
+
+<form action="{% provider_login_url 'google' process=process %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn-secondary w-full">
+        Google
+    </button>
+</form>
+<form action="{% provider_login_url 'github' process=process %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn-secondary w-full">
+        GitHub
+    </button>
+</form>

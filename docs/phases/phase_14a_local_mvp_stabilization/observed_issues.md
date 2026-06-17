@@ -58,7 +58,7 @@ Observed behavior from synthetic PDF:
 
 Required repair direction:
 
-- Deterministic extractor must handle `LinkedIn: linkedin.com/in/...`, `GitHub: github.com/...`, `Portfolio: domain.example.com` without scheme.
+- Deterministic extractor must handle `LinkedIn: linkedin.com/in/...`, `GitHub: github.com/...`, `Portfolio: domain.example.test` without scheme.
 - Extract `Tunis, Tunisia` as location from header/contact line.
 - Normalize URLs to `https://...` when needed.
 - Store extracted fields in `CVParsedData`.

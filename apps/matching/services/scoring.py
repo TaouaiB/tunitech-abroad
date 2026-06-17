@@ -4,6 +4,8 @@ from apps.profiles.models import CandidateProfile, ProfileSkill
 from apps.jobs.models import NormalizedJob, RequirementType
 from apps.cvs.models import CVUpload
 from apps.skills.services.normalizer import normalize_skill_text
+from apps.jobs.services.relevance import TECH_CATEGORIES
+from django.conf import settings
 from django.utils import timezone
 
 MISSING_FRENCH_LEVELS = {"", "none", "no", "a0"}
@@ -11,6 +13,7 @@ MISSING_FRENCH_LEVELS = {"", "none", "no", "a0"}
 @dataclass(frozen=True)
 class FitScoreResult:
     fit_score: int
+    match_confidence: str
     technical_skills_score: int
     experience_score: int
     role_title_score: int
@@ -25,6 +28,10 @@ class FitScoreResult:
     scoring_version: str = "score_v1"
 
 class MatchScoringService:
+    CONFIDENCE_RELIABLE = "reliable"
+    CONFIDENCE_LOW = "low_confidence"
+    CONFIDENCE_UNAVAILABLE = "unavailable"
+
     @staticmethod
     def calculate(
         profile: CandidateProfile,
@@ -34,6 +41,52 @@ class MatchScoringService:
         risk_flags = set()
         profile_signals = set()
         recommended_actions = set()
+        classification_json = job.classification_json or {}
+        it_confidence = classification_json.get("confidence", "unknown")
+        skill_signal_quality = job.skill_signal_quality
+        enriched_data = MatchScoringService._get_successful_enrichment(job)
+
+        job_skills = list(job.job_skills.select_related("skill").all())
+        tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
+        req_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.REQUIRED]
+
+        match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
+        if it_confidence == "excluded" or skill_signal_quality == "excluded_non_it":
+            match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
+        elif enriched_data:
+            if enriched_data.get("required_skills") or enriched_data.get("optional_skills"):
+                match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
+            else:
+                match_confidence = MatchScoringService.CONFIDENCE_LOW
+        elif it_confidence in ["high", "medium"]:
+            if skill_signal_quality == "strong":
+                match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
+            elif skill_signal_quality == "partial":
+                if len(req_skills) > 0:
+                    match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
+                else:
+                    match_confidence = MatchScoringService.CONFIDENCE_LOW
+            elif skill_signal_quality == "generic_only":
+                match_confidence = MatchScoringService.CONFIDENCE_LOW
+            elif skill_signal_quality == "missing":
+                if MatchScoringService._has_strong_it_context(job):
+                    match_confidence = MatchScoringService.CONFIDENCE_LOW
+                else:
+                    match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
+        elif it_confidence == "low":
+            if skill_signal_quality in ["strong", "partial"]:
+                match_confidence = MatchScoringService.CONFIDENCE_LOW
+            else:
+                match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
+
+        if match_confidence == MatchScoringService.CONFIDENCE_UNAVAILABLE:
+            risk_flags.add("non_it_low_relevance_job")
+            if it_confidence == "excluded" or skill_signal_quality == "excluded_non_it":
+                recommended_actions.add("Offre probablement non IT. Matching indisponible.")
+            else:
+                recommended_actions.add("Données insuffisantes pour calculer un match fiable.")
+        elif match_confidence == MatchScoringService.CONFIDENCE_LOW:
+            risk_flags.add("insufficient_job_technical_signal")
 
         # Job active status check
         now = timezone.now()
@@ -75,9 +128,12 @@ class MatchScoringService:
         )
         
         fit_score = max(0, min(100, round(fit_score)))
+        if match_confidence == MatchScoringService.CONFIDENCE_UNAVAILABLE:
+            fit_score = min(fit_score, 25)
 
         return FitScoreResult(
             fit_score=fit_score,
+            match_confidence=match_confidence,
             technical_skills_score=tech_score,
             experience_score=exp_score,
             role_title_score=role_score,
@@ -92,6 +148,53 @@ class MatchScoringService:
         )
 
     @staticmethod
+    def _has_strong_it_context(job: NormalizedJob) -> bool:
+        classification_json = job.classification_json or {}
+        if classification_json.get("confidence") != "high":
+            return False
+
+        family = classification_json.get("family")
+        strong_context_families = {
+            "data_ai_bi",
+            "devops_cloud_sre",
+            "cybersecurity",
+            "qa_testing",
+            "systems_network",
+            "database",
+            "erp_crm",
+            "it_support",
+            "it_project_product_analysis",
+            "it_training_apprenticeship",
+        }
+        if family in strong_context_families:
+            return True
+
+        description = (job.description or "").lower()
+        strong_description_terms = [
+            "environnement technique",
+            "stack technique",
+            "architecture logicielle",
+            "système d'information",
+            "application métier",
+            "développement logiciel",
+            "developpement logiciel",
+            "ingénierie logicielle",
+            "ingenierie logicielle",
+        ]
+        return any(term in description for term in strong_description_terms)
+
+    @staticmethod
+    def _get_successful_enrichment(job: NormalizedJob) -> dict:
+        if not getattr(settings, "JOB_RECOMMENDATIONS_USE_ENRICHED_DATA", False):
+            return {}
+        if not hasattr(job, "enrichment") or job.enrichment.status != "success":
+            return {}
+        enriched_data = job.enrichment.validated_output_json or {}
+        if not isinstance(enriched_data, dict):
+            return {}
+        return enriched_data
+
+    @staticmethod
     def _calc_technical_score(profile, job, profile_signals, risk_flags, recommended_actions):
         # Profile skills
         profile_skills_normalized = set()
@@ -101,26 +204,73 @@ class MatchScoringService:
             if normalized_skill_name:
                 profile_skills_normalized.add(normalized_skill_name)
 
-        # Job skills
-        job_skills = list(job.job_skills.select_related("skill").all())
-        req_skills = [js for js in job_skills if js.requirement_type == RequirementType.REQUIRED]
-        opt_skills = [js for js in job_skills if js.requirement_type == RequirementType.OPTIONAL]
-
-        if not req_skills and job_skills:
-            profile_signals.add("low_confidence_job_skills")
-            req_skills = job_skills
-            opt_skills = []
+        enriched_data = MatchScoringService._get_successful_enrichment(job)
+        use_enriched = bool(enriched_data)
 
         strong_skills = []
         missing_req = []
         missing_opt = []
+
+        if use_enriched:
+            en_req = enriched_data.get("required_skills", [])
+            en_opt = enriched_data.get("optional_skills", [])
+            
+            if not en_req and (en_req or en_opt):
+                profile_signals.add("low_confidence_job_skills")
+                risk_flags.add("no_required_skills_extracted")
+            elif not en_req:
+                risk_flags.add("no_required_skills_extracted")
+                risk_flags.add("insufficient_job_technical_signal")
+                
+            req_matched = 0
+            for skill_dict in en_req:
+                skill_name = skill_dict.get("name", "")
+                normalized_skill_name = normalize_skill_text(skill_name)
+                if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
+                    req_matched += 1
+                    strong_skills.append({"name": skill_name, "type": "required"})
+                else:
+                    missing_req.append({"name": skill_name, "requirement_type": "required"})
+
+            opt_matched = 0
+            for skill_dict in en_opt:
+                skill_name = skill_dict.get("name", "")
+                normalized_skill_name = normalize_skill_text(skill_name)
+                if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
+                    opt_matched += 1
+                    strong_skills.append({"name": skill_name, "type": "optional"})
+                else:
+                    missing_opt.append({"name": skill_name, "requirement_type": "optional"})
+            
+            if missing_req:
+                risk_flags.add("missing_required_skills")
+                recommended_actions.add("Add missing required skills to your learning plan.")
+                
+            req_score = (req_matched / len(en_req) * 100) if en_req else 0
+            opt_score = (opt_matched / len(en_opt) * 100) if en_opt else 50
+            tech_score = (req_score * 0.8) + (opt_score * 0.2)
+            
+            return max(0, min(100, round(tech_score))), strong_skills, missing_req, missing_opt
+
+        # Fallback to deterministic skills
+        job_skills = list(job.job_skills.select_related("skill").all())
+        tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
+        req_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.REQUIRED]
+        opt_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.OPTIONAL]
+
+        if not req_skills and tech_job_skills:
+            profile_signals.add("low_confidence_job_skills")
+            risk_flags.add("no_required_skills_extracted")
+        elif not req_skills:
+            risk_flags.add("no_required_skills_extracted")
+            risk_flags.add("insufficient_job_technical_signal")
 
         # Compare required
         req_matched = 0
         for js in req_skills:
             skill_name = js.skill.canonical_name
             normalized_skill_name = normalize_skill_text(skill_name)
-            if normalized_skill_name in profile_skills_normalized:
+            if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
                 req_matched += 1
                 strong_skills.append({"name": skill_name, "type": "required"})
             else:
@@ -131,7 +281,7 @@ class MatchScoringService:
         for js in opt_skills:
             skill_name = js.skill.canonical_name
             normalized_skill_name = normalize_skill_text(skill_name)
-            if normalized_skill_name in profile_skills_normalized:
+            if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
                 opt_matched += 1
                 strong_skills.append({"name": skill_name, "type": "optional"})
             else:
@@ -141,8 +291,8 @@ class MatchScoringService:
             risk_flags.add("missing_required_skills")
             recommended_actions.add("Add missing required skills to your learning plan.")
 
-        req_score = (req_matched / len(req_skills) * 100) if req_skills else 100
-        opt_score = (opt_matched / len(opt_skills) * 100) if opt_skills else 100
+        req_score = (req_matched / len(req_skills) * 100) if req_skills else 0
+        opt_score = (opt_matched / len(opt_skills) * 100) if opt_skills else 50
 
         tech_score = (req_score * 0.8) + (opt_score * 0.2)
         return max(0, min(100, round(tech_score))), strong_skills, missing_req, missing_opt
@@ -185,7 +335,8 @@ class MatchScoringService:
             risk_flags.add("experience_too_low")
             return 30
 
-        return 70
+        risk_flags.add("experience_unknown")
+        return 60
 
     @staticmethod
     def _calc_role_title_score(profile, job):
@@ -193,7 +344,7 @@ class MatchScoringService:
         j_title = job.title.lower() if job.title else ""
 
         if not p_roles and j_title:
-            return 75
+            return 60
         if not p_roles and not j_title:
             return 60
 
@@ -223,7 +374,9 @@ class MatchScoringService:
         # Basic France-first check
         france_first = job.country.lower() == "france" if job.country else True
 
-        score = 70
+        score = 55
+        if not j_lang_req:
+            risk_flags.add("job_language_unknown")
         if france_first and not has_french_level:
             risk_flags.add("french_level_missing")
             recommended_actions.add("Complete your French level.")
@@ -233,10 +386,10 @@ class MatchScoringService:
             score = min(score, 60)
         
         if has_french_level:
-            score = max(score, 80)
+            score = max(score, 70)
             
-        if has_french_level and p_english:
-            score = 100
+        if has_french_level and p_english and j_lang_req:
+            score = 85
 
         return max(0, min(100, score))
 
@@ -245,24 +398,24 @@ class MatchScoringService:
         j_country = job.country.lower() if job.country else ""
         j_remote = job.remote_type.lower() if job.remote_type else ""
         
-        p_target = [profile.target_country.lower()] if profile.target_country else []
         p_remote_pref = profile.remote_preference.lower() if profile.remote_preference else ""
         p_relocation = profile.relocation_preference
+
+        if not j_country and not j_remote:
+            return 45
 
         # Remote
         if "remote" in j_remote or "télétravail" in j_remote:
             if p_remote_pref in ["remote_only", "hybrid", "any"] or not p_remote_pref:
-                return 100
-            return 80
+                return 75
+            return 60
 
-        # France target
         if j_country == "france" or j_country == "fr":
-            if "france" in p_target:
-                return 90
             if p_relocation:
-                return 80
+                return 65
+            return 55
 
         if not j_country:
-            return 70
+            return 45
 
         return 50

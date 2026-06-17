@@ -51,6 +51,9 @@ class MatchResultService:
             "country": public_job.country,
             "remote_type": public_job.remote_type,
             "language_requirements_json": public_job.language_requirements_json,
+            "required_skills_json": public_job.required_skills_json,
+            "optional_skills_json": public_job.optional_skills_json,
+            "match_confidence": score_result.match_confidence,
         }
         
         match = MatchResult.objects.create(

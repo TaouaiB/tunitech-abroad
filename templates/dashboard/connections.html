@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Comptes Liés - TuniTech Abroad{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <a href="{% url 'dashboard:account' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Retour aux paramètres
+        </a>
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Comptes Liés</h1>
+        <p class="mt-2 text-lg text-gray-600">Gérez vos connexions via des fournisseurs externes (Google, GitHub).</p>
+    </div>
+
+    <div class="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+        <!-- Google -->
+        <div class="p-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center p-2">
+                    <img src="https://www.google.com/favicon.ico" alt="Google" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Google</h3>
+                    {% if "google" in providers %}
+                        <p class="text-sm text-green-600 flex items-center gap-1 font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Connecté
+                        </p>
+                    {% else %}
+                        <p class="text-sm text-gray-500">Non connecté</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                {% if "google" in providers %}
+                    <form method="post" action="{% url 'dashboard:connections' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="disconnect_id" value="{{ providers.google.id }}">
+                        <button type="submit" class="btn-secondary text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300">
+                            Déconnecter
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="post" action="{% url 'google_login' %}?process=connect">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-secondary">
+                            Connecter
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- GitHub -->
+        <div class="p-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center p-2">
+                    <img src="https://github.com/favicon.ico" alt="GitHub" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">GitHub</h3>
+                    {% if "github" in providers %}
+                        <p class="text-sm text-green-600 flex items-center gap-1 font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Connecté
+                        </p>
+                    {% else %}
+                        <p class="text-sm text-gray-500">Non connecté</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                {% if "github" in providers %}
+                    <form method="post" action="{% url 'dashboard:connections' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="disconnect_id" value="{{ providers.github.id }}">
+                        <button type="submit" class="btn-secondary text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300">
+                            Déconnecter
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="post" action="{% url 'github_login' %}?process=connect">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-secondary">
+                            Connecter
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-6">
+        <h3 class="text-lg font-bold text-blue-900 mb-2">Changer de compte tiers</h3>
+        <p class="text-sm text-blue-800 leading-relaxed">
+            Notez que lors de la connexion, Google ou GitHub peuvent réutiliser la session active dans votre navigateur sans vous demander de choisir un compte. 
+            Si vous souhaitez lier un compte différent, veuillez d'abord vous déconnecter de Google ou GitHub dans un autre onglet, ou utiliser une fenêtre de navigation privée.
+        </p>
+    </div>
+
+    {% if not request.user.has_usable_password %}
+    <div class="mt-8 bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+            <h3 class="text-lg font-bold text-gray-900 mb-1">Mot de passe manquant</h3>
+            <p class="text-sm text-gray-600">Vous avez créé votre compte via un fournisseur externe. Définissez un mot de passe pour pouvoir vous connecter avec votre adresse email.</p>
+        </div>
+        <a href="{% url 'account_set_password' %}" class="btn-primary whitespace-nowrap">
+            Définir un mot de passe
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -56,12 +56,12 @@ class MatchingTests(TestCase):
     def setUp(self):
         self.user = create_test_user(
             username="candidate",
-            email="candidate@example.com",
+            email="candidate@example.test",
             password="password",
         )
         self.other_user = create_test_user(
             username="other",
-            email="other@example.com",
+            email="other@example.test",
             password="password",
         )
         self.profile = CandidateProfile.objects.create(
@@ -127,6 +127,8 @@ class MatchingTests(TestCase):
         country="France",
         remote_type=RemoteType.HYBRID,
         language_requirements=None,
+        classification_json=None,
+        skill_signal_quality="strong",
     ):
         now = timezone.now()
         raw = RawJobRecord.objects.create(
@@ -157,6 +159,8 @@ class MatchingTests(TestCase):
             required_skills_json=["Python", "Django"],
             optional_skills_json=["PostgreSQL"],
             language_requirements_json=language_requirements or {},
+            classification_json=classification_json or {"family": "software_development", "is_it": True, "confidence": "high"},
+            skill_signal_quality=skill_signal_quality,
             first_seen_at=now,
             last_seen_at=now,
             last_fetched_at=now,
@@ -170,6 +174,14 @@ class MatchingTests(TestCase):
             source=SkillSource.RULE,
             confidence=1,
         )
+
+    def _job_without_extracted_skills(self, source_job_id, title, description="Build software.", classification_json=None):
+        job = self._job(source_job_id, title, classification_json=classification_json, skill_signal_quality="missing")
+        job.description = description
+        job.required_skills_json = []
+        job.optional_skills_json = []
+        job.save(update_fields=["description", "required_skills_json", "optional_skills_json"])
+        return job
 
     def test_match_result_public_id_exists_and_recompute_is_allowed(self):
         first = MatchResultService.create_match_result(self.user, self.job)
@@ -202,7 +214,7 @@ class MatchingTests(TestCase):
 
     def test_required_skills_weight_more_than_optional_skills(self):
         optional_only_profile = CandidateProfile.objects.create(
-            user=create_test_user(username="optional", email="optional@example.com", password="password"),
+            user=create_test_user(username="optional", email="optional@example.test", password="password"),
             years_experience=3.0,
             current_level="mid_level",
             target_country="France",
@@ -210,7 +222,7 @@ class MatchingTests(TestCase):
             profile_completion_score=80,
         )
         required_only_profile = CandidateProfile.objects.create(
-            user=create_test_user(username="required", email="required@example.com", password="password"),
+            user=create_test_user(username="required", email="required@example.test", password="password"),
             years_experience=3.0,
             current_level="mid_level",
             target_country="France",
@@ -256,12 +268,91 @@ class MatchingTests(TestCase):
         with_signals = MatchScoringService.calculate(self.profile, self.job)
         self.profile.github_url = "https://github.com/candidate"
         self.profile.linkedin_url = "https://www.linkedin.com/in/candidate"
-        self.profile.portfolio_url = "https://candidate.example.com"
+        self.profile.portfolio_url = "https://candidate.example.test"
         self.profile.save(update_fields=["github_url", "linkedin_url", "portfolio_url"])
         without_signals = MatchScoringService.calculate(self.profile, self.job)
 
         self.assertEqual(with_signals.fit_score, without_signals.fit_score)
         self.assertIn("profile_signal_missing_github", with_signals.profile_signals)
+
+    def test_data_scientist_without_technical_skills_is_not_reliable_match(self):
+        job = self._job_without_extracted_skills(
+            "data-no-skills",
+            "Data Scientist",
+            description="Analyse data and build business reports.",
+        )
+
+        result = MatchScoringService.calculate(self.profile, job)
+
+        self.assertIn(result.match_confidence, ["low_confidence", "unavailable"])
+        self.assertIn("no_required_skills_extracted", result.risk_flags)
+
+    def test_web_developer_without_extracted_skills_is_unavailable(self):
+        job = self._job_without_extracted_skills(
+            "web-no-skills",
+            "Web Developer",
+            description="Build web applications for internal users.",
+        )
+
+        result = MatchScoringService.calculate(self.profile, job)
+
+        self.assertEqual(result.match_confidence, "unavailable")
+        self.assertIn("insufficient_job_technical_signal", result.risk_flags)
+
+    def test_photography_seller_job_is_unavailable(self):
+        job = self._job_without_extracted_skills(
+            "photo-seller",
+            "Vendeur photographie",
+            description="Vente de matériel photo et conseil clients en magasin.",
+            classification_json={"family": "non_it", "is_it": False, "confidence": "excluded"}
+        )
+
+        result = MatchScoringService.calculate(self.profile, job)
+
+        self.assertEqual(result.match_confidence, "unavailable")
+        self.assertLessEqual(result.fit_score, 25)
+        self.assertIn("non_it_low_relevance_job", result.risk_flags)
+
+    def test_python_django_required_skills_are_reliable_normal_score(self):
+        result = MatchScoringService.calculate(self.profile, self.job)
+
+        self.assertEqual(result.match_confidence, "reliable")
+        self.assertGreater(result.fit_score, 0)
+        self.assertNotIn("no_required_skills_extracted", result.risk_flags)
+
+    def test_java_spring_angular_required_stack_is_reliable(self):
+        java = self._skill("Java", SkillCategory.PROGRAMMING_LANGUAGE)
+        spring = self._skill("Spring", SkillCategory.BACKEND)
+        angular = self._skill("Angular", SkillCategory.FRONTEND)
+        job = self._job(
+            "java-spring-angular",
+            "Développeur Java Spring Angular",
+            classification_json={"family": "software_development", "is_it": True, "confidence": "high"},
+            skill_signal_quality="strong",
+        )
+        self._job_skill(job, java, RequirementType.REQUIRED)
+        self._job_skill(job, spring, RequirementType.REQUIRED)
+        self._job_skill(job, angular, RequirementType.REQUIRED)
+
+        result = MatchScoringService.calculate(self.profile, job)
+
+        self.assertEqual(result.match_confidence, "reliable")
+
+    def test_generic_ft_competence_labels_only_are_not_reliable(self):
+        job = self._job(
+            "generic-ft-web",
+            "Développeur web",
+            classification_json={"family": "web_mobile", "is_it": True, "confidence": "medium"},
+            skill_signal_quality="generic_only",
+        )
+        job.required_skills_json = []
+        job.optional_skills_json = ["Concevoir une application web"]
+        job.save(update_fields=["required_skills_json", "optional_skills_json"])
+
+        result = MatchScoringService.calculate(self.profile, job)
+
+        self.assertEqual(result.match_confidence, "low_confidence")
+        self.assertNotEqual(result.match_confidence, "reliable")
 
     def test_match_result_snapshots_exclude_private_cv_data(self):
         cv_upload = CVUpload.objects.create(
@@ -368,7 +459,7 @@ class MatchingTests(TestCase):
         anonymous_response = self.client.post(url)
         self.assertEqual(anonymous_response.status_code, 302)
 
-        self.client.login(email="candidate@example.com", password="password")
+        self.client.login(email="candidate@example.test", password="password")
         response = self.client.post(url)
 
         self.assertEqual(response.status_code, 302)
@@ -402,7 +493,7 @@ class MatchingTests(TestCase):
         match = MatchResultService.create_match_result(self.user, self.job)
         other_match = MatchResultService.create_match_result(self.other_user, self.job)
 
-        self.client.login(email="candidate@example.com", password="password")
+        self.client.login(email="candidate@example.test", password="password")
         history_response = self.client.get(reverse("matching:history"))
         detail_response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
         other_detail_response = self.client.get(reverse("matching:detail", kwargs={"public_id": other_match.public_id}))
@@ -414,3 +505,44 @@ class MatchingTests(TestCase):
     def test_no_internal_integer_match_routes_exist(self):
         self.assertEqual(self.client.post(f"/jobs/{self.job.id}/match/").status_code, 404)
         self.assertEqual(self.client.get("/dashboard/matches/1/").status_code, 404)
+
+    def test_match_detail_unavailable_hides_normal_score_ui_and_raw_flags(self):
+        job = self._job_without_extracted_skills(
+            "photo-ui",
+            "Vendeur photographie",
+            description="Vente de matériel photo et conseil clients en magasin.",
+            classification_json={"family": "non_it", "is_it": False, "confidence": "excluded"}
+        )
+        match = MatchResultService.create_match_result(self.user, job)
+
+        self.client.login(email="candidate@example.test", password="password")
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertContains(response, "Données insuffisantes pour calculer un match fiable")
+        self.assertNotContains(response, "Fit Global")
+        self.assertNotContains(response, "Technique")
+        self.assertContains(response, "Offre probablement non IT")
+        self.assertNotContains(response, "non_it_low_relevance_job")
+
+    def test_match_detail_low_confidence_labels_estimate_and_technical_unavailable(self):
+        job = self._job(
+            "web-ui",
+            "Data Analyst",
+            classification_json={"family": "data_ai_bi", "is_it": True, "confidence": "high"},
+            skill_signal_quality="partial",
+        )
+        job.required_skills_json = []
+        job.optional_skills_json = ["Python"]
+        job.description = "Analyse data and build business reports with Python."
+        job.save(update_fields=["required_skills_json", "optional_skills_json", "description"])
+        self._job_skill(job, self.python, RequirementType.OPTIONAL)
+        match = MatchResultService.create_match_result(self.user, job)
+
+        self.client.login(email="candidate@example.test", password="password")
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertContains(response, "estimation prudente")
+        self.assertContains(response, "L'analyse de cette offre est limitée.")
+        self.assertNotContains(response, "Excellente nouvelle ! Vous possédez toutes les compétences techniques requises")
+        self.assertContains(response, "Signal technique insuffisant")
+        self.assertNotContains(response, "no_required_skills_extracted")

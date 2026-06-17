@@ -188,6 +188,8 @@ class NormalizedJob(models.Model):
     required_skills_json = models.JSONField(default=default_list, blank=True)
     optional_skills_json = models.JSONField(default=default_list, blank=True)
     language_requirements_json = models.JSONField(default=default_dict, blank=True)
+    classification_json = models.JSONField(default=default_dict, blank=True)
+    skill_signal_quality = models.CharField(max_length=32, default="unknown")
     search_vector = SearchVectorField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

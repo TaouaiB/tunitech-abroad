@@ -24,7 +24,7 @@ def create_test_user(username: str, email: str, password: str = "password123") -
 
 class ConsentTests(TestCase):
     def test_consent_service_records(self):
-        user = create_test_user(username="consentuser", email="consent@example.com", password="pw")
+        user = create_test_user(username="consentuser", email="consent@example.test", password="pw")
 
         record = ConsentService.record(
             user=user,
@@ -44,7 +44,7 @@ class ConsentTests(TestCase):
         self.assertEqual(record.user_agent, "TestAgent")
 
     def test_consent_service_records_stable_text_and_source(self):
-        user = create_test_user(username="consentuser2", email="consent2@example.com", password="pw")
+        user = create_test_user(username="consentuser2", email="consent2@example.test", password="pw")
 
         record = ConsentService.record(
             user=user,
@@ -81,7 +81,7 @@ class PrivacyRoutesTests(TestCase):
 )
 class PrivacyDashboardRoutesTests(TestCase):
     def setUp(self):
-        self.user = create_test_user(username="accountuser", email="account@example.com", password="pw")
+        self.user = create_test_user(username="accountuser", email="account@example.test", password="pw")
 
     def test_account_page_requires_login(self):
         response = self.client.get("/dashboard/account/")
@@ -113,7 +113,7 @@ class PrivacyDashboardRoutesTests(TestCase):
 
 class AccountDeletionServiceTests(TestCase):
     def test_request_deletion_idempotent(self):
-        user = create_test_user(username="deluser", email="del@example.com", password="pw")
+        user = create_test_user(username="deluser", email="del@example.test", password="pw")
         with patch("apps.privacy.tasks.process_account_deletion.delay"):
             req1 = AccountDeletionService.request_deletion(user)
             req2 = AccountDeletionService.request_deletion(user)
@@ -121,7 +121,7 @@ class AccountDeletionServiceTests(TestCase):
         self.assertEqual(req1.status, 'pending')
 
     def test_process_account_deletion(self):
-        user = create_test_user(username="deluser2", email="del2@example.com", password="pw")
+        user = create_test_user(username="deluser2", email="del2@example.test", password="pw")
         with patch("apps.privacy.tasks.process_account_deletion.delay"):
             req = AccountDeletionService.request_deletion(user)
         processed = AccountDeletionService.process_request(req)
@@ -133,7 +133,7 @@ class AccountDeletionServiceTests(TestCase):
         self.assertFalse(user.has_usable_password())
 
     def test_process_account_deletion_failure_retry(self):
-        user = create_test_user(username="deluser3", email="del3@example.com", password="pw")
+        user = create_test_user(username="deluser3", email="del3@example.test", password="pw")
         with patch("apps.privacy.tasks.process_account_deletion.delay"):
             req = AccountDeletionService.request_deletion(user)
 
@@ -146,7 +146,7 @@ class AccountDeletionServiceTests(TestCase):
     @patch("os.remove")
     @patch("os.path.exists", return_value=True)
     def test_process_account_deletion_removes_private_candidate_data(self, mock_exists, mock_remove):
-        user = create_test_user(username="deluser4", email="del4@example.com", password="pw")
+        user = create_test_user(username="deluser4", email="del4@example.test", password="pw")
         profile = CandidateProfile.objects.create(user=user, full_name="Private Name")
         ProfileSkill.objects.create(
             profile=profile,

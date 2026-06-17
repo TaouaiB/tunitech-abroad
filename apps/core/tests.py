@@ -42,11 +42,11 @@ User = get_user_model()
 
 class AdminAccessTests(TestCase):
     def setUp(self):
-        self.staff_user = User.objects.create(username="staff", email="staff@example.com", is_staff=True, is_superuser=True, is_active=True)
+        self.staff_user = User.objects.create(username="staff", email="staff@example.test", is_staff=True, is_superuser=True, is_active=True)
         self.staff_user.set_password("pass")
         self.staff_user.save()
 
-        self.normal_user = User.objects.create(username="normal", email="normal@example.com", is_staff=False, is_active=True)
+        self.normal_user = User.objects.create(username="normal", email="normal@example.test", is_staff=False, is_active=True)
         self.normal_user.set_password("pass")
         self.normal_user.save()
 
@@ -56,17 +56,17 @@ class AdminAccessTests(TestCase):
         self.assertIn("/admin/login/", response.url)
 
     def test_normal_user_denied(self):
-        self.client.login(email="normal@example.com", password="pass")
+        self.client.login(email="normal@example.test", password="pass")
         response = self.client.get("/admin/")
         self.assertEqual(response.status_code, 302)
 
     def test_staff_user_can_access(self):
-        self.client.login(email="staff@example.com", password="pass")
+        self.client.login(email="staff@example.test", password="pass")
         response = self.client.get("/admin/")
         self.assertEqual(response.status_code, 200)
 
     def test_representative_admin_page_loads(self):
-        self.client.login(email="staff@example.com", password="pass")
+        self.client.login(email="staff@example.test", password="pass")
         response = self.client.get("/admin/core/systemsetting/")
         self.assertEqual(response.status_code, 200)
 
@@ -75,7 +75,7 @@ class AdminAccessTests(TestCase):
         from apps.cvs.models import CVUpload
         cv = CVUpload.objects.create(user=self.normal_user, original_filename="test.pdf", file_hash="abc", file_size=10, is_active=True)
 
-        self.client.login(email="staff@example.com", password="pass")
+        self.client.login(email="staff@example.test", password="pass")
         data = {
             'action': 'reparse_cvs',
             '_selected_action': [cv.id]

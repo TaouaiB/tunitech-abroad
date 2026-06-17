@@ -13,6 +13,7 @@ class CandidateProfile(models.Model):
     github_url = models.URLField(blank=True)
     portfolio_url = models.URLField(blank=True)
     website_url = models.URLField(blank=True)
+    avatar_url = models.URLField(blank=True)
 
     current_level = models.CharField(max_length=50, blank=True)
     years_experience = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
@@ -35,6 +36,8 @@ class CandidateProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - Profile"
+
+
 
 class ProfileSkill(models.Model):
     profile = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name="profile_skills")

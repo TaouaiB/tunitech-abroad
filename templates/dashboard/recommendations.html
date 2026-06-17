@@ -1,12 +1,22 @@
 {% extends 'base.html' %}
 
-{% block title %}Job Recommendations | Dashboard{% endblock %}
+{% block title %}Recommandations d'emploi - TuniTech Abroad{% endblock %}
 
 {% block content %}
-<div class="bg-white rounded-lg shadow p-6">
-    <h1 class="text-2xl font-bold mb-4">Job Recommendations</h1>
-    <p class="text-gray-600 mb-6">Based on your candidate profile and active CV.</p>
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8 flex justify-between items-end">
+        <div>
+            <a href="{% url 'dashboard:home' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Retour au tableau de bord
+            </a>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Recommandations</h1>
+            <p class="mt-2 text-lg text-gray-600">Offres sélectionnées spécialement pour votre profil technique.</p>
+        </div>
+    </div>
 
-    {% include 'recommendations/partials/recommendation_list.html' with result=result %}
+    <div id="recommendation-panel" class="card p-6 md:p-8 bg-gray-50 border-0 shadow-inner min-h-[50vh]">
+        {% include 'recommendations/partials/recommendation_list.html' with result=result %}
+    </div>
 </div>
 {% endblock %}

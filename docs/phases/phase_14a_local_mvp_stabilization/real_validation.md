@@ -39,8 +39,8 @@ Minimum real test payload:
 ```text
 Aymen Ben Salah
 Junior Full Stack Developer
-Tunis, Tunisia | +216 55 123 456 | aymen.bensalah.test@example.com
-LinkedIn: linkedin.com/in/aymen-bensalah-test | GitHub: github.com/aymen-bensalah-test | Portfolio: aymen-dev.example.com
+Tunis, Tunisia | +216 55 123 456 | aymen.bensalah.test@example.test
+LinkedIn: linkedin.com/in/aymen-bensalah-test | GitHub: github.com/aymen-bensalah-test | Portfolio: aymen-dev.example.test
 Skills: JavaScript, React, Node.js, Django, PostgreSQL, Docker
 Experience: Junior Web Developer Intern, DigitalBridge Labs, March 2025 - August 2025
 Education: Licence en Informatique, Private University of Tunis

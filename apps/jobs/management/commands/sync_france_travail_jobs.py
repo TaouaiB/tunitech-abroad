@@ -18,7 +18,7 @@ class Command(BaseCommand):
         normalize = options['normalize']
         keywords_to_try = [keyword, 'developpeur', 'informatique', 'python', 'django']
         jobs = []
-        actual_limit = min(limit, 10)
+        actual_limit = limit
         client = FranceTravailClient()
 
         for kw in keywords_to_try:

@@ -30,8 +30,18 @@ class JobNormalizationService:
 
         description = payload.get("description", "")
         
+        from apps.jobs.services.it_classification import JobITClassificationService
+        
         try:
             classification = JobClassificationService.classify(payload, description, title)
+            it_class_obj = JobITClassificationService.classify(payload, description, title)
+            classification_json = {
+                "family": it_class_obj.family,
+                "is_it": it_class_obj.is_it,
+                "confidence": it_class_obj.confidence,
+                "reasons": it_class_obj.reasons,
+                "negative_reasons": it_class_obj.negative_reasons,
+            }
 
             entreprise = payload.get("entreprise") or {}
             company_name = entreprise.get("nom", "")
@@ -93,6 +103,7 @@ class JobNormalizationService:
                     "language_requirements_json": classification["language_requirements"],
                     "required_skills_json": required_skills,
                     "optional_skills_json": optional_skills,
+                    "classification_json": classification_json,
                 }
             )
 

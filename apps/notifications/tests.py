@@ -11,7 +11,7 @@ def create_test_user(username: str, email: str, password: str = "password123") -
 
 class EmailPreferenceTests(TestCase):
     def test_email_preference_creation(self):
-        user = create_test_user(username="epuser", email="ep@example.com", password="pw")
+        user = create_test_user(username="epuser", email="ep@example.test", password="pw")
         pref = EmailPreference.objects.create(user=user)
         
         self.assertEqual(pref.user, user)
@@ -21,7 +21,7 @@ class EmailPreferenceTests(TestCase):
 
 class EmailModelsTests(TestCase):
     def setUp(self):
-        self.user = create_test_user(username="testuser", email="test@example.com")
+        self.user = create_test_user(username="testuser", email="test@example.test")
         
     def test_email_batch_creation(self):
         batch = EmailBatch.objects.create(batch_type="weekly_digest", status="pending")
@@ -35,7 +35,7 @@ class EmailModelsTests(TestCase):
             user=self.user,
             batch=batch,
             email_type="weekly_digest",
-            to_email="test@example.com",
+            to_email="test@example.test",
             subject="Test Subject",
             template_name="test_template",
             status="queued",
@@ -49,7 +49,7 @@ class EmailModelsTests(TestCase):
         EmailEvent.objects.create(
             user=self.user,
             email_type="weekly_digest",
-            to_email="test@example.com",
+            to_email="test@example.test",
             subject="Test Subject",
             template_name="test_template",
             idempotency_key="unique_key_123"
@@ -59,7 +59,7 @@ class EmailModelsTests(TestCase):
             EmailEvent.objects.create(
                 user=self.user,
                 email_type="weekly_digest",
-                to_email="test@example.com",
+                to_email="test@example.test",
                 subject="Test Subject",
                 template_name="test_template",
                 idempotency_key="unique_key_123"
@@ -86,11 +86,11 @@ from apps.notifications.services.email_sender import EmailSenderService
 
 class EmailSenderServiceTests(TestCase):
     def setUp(self):
-        self.user = create_test_user(username="sender", email="sender@example.com")
+        self.user = create_test_user(username="sender", email="sender@example.test")
         
     def test_send_email_success(self):
         event = EmailSenderService.send(
-            to="test@example.com",
+            to="test@example.test",
             subject="Test Subject",
             template_name="test_template",
             context={"name": "Bob"},
@@ -102,11 +102,11 @@ class EmailSenderServiceTests(TestCase):
         email = mail.outbox[0]
         self.assertEqual(email.subject, "Test Subject")
         self.assertIn("Hello Bob", email.body)
-        self.assertEqual(email.to, ["test@example.com"])
+        self.assertEqual(email.to, ["test@example.test"])
         
     def test_duplicate_idempotency_key_does_not_send(self):
         EmailSenderService.send(
-            to="test@example.com",
+            to="test@example.test",
             subject="Test Subject",
             template_name="test_template",
             context={"name": "Bob"},
@@ -115,7 +115,7 @@ class EmailSenderServiceTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         
         event2 = EmailSenderService.send(
-            to="test@example.com",
+            to="test@example.test",
             subject="Test Subject 2",
             template_name="test_template",
             context={"name": "Bob"},
@@ -128,7 +128,7 @@ class EmailSenderServiceTests(TestCase):
 
     def test_send_email_failure_records_failed_event(self):
         event = EmailSenderService.send(
-            to="test@example.com",
+            to="test@example.test",
             subject="Missing Template",
             template_name="missing_template",
             context={"name": "Bob"},
@@ -145,7 +145,7 @@ from django.urls import reverse
 
 class EmailPreferenceServiceTests(TestCase):
     def setUp(self):
-        self.user = create_test_user(username="prefuser", email="pref@example.com")
+        self.user = create_test_user(username="prefuser", email="pref@example.test")
         
     def test_update_preferences_creates_consent(self):
         pref = EmailPreferenceService.update_preferences(self.user, {"weekly_digest_enabled": True})
@@ -223,7 +223,7 @@ class EmailPreferenceServiceTests(TestCase):
 
 class EmailPreferenceViewsTests(TestCase):
     def setUp(self):
-        self.user = create_test_user(username="viewuser", email="view@example.com")
+        self.user = create_test_user(username="viewuser", email="view@example.test")
         self.client.force_login(self.user)
         
     def test_email_preferences_view_get(self):
@@ -272,13 +272,13 @@ from django.utils import timezone
 
 class WeeklyDigestServiceTests(TestCase):
     def setUp(self):
-        self.user = create_test_user(username="digestuser", email="digest@example.com")
+        self.user = create_test_user(username="digestuser", email="digest@example.test")
         self.user.last_login = timezone.now()
         self.user.save()
         
         self.profile = CandidateProfile.objects.create(user=self.user, profile_completion_score=100)
         
-        EmailAddress.objects.create(user=self.user, email="digest@example.com", verified=True, primary=True)
+        EmailAddress.objects.create(user=self.user, email="digest@example.test", verified=True, primary=True)
         EmailPreference.objects.create(user=self.user, weekly_digest_enabled=True)
         
         from apps.jobs.models import NormalizedJob, JobSource, RawJobRecord

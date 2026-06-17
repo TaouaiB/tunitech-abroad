@@ -1,0 +1,18 @@
+Fatma Ben Youssef
+Tunis, Tunisia
+fatma.by@example.test | +216 98 765 432
+LinkedIn: https://linkedin.com/in/fatmaby
+GitHub: https://github.com/fatmaby
+
+Postes ciblés: Frontend Developer Intern, Web Developer Stage
+
+PROJECTS
+E-commerce Platform (React, Node.js)
+Portfolio Builder (Vue.js, Tailwind CSS)
+
+SKILLS
+HTML, CSS, JavaScript, React, Tailwind CSS, Git, Figma
+
+LANGUAGES
+English: Fluent
+French: Professional working proficiency

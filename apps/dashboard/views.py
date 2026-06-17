@@ -9,10 +9,13 @@ from apps.profiles.services.profile_update import ProfileUpdateService
 from apps.recommendations.services.query import RecommendationQueryService
 from apps.recommendations.services.saved_jobs import SavedJobService
 from apps.privacy.services.account_deletion import AccountDeletionService
+from allauth.socialaccount.models import SocialAccount
 
 @login_required
 def dashboard_recommendations(request):
     result = RecommendationQueryService.get_dashboard_recommendations(request.user)
+    if request.headers.get("HX-Request"):
+        return render(request, "recommendations/partials/recommendation_list.html", {"result": result})
     return render(request, "dashboard/recommendations.html", {"result": result})
 
 @login_required
@@ -29,6 +32,25 @@ def dashboard_profile(request):
     user = request.user
     profile = getattr(user, 'candidate_profile', None)
 
+    active_cv = CVUpload.objects.filter(user=user, is_active=True).first()
+    cv_data = {}
+    if active_cv and hasattr(active_cv, 'parsed_data'):
+        pd = active_cv.parsed_data
+        cv_data = {
+            'full_name': pd.extracted_name,
+            'phone': pd.extracted_phone,
+            'location': pd.extracted_location,
+            'linkedin_url': pd.extracted_linkedin_url,
+            'github_url': pd.extracted_github_url,
+            'portfolio_url': pd.extracted_portfolio_url,
+            'years_experience': pd.estimated_years_experience,
+        }
+
+    initial_data = {}
+    for key, val in cv_data.items():
+        if val and not getattr(profile, key, None):
+            initial_data[key] = val
+
     if request.method == "POST":
         from apps.profiles.forms import ProfileForm
         form = ProfileForm(request.POST, instance=profile)
@@ -38,11 +60,25 @@ def dashboard_profile(request):
             return redirect("dashboard:profile")
     else:
         from apps.profiles.forms import ProfileForm
-        form = ProfileForm(instance=profile)
+        form = ProfileForm(instance=profile, initial=initial_data)
+
+    # Make cv_data accessible by field name in template
+    suggestions = {}
+    for key, val in cv_data.items():
+        if val and getattr(profile, key, None) != val:
+            suggestions[key] = val
+
+    from apps.profiles.services.completeness import ProfileCompletenessService
+    missing_fields = []
+    if profile:
+        completeness_report = ProfileCompletenessService.get_report(profile)
+        missing_fields = completeness_report["missing"] + completeness_report["invalid"]
 
     return render(request, "dashboard/profile.html", {
         "form": form,
-        "profile": profile
+        "profile": profile,
+        "suggestions": suggestions,
+        "missing_fields": missing_fields
     })
 
 @login_required
@@ -96,7 +132,8 @@ def dashboard_account(request):
         deletion_request = None
 
     return render(request, "dashboard/account.html", {
-        "deletion_request": deletion_request
+        "deletion_request": deletion_request,
+        "has_usable_password": request.user.has_usable_password(),
     })
 
 @login_required
@@ -113,3 +150,21 @@ def dashboard_delete_account(request):
             return redirect("dashboard:delete_account")
 
     return render(request, "dashboard/delete_account.html")
+
+@login_required
+def dashboard_connections(request):
+    if request.method == "POST" and "disconnect_id" in request.POST:
+        account_id = request.POST.get("disconnect_id")
+        # Ensure it belongs to the user
+        account_to_delete = SocialAccount.objects.filter(id=account_id, user=request.user).first()
+        if account_to_delete:
+            account_to_delete.delete()
+            messages.success(request, f"Compte {account_to_delete.provider.capitalize()} déconnecté.")
+        return redirect("dashboard:connections")
+
+    social_accounts = SocialAccount.objects.filter(user=request.user)
+    providers = {acc.provider: acc for acc in social_accounts}
+    
+    return render(request, "dashboard/connections.html", {
+        "providers": providers
+    })
