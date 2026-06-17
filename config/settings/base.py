@@ -161,8 +161,32 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Europe/Paris"
 CELERY_BEAT_SCHEDULER = "celery.beat:PersistentScheduler"
-CELERY_BEAT_SCHEDULE = {}  # Populated in future phases
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # Suppress Celery 5.x deprecation warning
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "run_it_job_ingestion": {
+        "task": "apps.jobs.tasks.run_it_job_ingestion",
+        "schedule": crontab(minute=0, hour="*/4"),
+    },
+    "mark_stale_and_expired_jobs": {
+        "task": "apps.jobs.tasks.mark_stale_and_expired_jobs",
+        "schedule": crontab(minute=30, hour=2),
+    },
+    "refresh_active_users_recommendations": {
+        "task": "apps.recommendations.tasks.refresh_active_users_recommendations",
+        "schedule": crontab(minute=30, hour=3),
+    },
+    "cleanup_expired_quick_matches": {
+        "task": "apps.privacy.tasks.cleanup_expired_quick_matches",
+        "schedule": crontab(minute=0, hour=4),
+    },
+    "delete_orphaned_cv_files": {
+        "task": "apps.privacy.tasks.delete_orphaned_cv_files",
+        "schedule": crontab(minute=30, hour=4, day_of_week="sun"),
+    },
+}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Internationalisation
