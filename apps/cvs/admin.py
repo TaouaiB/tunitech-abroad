@@ -13,12 +13,30 @@ def reparse_cvs(modeladmin, request, queryset):
     modeladmin.message_user(request, f"Queued {count} CVs for reparsing.", messages.SUCCESS)
 
 
+from django.utils import timezone
+from datetime import timedelta
+
+class StuckCVFilter(admin.SimpleListFilter):
+    title = 'Stuck Status'
+    parameter_name = 'stuck'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('stuck', 'Stuck (>15m queued)'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'stuck':
+            threshold = timezone.now() - timedelta(minutes=15)
+            return queryset.filter(parse_status__in=['pending', 'processing'], uploaded_at__lt=threshold)
+        return queryset
+
 @admin.register(CVUpload)
 class CVUploadAdmin(admin.ModelAdmin):
     list_display = ("user", "original_filename", "is_active", "parse_status", "uploaded_at", "deleted_at")
-    list_filter = ("is_active", "parse_status", "text_extraction_status")
+    list_filter = ("is_active", "parse_status", StuckCVFilter, "text_extraction_status")
     search_fields = ("user__email", "original_filename", "public_id")
-    readonly_fields = ("public_id", "uploaded_at", "parsed_at", "deleted_at", "file_hash", "file_size", "mime_type")
+    readonly_fields = ("public_id", "uploaded_at", "parsed_at", "deleted_at", "file_hash", "file_size", "mime_type", "parse_error")
     exclude = ("file",)
     actions = [reparse_cvs]
 
