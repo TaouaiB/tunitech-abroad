@@ -13,7 +13,7 @@ from datetime import timedelta
 import hashlib
 
 class TestAutomatedITIngestion(TestCase):
-    
+
     def test_default_config_values(self):
         # 1. default config has enrichment_enabled=True and enrich_every_fetched_it_job=True.
         config = JobIngestionConfig.objects.create(name="test_default")
@@ -37,21 +37,21 @@ class TestAutomatedITIngestion(TestCase):
             max_pages_per_keyword=1,
             enrichment_enabled=False
         )
-        
+
         mock_search.return_value = {
             "resultats": [
                 {"id": "job1", "intitule": "Job 1", "description": "desc 1", "entreprise": {}},
                 {"id": "job2", "intitule": "Job 2", "description": "desc 2", "entreprise": {}}
             ]
         }
-        
+
         overrides = {
             "custom_keywords": ["kw1", "kw2"],
             "preset": ""
         }
-        
+
         run_log = JobIngestionService.run(config, trigger="test", overrides=overrides)
-        
+
         self.assertEqual(run_log.status, "success")
         self.assertEqual(run_log.fetched_count, 2)
         self.assertEqual(run_log.duplicates_skipped_count, 2)
@@ -82,11 +82,11 @@ class TestAutomatedITIngestion(TestCase):
             '1200',
             '--enqueue-enrichment',
         )
-        
+
         mock_run.assert_called_once()
         args, kwargs = mock_run.call_args
         overrides = kwargs['overrides']
-        
+
         self.assertEqual(overrides['limit_per_keyword'], 60)
         self.assertEqual(overrides['max_total'], 1200)
         self.assertTrue(overrides['enrichment_enabled'])
@@ -123,7 +123,7 @@ class TestAutomatedITIngestion(TestCase):
     def test_expiry_service(self):
         source = JobSource.objects.create(name="test", slug="test")
         now = timezone.now()
-        
+
         raw_job = RawJobRecord.objects.create(
             source=source, source_job_id="stale_job", raw_payload_json={},
             first_seen_at=now, last_seen_at=now, last_fetched_at=now
@@ -132,10 +132,10 @@ class TestAutomatedITIngestion(TestCase):
             source=source, raw_record=raw_job, title="Stale Job", status=JobStatus.ACTIVE,
             first_seen_at=now, last_seen_at=now - timedelta(days=25), last_fetched_at=now
         )
-        
+
         expired_count = JobExpiryService.mark_stale_jobs(21)
         self.assertEqual(expired_count, 1)
-        
+
         norm_job.refresh_from_db()
         self.assertEqual(norm_job.status, JobStatus.STALE)
 
@@ -143,12 +143,12 @@ class TestAutomatedITIngestion(TestCase):
     @patch("apps.jobs.services.ingestion.enrich_job_task.delay")
     @patch("apps.jobs.services.ingestion.job_qualifies_for_enrichment_with_reason")
     def test_enrichment_queues_and_skips(self, mock_qualify, mock_enrich_task, mock_search):
-        # We test: 
+        # We test:
         # 2. queues enrichment for updated existing jobs
         # 3. existing successful same hash is skipped and counted.
         # 4. pending duplicate is skipped and counted.
         # 5. run counters match command output.
-        
+
         config = JobIngestionConfig.objects.create(
             name="test_enrich",
             limit_per_keyword=5,
@@ -157,7 +157,7 @@ class TestAutomatedITIngestion(TestCase):
             enrich_every_fetched_it_job=True,
             preset=""
         )
-        
+
         # Prepare 3 jobs in search response
         mock_search.return_value = {
             "resultats": [
@@ -166,10 +166,10 @@ class TestAutomatedITIngestion(TestCase):
                 {"id": "job_pending", "intitule": "Pending Job", "description": "desc"}
             ]
         }
-        
+
         # Make them all qualify
         mock_qualify.return_value = (True, "")
-        
+
         # Create the source
         source = JobSource.objects.create(name="FT", slug="france_travail", source_type="api")
         now = timezone.now()
@@ -200,20 +200,20 @@ class TestAutomatedITIngestion(TestCase):
 
         overrides = {"custom_keywords": ["python"], "preset": ""}
         run_log = JobIngestionService.run(config, trigger="test", overrides=overrides)
-        
+
         self.assertEqual(run_log.fetched_count, 3)
         self.assertEqual(run_log.created_raw_count, 1) # job_new
         self.assertEqual(run_log.updated_raw_count, 2) # job_success, job_pending
         self.assertEqual(run_log.normalized_count, 3)
-        
+
         # Enrichment queued should be 1 (job_new), skipped should be 2
         self.assertEqual(run_log.enrichment_queued_count, 1)
         self.assertEqual(run_log.enrichment_skipped_count, 2)
-        
+
         # Verify it queued for the new one (proving #2 since updated jobs like pending/success were evaluated and skipped, not ignored)
         mock_enrich_task.assert_called_once()
         args, kwargs = mock_enrich_task.call_args
-        
+
         new_job = NormalizedJob.objects.get(source_job_id="job_new")
         self.assertEqual(args[0], new_job.id)
 
@@ -286,11 +286,155 @@ class TestAutomatedITIngestion(TestCase):
             max_total_per_run=20,
             enrichment_enabled=False
         )
-        
+
         # Return 20 jobs
         jobs = [{"id": f"job{i}", "intitule": f"Job {i}", "description": "desc"} for i in range(20)]
         mock_search.return_value = {"resultats": jobs}
-        
+
         run_log = JobIngestionService.run(config, trigger="test", overrides={"custom_keywords": ["python"], "preset": ""})
-        
+
         self.assertEqual(run_log.fetched_count, 20)
+
+    def test_daily_limit_default_is_1000(self):
+        config = JobIngestionConfig.objects.create(name="test_daily_limit_default")
+        self.assertEqual(config.daily_enrichment_limit, 1000)
+
+    @patch("apps.jobs.services.france_travail.client.FranceTravailClient.search_offers")
+    @patch("apps.jobs.services.ingestion.enrich_job_task.delay")
+    @patch("apps.jobs.services.normalization.JobNormalizationService.normalize")
+    def test_daily_limit_allows_20_job_sync(self, mock_normalize, mock_enrich_task, mock_search):
+        config = JobIngestionConfig.objects.create(
+            name="test_daily_limit_20",
+            limit_per_keyword=20,
+            max_total_per_run=20,
+            enrichment_enabled=True,
+            enrich_every_fetched_it_job=True,
+            daily_enrichment_limit=1000
+        )
+        jobs = [{"id": f"job{i}", "intitule": f"Job {i}", "description": "desc"} for i in range(20)]
+        mock_search.return_value = {"resultats": jobs}
+
+        def fake_normalize(raw_record):
+            now = timezone.now()
+            norm = NormalizedJob.objects.create(
+                source=raw_record.source,
+                raw_record=raw_record,
+                source_job_id=raw_record.source_job_id,
+                title=raw_record.raw_payload_json.get("intitule", ""),
+                first_seen_at=now, last_seen_at=now, last_fetched_at=now,
+                status=JobStatus.ACTIVE, country="FR",
+                classification_json={"confidence": "high"}
+            )
+            return norm
+        mock_normalize.side_effect = fake_normalize
+
+        run_log = JobIngestionService.run(config, trigger="test", overrides={"custom_keywords": ["python"], "preset": ""})
+
+        self.assertEqual(run_log.fetched_count, 20)
+        self.assertEqual(run_log.enrichment_queued_count, 20)
+        self.assertEqual(mock_enrich_task.call_count, 20)
+
+    @patch("apps.jobs.services.france_travail.client.FranceTravailClient.search_offers")
+    @patch("apps.jobs.services.ingestion.enrich_job_task.delay")
+    @patch("apps.jobs.services.normalization.JobNormalizationService.normalize")
+    def test_skipped_rows_do_not_consume_daily_limit(self, mock_normalize, mock_enrich_task, mock_search):
+        config = JobIngestionConfig.objects.create(
+            name="test_daily_limit_skipped",
+            limit_per_keyword=5,
+            max_total_per_run=5,
+            enrichment_enabled=True,
+            enrich_every_fetched_it_job=True,
+            daily_enrichment_limit=2
+        )
+        source = JobSource.objects.create(name="FT", slug="france_travail", source_type="api")
+        now = timezone.now()
+
+        # Create 10 skipped enrichments today
+        for i in range(10):
+            raw = RawJobRecord.objects.create(
+                source=source, source_job_id=f"skipped_{i}", raw_payload_json={},
+                payload_hash=f"hash_{i}", first_seen_at=now, last_seen_at=now, last_fetched_at=now
+            )
+            norm = NormalizedJob.objects.create(
+                source=source, raw_record=raw, source_job_id=f"skipped_{i}", title=f"Skipped {i}",
+                first_seen_at=now, last_seen_at=now, last_fetched_at=now, status=JobStatus.ACTIVE, country="FR",
+                classification_json={"confidence": "high"}
+            )
+            JobEnrichment.objects.create(job=norm, status=JobEnrichment.Status.SKIPPED, payload_hash=f"hash_{i}")
+
+        jobs = [{"id": f"job_new_{i}", "intitule": f"Job New {i}", "description": "desc"} for i in range(3)]
+        mock_search.return_value = {"resultats": jobs}
+
+        def fake_normalize(raw_record):
+            now = timezone.now()
+            norm = NormalizedJob.objects.create(
+                source=raw_record.source,
+                raw_record=raw_record,
+                source_job_id=raw_record.source_job_id,
+                title=raw_record.raw_payload_json.get("intitule", ""),
+                first_seen_at=now, last_seen_at=now, last_fetched_at=now,
+                status=JobStatus.ACTIVE, country="FR",
+                classification_json={"confidence": "high"}
+            )
+            return norm
+        mock_normalize.side_effect = fake_normalize
+
+        run_log = JobIngestionService.run(config, trigger="test", overrides={"custom_keywords": ["python"], "preset": ""})
+
+        # Daily limit is 2. 10 skipped rows do not count, but queued rows are
+        # reserved as PENDING during this run.
+        self.assertEqual(run_log.fetched_count, 3)
+        self.assertEqual(run_log.enrichment_queued_count, 2)
+        self.assertEqual(run_log.enrichment_skipped_count, 1)
+
+    @patch("apps.jobs.services.france_travail.client.FranceTravailClient.search_offers")
+    @patch("apps.jobs.services.ingestion.enrich_job_task.delay")
+    @patch("apps.jobs.services.normalization.JobNormalizationService.normalize")
+    def test_daily_limit_blocks_after_actual_attempted_reach_limit(self, mock_normalize, mock_enrich_task, mock_search):
+        config = JobIngestionConfig.objects.create(
+            name="test_daily_limit_blocks",
+            limit_per_keyword=5,
+            max_total_per_run=5,
+            enrichment_enabled=True,
+            enrich_every_fetched_it_job=True,
+            daily_enrichment_limit=2
+        )
+        source = JobSource.objects.create(name="FT", slug="france_travail", source_type="api")
+        now = timezone.now()
+
+        # Create 2 SUCCESS enrichments today (reaches limit)
+        for i in range(2):
+            raw = RawJobRecord.objects.create(
+                source=source, source_job_id=f"success_{i}", raw_payload_json={},
+                payload_hash=f"shash_{i}", first_seen_at=now, last_seen_at=now, last_fetched_at=now
+            )
+            norm = NormalizedJob.objects.create(
+                source=source, raw_record=raw, source_job_id=f"success_{i}", title=f"Success {i}",
+                first_seen_at=now, last_seen_at=now, last_fetched_at=now, status=JobStatus.ACTIVE, country="FR",
+                classification_json={"confidence": "high"}
+            )
+            JobEnrichment.objects.create(job=norm, status=JobEnrichment.Status.SUCCESS, payload_hash=f"shash_{i}")
+
+        jobs = [{"id": f"job_new_{i}", "intitule": f"Job New {i}", "description": "desc"} for i in range(2)]
+        mock_search.return_value = {"resultats": jobs}
+
+        def fake_normalize(raw_record):
+            now = timezone.now()
+            norm = NormalizedJob.objects.create(
+                source=raw_record.source,
+                raw_record=raw_record,
+                source_job_id=raw_record.source_job_id,
+                title=raw_record.raw_payload_json.get("intitule", ""),
+                first_seen_at=now, last_seen_at=now, last_fetched_at=now,
+                status=JobStatus.ACTIVE, country="FR",
+                classification_json={"confidence": "high"}
+            )
+            return norm
+        mock_normalize.side_effect = fake_normalize
+
+        run_log = JobIngestionService.run(config, trigger="test", overrides={"custom_keywords": ["python"], "preset": ""})
+
+        # Daily limit is 2. 2 success exist. So 0 should be queued, 2 skipped.
+        self.assertEqual(run_log.fetched_count, 2)
+        self.assertEqual(run_log.enrichment_queued_count, 0)
+        self.assertEqual(run_log.enrichment_skipped_count, 2)

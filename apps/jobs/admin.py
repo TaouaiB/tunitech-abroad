@@ -46,6 +46,7 @@ class JobIngestionConfigAdmin(admin.ModelAdmin):
         "enrichment_enabled",
         "enrich_every_fetched_it_job",
         "enrichment_limit_per_run",
+        "daily_enrichment_limit",
         "last_run_at",
         "last_success_at",
     )
@@ -63,6 +64,7 @@ class JobIngestionConfigAdmin(admin.ModelAdmin):
                     "enrichment_enabled",
                     "enrich_every_fetched_it_job",
                     "enrichment_limit_per_run",
+                    "daily_enrichment_limit",
                 )
             },
         ),

@@ -13,7 +13,10 @@ from apps.jobs.models import (
 from apps.jobs.services.france_travail.client import FranceTravailClient
 from apps.jobs.services.normalization import JobNormalizationService
 from apps.jobs.services.broad_it_preset import get_preset_keywords
-from apps.llm.services.job_enrichment import job_qualifies_for_enrichment_with_reason
+from apps.llm.services.job_enrichment import (
+    compute_job_enrichment_payload_hash,
+    job_qualifies_for_enrichment_with_reason,
+)
 from apps.llm.models import JobEnrichment
 from apps.llm.tasks import enrich_job_task
 
@@ -38,12 +41,12 @@ class JobIngestionService:
         keywords = overrides.get("custom_keywords") or config.custom_keywords
         if preset and preset == "broad_it":
             keywords = get_preset_keywords(preset)
-        
+
         run_log.keywords_json = keywords
         run_log.save(update_fields=["keywords_json"])
 
         dry_run = overrides.get("dry_run", config.dry_run)
-        
+
         limit_per_keyword = run_log.limit_per_keyword
         max_total = run_log.max_total
         max_pages_per_keyword = overrides.get("max_pages_per_keyword", config.max_pages_per_keyword)
@@ -54,7 +57,7 @@ class JobIngestionService:
             config.enrich_every_fetched_it_job,
         )
         sync_enrichment = overrides.get("sync_enrichment", False)
-        
+
         client = FranceTravailClient()
 
         source, _ = JobSource.objects.get_or_create(
@@ -70,26 +73,26 @@ class JobIngestionService:
         seen_source_ids: set[str] = set()
         total_fetched = 0
         page_size = min(limit_per_keyword, 50)  # FT API limit is 150, but let's use up to 50
-        
+
         for kw in keywords:
             if total_fetched >= max_total:
                 break
-                
+
             fetched_for_kw = 0
             page = 0
-            
+
             while page < max_pages_per_keyword and fetched_for_kw < limit_per_keyword and total_fetched < max_total:
                 start = page * page_size
                 end = start + page_size - 1
-                
+
                 # Adjust end if it exceeds limits
                 remaining_for_kw = limit_per_keyword - fetched_for_kw
                 remaining_total = max_total - total_fetched
                 max_allowed_this_page = min(page_size, remaining_for_kw, remaining_total)
-                
+
                 if max_allowed_this_page <= 0:
                     break
-                    
+
                 end = start + max_allowed_this_page - 1
 
                 try:
@@ -99,7 +102,7 @@ class JobIngestionService:
                     run_log.error_count += 1
                     run_log.error_summary += f"Error fetching {kw} page {page}: {str(e)}\n"
                     break # Skip to next keyword on error
-                
+
                 jobs = result.get("resultats", [])
                 if not jobs:
                     break # No more results for this keyword
@@ -107,15 +110,15 @@ class JobIngestionService:
                 for job_data in jobs:
                     if total_fetched >= max_total or fetched_for_kw >= limit_per_keyword:
                         break
-                        
+
                     job_id = job_data.get("id")
                     if not job_id:
                         continue
-                        
+
                     if job_id in seen_source_ids:
                         run_log.duplicates_skipped_count += 1
                         continue
-                        
+
                     seen_source_ids.add(job_id)
                     total_fetched += 1
                     fetched_for_kw += 1
@@ -137,22 +140,22 @@ class JobIngestionService:
 
                 if len(jobs) < max_allowed_this_page:
                     break # Last page
-                    
+
                 page += 1
 
         run_log.status = "success" if run_log.error_count == 0 else "partial_success"
         if run_log.error_count > 0 and total_fetched == 0:
             run_log.status = "failed"
-            
+
         run_log.finished_at = timezone.now()
         run_log.save()
-        
+
         if not dry_run:
             config.last_run_at = timezone.now()
             if run_log.status in ["success", "partial_success"]:
                 config.last_success_at = timezone.now()
             config.save(update_fields=["last_run_at", "last_success_at"])
-            
+
         return run_log
 
     @classmethod
@@ -171,7 +174,7 @@ class JobIngestionService:
         run_log.fetched_count += 1
         now = timezone.now()
         payload_hash = hashlib.sha256(str(job_data).encode()).hexdigest()
-        
+
         try:
             raw_job = RawJobRecord.objects.get(source=source, source_job_id=job_id)
             raw_job.raw_payload_json = job_data
@@ -193,7 +196,7 @@ class JobIngestionService:
             )
             created = True
             run_log.created_raw_count += 1
-            
+
         if normalize:
             try:
                 norm_job = JobNormalizationService.normalize(raw_job)
@@ -213,20 +216,18 @@ class JobIngestionService:
 
     @classmethod
     def _queue_enrichment(cls, norm_job, run_log, sync_enrichment, config):
-        qualifies, reason = job_qualifies_for_enrichment_with_reason(norm_job)
-        if not qualifies:
-            cls._record_enrichment_skip(run_log, norm_job, reason)
-            return
+        payload_hash = compute_job_enrichment_payload_hash(norm_job)
 
-        payload_hash = hashlib.md5(f"{norm_job.title}\n{norm_job.description}".encode('utf-8')).hexdigest()
-        
-        # Check for existing enrichment
         enrichment_exists = JobEnrichment.objects.filter(
             job=norm_job,
             payload_hash=payload_hash,
-            status__in=[JobEnrichment.Status.SUCCESS, JobEnrichment.Status.PENDING, JobEnrichment.Status.PROCESSING]
+            status__in=[
+                JobEnrichment.Status.SUCCESS,
+                JobEnrichment.Status.PENDING,
+                JobEnrichment.Status.PROCESSING,
+            ],
         ).exists()
-        
+
         if enrichment_exists:
             cls._record_enrichment_skip(
                 run_log,
@@ -234,18 +235,34 @@ class JobIngestionService:
                 "Successful, pending, or processing enrichment already exists for this payload hash",
             )
             return
-            
-        # Check run limits
+
         if run_log.enrichment_queued_count >= config.enrichment_limit_per_run:
             cls._record_enrichment_skip(run_log, norm_job, "Run enrichment limit reached")
             return
-            
+
+        qualifies, reason = job_qualifies_for_enrichment_with_reason(
+            norm_job,
+            daily_limit=config.daily_enrichment_limit,
+        )
+        if not qualifies:
+            cls._record_enrichment_skip(run_log, norm_job, reason)
+            return
+
+        JobEnrichment.objects.update_or_create(
+            job=norm_job,
+            defaults={
+                "payload_hash": payload_hash,
+                "status": JobEnrichment.Status.PENDING,
+                "status_reason": "Queued by automated ingestion.",
+            },
+        )
+
         if sync_enrichment:
             from apps.llm.services.job_enrichment import enrich_job
             enrich_job(norm_job)
         else:
             cast(Any, enrich_job_task.delay)(norm_job.id)
-            
+
         run_log.enrichment_queued_count += 1
 
     @staticmethod

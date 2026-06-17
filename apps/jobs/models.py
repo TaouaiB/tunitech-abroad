@@ -266,7 +266,8 @@ class JobIngestionConfig(models.Model):
     normalize_after_fetch = models.BooleanField(default=True)
     enrichment_enabled = models.BooleanField(default=True)
     enrich_every_fetched_it_job = models.BooleanField(default=True)
-    enrichment_limit_per_run = models.PositiveIntegerField(default=100)
+    enrichment_limit_per_run = models.PositiveIntegerField(default=1000)
+    daily_enrichment_limit = models.PositiveIntegerField(default=1000)
 
     expire_after_days = models.PositiveIntegerField(default=21)
     mark_missing_as_stale_after_days = models.PositiveIntegerField(default=14)

@@ -8,24 +8,32 @@ from django.utils import timezone
 from apps.llm.services.client import OpenRouterClient
 from apps.llm.models import JobEnrichment
 from apps.jobs.models import JobStatus
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
     "job_qualifies_for_enrichment_with_reason",
     "job_qualifies_for_enrichment",
+    "compute_job_enrichment_payload_hash",
+    "count_daily_enrichment_budget_used",
     "enrich_job",
     "validate_enrichment_schema",
 ]
 
 
-def job_qualifies_for_enrichment_with_reason(job) -> tuple[bool, str]:
+def job_qualifies_for_enrichment_with_reason(
+    job,
+    daily_limit: int | None = None,
+    ignore_pending_reservation: bool = False,
+    exclude_enrichment_id: int | None = None,
+) -> tuple[bool, str]:
     """
     Check if a NormalizedJob qualifies for LLM enrichment, returning (qualifies, reason).
     """
     if not settings.JOB_ENRICHMENT_ENABLED:
         return False, "JOB_ENRICHMENT_ENABLED is False"
-        
+
     if job.status != JobStatus.ACTIVE:
         return False, f"Job status is {job.status}, not ACTIVE"
 
@@ -36,35 +44,76 @@ def job_qualifies_for_enrichment_with_reason(job) -> tuple[bool, str]:
     if classification.get("confidence") != "high":
         return False, "Job classification confidence is not high"
 
-    # Payload hash check to avoid duplicate enrichment
-    payload_hash = _compute_payload_hash(job)
-    
-    # Check if a successful enrichment already exists for this hash
-    if hasattr(job, "enrichment") and job.enrichment.status == JobEnrichment.Status.SUCCESS:
-        if job.enrichment.payload_hash == payload_hash:
-            return False, "Successful enrichment already exists for this payload hash"
+    payload_hash = compute_job_enrichment_payload_hash(job)
 
-    # Check daily limit
-    today = timezone.now().date()
-    daily_count = JobEnrichment.objects.filter(
-        created_at__date=today,
-    ).exclude(status=JobEnrichment.Status.PENDING).count()
-    
-    if daily_count >= settings.JOB_ENRICHMENT_DAILY_LIMIT:
+    if hasattr(job, "enrichment"):
+        unchanged_statuses = {
+            JobEnrichment.Status.SUCCESS,
+            JobEnrichment.Status.PROCESSING,
+        }
+        if not ignore_pending_reservation:
+            unchanged_statuses.add(JobEnrichment.Status.PENDING)
+
+        if job.enrichment.payload_hash == payload_hash and job.enrichment.status in unchanged_statuses:
+            return False, f"{job.enrichment.get_status_display()} enrichment already exists for this payload hash"
+
+    limit_to_use = daily_limit if daily_limit is not None else settings.JOB_ENRICHMENT_DAILY_LIMIT
+
+    if count_daily_enrichment_budget_used(exclude_enrichment_id=exclude_enrichment_id) >= limit_to_use:
         return False, "Daily enrichment limit reached"
 
     return True, ""
 
-def job_qualifies_for_enrichment(job) -> bool:
+def job_qualifies_for_enrichment(
+    job,
+    daily_limit: int | None = None,
+    ignore_pending_reservation: bool = False,
+    exclude_enrichment_id: int | None = None,
+) -> bool:
     """
     Check if a NormalizedJob qualifies for LLM enrichment.
     """
-    qualifies, _ = job_qualifies_for_enrichment_with_reason(job)
+    qualifies, _ = job_qualifies_for_enrichment_with_reason(
+        job,
+        daily_limit,
+        ignore_pending_reservation,
+        exclude_enrichment_id,
+    )
     return qualifies
 
-def _compute_payload_hash(job) -> str:
+def count_daily_enrichment_budget_used(exclude_enrichment_id: int | None = None):
+    """
+    Count today's reserved or attempted enrichment work.
+
+    SKIPPED rows are intentionally excluded unless they show evidence of actual
+    work through attempts or token usage.
+    """
+    today = timezone.now().date()
+    queryset = JobEnrichment.objects.filter(created_at__date=today).filter(
+        Q(
+            status__in=[
+                JobEnrichment.Status.PENDING,
+                JobEnrichment.Status.PROCESSING,
+                JobEnrichment.Status.SUCCESS,
+                JobEnrichment.Status.FAILED,
+                JobEnrichment.Status.VALIDATION_ERROR,
+            ]
+        )
+        | Q(attempt_count__gt=0)
+        | Q(total_tokens__gt=0)
+    )
+    if exclude_enrichment_id is not None:
+        queryset = queryset.exclude(id=exclude_enrichment_id)
+    return queryset.count()
+
+
+def compute_job_enrichment_payload_hash(job) -> str:
     text = f"{job.title}\n{job.description}"
     return hashlib.md5(text.encode('utf-8')).hexdigest()
+
+
+def _compute_payload_hash(job) -> str:
+    return compute_job_enrichment_payload_hash(job)
 
 def enrich_job(job, force: bool = False):
     """
@@ -72,19 +121,28 @@ def enrich_job(job, force: bool = False):
     Updates or creates the JobEnrichment record.
     """
     payload_hash = _compute_payload_hash(job)
-    
+
     enrichment, _ = JobEnrichment.objects.get_or_create(
         job=job,
         defaults={"payload_hash": payload_hash}
     )
 
-    if not force and enrichment.status == JobEnrichment.Status.SUCCESS and enrichment.payload_hash == payload_hash:
-        return enrichment
-        
-    if not force and not job_qualifies_for_enrichment(job):
+    if not force:
+        if enrichment.status == JobEnrichment.Status.SUCCESS and enrichment.payload_hash == payload_hash:
+            return enrichment
+
+        if enrichment.status == JobEnrichment.Status.PROCESSING and enrichment.payload_hash == payload_hash:
+            enrichment.status_reason = "Enrichment already processing"
+            return enrichment
+
+    if not force and not job_qualifies_for_enrichment(
+        job,
+        ignore_pending_reservation=True,
+        exclude_enrichment_id=enrichment.id,
+    ):
         enrichment.status = JobEnrichment.Status.SKIPPED
         enrichment.status_reason = "Job does not qualify or daily limit reached."
-        enrichment.save()
+        enrichment.save(update_fields=["status", "status_reason"])
         return enrichment
 
     enrichment.status = JobEnrichment.Status.PROCESSING
@@ -138,15 +196,15 @@ Respond with a JSON object strictly matching this shape:
     enrichment.model_name = settings.JOB_ENRICHMENT_MODEL
 
     client = OpenRouterClient(default_model=settings.JOB_ENRICHMENT_MODEL)
-    
+
     max_retries = settings.JOB_ENRICHMENT_MAX_RETRIES
     retries = 0
     success = False
-    
+
     while retries <= max_retries and not success:
         try:
             content, usage = client.chat(messages, response_format={"type": "json_object"})
-            
+
             enrichment.raw_response_text = content
             if not isinstance(usage, dict):
                 usage = {}
@@ -159,7 +217,7 @@ Respond with a JSON object strictly matching this shape:
             else:
                 enrichment.estimated_cost_usd = Decimal("0")
                 enrichment.status_reason = "OpenRouter usage metadata unavailable; cost stored as zero."
-            
+
             try:
                 parsed_json = json.loads(content)
                 enrichment.raw_response_json = parsed_json
@@ -168,7 +226,7 @@ Respond with a JSON object strictly matching this shape:
 
             # Validate schema
             validated_data, errors = validate_enrichment_schema(parsed_json, job_text)
-            
+
             if errors:
                 enrichment.status = JobEnrichment.Status.VALIDATION_ERROR
                 enrichment.validation_errors_json = errors
@@ -179,9 +237,9 @@ Respond with a JSON object strictly matching this shape:
                 enrichment.validated_output_json = validated_data
                 enrichment.validation_errors_json = []
                 enrichment.last_error = ""
-            
+
             success = True
-            
+
         except Exception as e:
             retries += 1
             enrichment.last_error = str(e)
@@ -195,14 +253,14 @@ Respond with a JSON object strictly matching this shape:
 def validate_enrichment_schema(data: Any, original_text: str) -> tuple[dict[str, Any] | None, list[str]]:
     errors: list[str] = []
     validated: dict[str, Any] = {}
-    
+
     original_text_lower = original_text.lower()
 
     if not isinstance(data, dict):
         return None, ["Root is not a JSON object"]
 
     validated["is_it_role"] = bool(data.get("is_it_role", False))
-    
+
     role_family_allowed = [
         "software_development", "web_mobile", "data_ai_bi", "devops_cloud_sre",
         "cybersecurity", "qa_testing", "systems_network", "database", "erp_crm",
@@ -223,33 +281,33 @@ def validate_enrichment_schema(data: Any, original_text: str) -> tuple[dict[str,
 
     # Skills validation
     soft_skills = ["rigueur", "autonomie", "bon relationnel", "esprit d'équipe", "communication", "curiosité"]
-    
+
     def validate_skills(skills_list: Any, list_name: str) -> list[dict[str, str]]:
         valid_skills: list[dict[str, str]] = []
         if not isinstance(skills_list, list):
             errors.append(f"{list_name} is not a list")
             return valid_skills
-            
+
         for skill in skills_list:
             if not isinstance(skill, dict):
                 errors.append(f"Item in {list_name} is not an object")
                 continue
-            
+
             name = str(skill.get("name", "")).strip()
             evidence = str(skill.get("evidence", "")).strip()
-            
+
             if not name:
                 errors.append(f"Missing skill name in {list_name}")
                 continue
-                
+
             if not evidence:
                 errors.append(f"Missing evidence for skill {name}")
                 continue
-                
+
             if name.lower() in soft_skills:
                 errors.append(f"Soft skill {name} rejected")
                 continue
-                
+
             # Naive evidence check: words in evidence must exist in original text (at least partially)
             evidence_lower = evidence.lower()
             if evidence_lower not in original_text_lower:
@@ -260,7 +318,7 @@ def validate_enrichment_schema(data: Any, original_text: str) -> tuple[dict[str,
                     if found_words / len(ev_words) < 0.5:
                         errors.append(f"Fake evidence for {name}: {evidence}")
                         continue
-                        
+
             valid_skills.append({"name": name, "evidence": evidence})
         return valid_skills
 

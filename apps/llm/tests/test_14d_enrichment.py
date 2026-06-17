@@ -2,6 +2,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import patch, MagicMock
+from pathlib import Path
 from typing import Any, cast
 
 from apps.jobs.models import NormalizedJob, JobStatus, RequirementType, JobSource, RawJobRecord
@@ -248,3 +249,152 @@ class EnrichmentTests(TestCase):
         self.assertSetEqual(optional_names, {"C"})
         self.assertEqual(enrichment.validated_output_json["years_experience_min"], 3)
         self.assertEqual(enrichment.validated_output_json["remote_policy"], "hybrid")
+
+    @override_settings(JOB_ENRICHMENT_ENABLED=True)
+    @patch('apps.llm.services.job_enrichment.OpenRouterClient')
+    def test_enrich_job_processes_pending_reservation_instead_of_skipping_it(self, mock_client_class):
+        from apps.llm.services.job_enrichment import compute_job_enrichment_payload_hash
+        import json
+        payload_hash = compute_job_enrichment_payload_hash(self.job)
+        enrichment_record = JobEnrichment.objects.create(
+            job=self.job,
+            status=JobEnrichment.Status.PENDING,
+            payload_hash=payload_hash,
+            status_reason="Queued by automated ingestion."
+        )
+
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = (json.dumps({
+            "is_it_role": True,
+            "role_family": "software_development",
+            "normalized_role_title": "Développeur Python",
+            "seniority": "senior",
+            "required_skills": [{"name": "Python", "evidence": "Python developer"}],
+            "optional_skills": [],
+            "years_experience_min": 3,
+            "languages": [],
+            "remote_policy": "hybrid",
+            "confidence": "high",
+        }), {"prompt_tokens": 100, "completion_tokens": 80, "total_tokens": 180})
+
+        result_enrichment = enrich_job(self.job, force=False)
+        self.assertEqual(result_enrichment.status, JobEnrichment.Status.SUCCESS)
+        self.assertEqual(result_enrichment.id, enrichment_record.id)
+        mock_client.chat.assert_called_once()
+
+    @override_settings(JOB_ENRICHMENT_ENABLED=True, JOB_ENRICHMENT_DAILY_LIMIT=1)
+    @patch('apps.llm.services.job_enrichment.OpenRouterClient')
+    def test_enrich_job_own_pending_reservation_does_not_consume_daily_limit(self, mock_client_class):
+        from apps.llm.services.job_enrichment import compute_job_enrichment_payload_hash
+        import json
+        payload_hash = compute_job_enrichment_payload_hash(self.job)
+        enrichment_record = JobEnrichment.objects.create(
+            job=self.job,
+            status=JobEnrichment.Status.PENDING,
+            payload_hash=payload_hash,
+            status_reason="Queued by automated ingestion."
+        )
+
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        def chat_success(*args, **kwargs):
+            enrichment_record.refresh_from_db()
+            self.assertEqual(enrichment_record.status, JobEnrichment.Status.PROCESSING)
+            return (json.dumps({
+                "is_it_role": True,
+                "role_family": "software_development",
+                "normalized_role_title": "Python Developer",
+                "seniority": "senior",
+                "required_skills": [{"name": "Python", "evidence": "Python developer"}],
+                "optional_skills": [],
+                "years_experience_min": 3,
+                "languages": [],
+                "remote_policy": "hybrid",
+                "confidence": "high",
+            }), {"prompt_tokens": 100, "completion_tokens": 80, "total_tokens": 180})
+
+        mock_client.chat.side_effect = chat_success
+
+        result_enrichment = enrich_job(self.job, force=False)
+
+        self.assertEqual(result_enrichment.id, enrichment_record.id)
+        self.assertEqual(result_enrichment.status, JobEnrichment.Status.SUCCESS)
+        self.assertEqual(result_enrichment.attempt_count, 1)
+        mock_client.chat.assert_called_once()
+
+    @override_settings(JOB_ENRICHMENT_ENABLED=True, JOB_ENRICHMENT_DAILY_LIMIT=1)
+    @patch('apps.llm.services.job_enrichment.OpenRouterClient')
+    def test_enrich_job_other_pending_reservation_still_consumes_daily_limit(self, mock_client_class):
+        from apps.llm.services.job_enrichment import compute_job_enrichment_payload_hash
+        now = timezone.now()
+        other_raw = RawJobRecord.objects.create(
+            source=self.source,
+            source_job_id="other-pending",
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+            payload_hash="other-hash",
+            raw_payload_json={},
+        )
+        other_job = NormalizedJob.objects.create(
+            source=self.source,
+            raw_record=other_raw,
+            source_job_id="other-pending",
+            title="Other Python Developer",
+            description="We need a Python developer.",
+            country="FR",
+            status=JobStatus.ACTIVE,
+            published_at=now,
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+            classification_json={"confidence": "high"},
+        )
+        JobEnrichment.objects.create(
+            job=other_job,
+            status=JobEnrichment.Status.PENDING,
+            payload_hash=compute_job_enrichment_payload_hash(other_job),
+        )
+
+        result_enrichment = enrich_job(self.job, force=False)
+
+        self.assertEqual(result_enrichment.status, JobEnrichment.Status.SKIPPED)
+        self.assertEqual(result_enrichment.status_reason, "Job does not qualify or daily limit reached.")
+        mock_client_class.assert_not_called()
+
+    @override_settings(JOB_ENRICHMENT_ENABLED=True)
+    def test_enrich_job_skips_when_status_is_processing(self):
+        from apps.llm.services.job_enrichment import compute_job_enrichment_payload_hash
+        payload_hash = compute_job_enrichment_payload_hash(self.job)
+        enrichment_record = JobEnrichment.objects.create(
+            job=self.job,
+            status=JobEnrichment.Status.PROCESSING,
+            payload_hash=payload_hash,
+        )
+
+        result_enrichment = enrich_job(self.job, force=False)
+        self.assertEqual(result_enrichment.status, JobEnrichment.Status.PROCESSING)
+        self.assertEqual(result_enrichment.status_reason, "Enrichment already processing")
+
+    @override_settings(JOB_ENRICHMENT_ENABLED=True)
+    def test_enrich_job_skips_when_status_is_success_same_payload(self):
+        from apps.llm.services.job_enrichment import compute_job_enrichment_payload_hash
+        payload_hash = compute_job_enrichment_payload_hash(self.job)
+        enrichment_record = JobEnrichment.objects.create(
+            job=self.job,
+            status=JobEnrichment.Status.SUCCESS,
+            payload_hash=payload_hash,
+        )
+
+        result_enrichment = enrich_job(self.job, force=False)
+        self.assertEqual(result_enrichment.status, JobEnrichment.Status.SUCCESS)
+
+    def test_no_openrouter_calls_from_django_views(self):
+        view_files = list(Path("apps").glob("*/views.py"))
+        self.assertGreater(len(view_files), 0)
+        for path in view_files:
+            content = path.read_text()
+            self.assertNotIn("OpenRouterClient", content, str(path))
+            self.assertNotIn("openrouter", content.lower(), str(path))
