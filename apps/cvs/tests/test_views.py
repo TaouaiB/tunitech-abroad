@@ -49,3 +49,20 @@ class CVViewTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse('dashboard:cv_status', args=[cv.public_id]))
         self.assertEqual(response.status_code, 404)
+
+    def test_dashboard_cv_uses_alpine_modal(self):
+        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
+        cv = CVUpload.objects.create(
+            user=self.user, file=file, original_filename="test.pdf",
+            file_hash="hash", file_size=1, is_active=True
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('dashboard:cv'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "confirm" + "(")
+        self.assertContains(response, "x-show=\"showDeleteModal\"")
+        self.assertContains(response, "Supprimer ce CV ?")
+        self.assertContains(response, "name=\"delete_cv_id\"")
+        self.assertContains(response, f'value="{cv.public_id}"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertNotContains(response, f'value="{cv.id}"')

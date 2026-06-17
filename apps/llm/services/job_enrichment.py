@@ -88,8 +88,13 @@ def count_daily_enrichment_budget_used(exclude_enrichment_id: int | None = None)
     SKIPPED rows are intentionally excluded unless they show evidence of actual
     work through attempts or token usage.
     """
-    today = timezone.now().date()
-    queryset = JobEnrichment.objects.filter(created_at__date=today).filter(
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = today_start + timezone.timedelta(days=1)
+
+    queryset = JobEnrichment.objects.filter(
+        created_at__gte=today_start,
+        created_at__lt=today_end
+    ).filter(
         Q(
             status__in=[
                 JobEnrichment.Status.PENDING,

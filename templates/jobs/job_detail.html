@@ -112,11 +112,11 @@
                 </div>
 
                 <!-- Language Requirements -->
-                {% if job.language_requirements_json %}
+                {% if valid_languages %}
                 <div class="mt-8 pt-8 border-t border-gray-100">
                     <h2 class="text-lg font-bold text-gray-900 mb-4">Langues exigées</h2>
                     <div class="flex flex-col gap-2">
-                        {% for lang, code in job.language_requirements_json.items %}
+                        {% for lang, code in valid_languages.items %}
                             <div class="flex items-center gap-2 text-gray-700">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
                                 <span class="font-medium">{{ lang }}</span>: <span class="text-gray-500">{{ code }}</span>

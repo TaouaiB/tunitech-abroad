@@ -9,6 +9,7 @@ from apps.jobs.services.search import JobSearchService
 from apps.jobs.services.query import JobQueryService
 from apps.jobs.services.revalidation import JobRevalidationService
 from apps.recommendations.services.saved_jobs import SavedJobService
+from apps.jobs.services.presentation import JobPresentationService
 
 try:
     from apps.analytics.services.user_event import UserEventService
@@ -64,9 +65,12 @@ def job_detail(request, public_id):
     if request.user.is_authenticated:
         is_saved = SavedJobService.is_saved(request.user, public_id)
 
+    valid_languages = JobPresentationService.get_valid_languages(job)
+
     return render(request, "jobs/job_detail.html", {
         "job": job,
         "is_saved": is_saved,
+        "valid_languages": valid_languages,
     })
 
 @login_required
