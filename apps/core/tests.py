@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.conf import settings
 from django.core.management import call_command
 from .models import SystemSetting
 from .services.system_setting import SystemSettingService
@@ -12,6 +13,12 @@ class CoreTests(TestCase):
         
         default_val = SystemSettingService.get_value("missing_key", default="fallback")
         self.assertEqual(default_val, "fallback")
+
+
+class SettingsSafetyTests(TestCase):
+    def test_sessions_use_cached_database_backend(self):
+        self.assertEqual(settings.SESSION_ENGINE, "django.contrib.sessions.backends.cached_db")
+        self.assertEqual(settings.SESSION_CACHE_ALIAS, "default")
 
 from unittest.mock import patch
 from django.urls import reverse

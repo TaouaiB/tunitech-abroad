@@ -43,9 +43,11 @@
     </div>
 
     {% if cv.parse_status == 'pending' %}
+        {% if debug %}
         <div class="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-200">
             <strong>Local Dev Note:</strong> If this stays queued in local development, please ensure the Celery worker is running.
         </div>
+        {% endif %}
     {% endif %}
     
     {% if cv.parse_error %}

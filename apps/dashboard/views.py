@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core import signing
+from django.core.signing import BadSignature
 from django.views.decorators.http import require_GET
 from apps.cvs.forms import CVUploadForm
 from apps.cvs.services.upload import CVUploadService
@@ -162,20 +164,36 @@ def dashboard_delete_account(request):
 def dashboard_delete_account_done(request):
     return render(request, "dashboard/delete_account_done.html")
 
+SOCIAL_DISCONNECT_SIGNING_SALT = "dashboard.social-disconnect"
+
 @login_required
 def dashboard_connections(request):
-    if request.method == "POST" and "disconnect_id" in request.POST:
-        account_id = request.POST.get("disconnect_id")
-        # Ensure it belongs to the user
-        account_to_delete = SocialAccount.objects.filter(id=account_id, user=request.user).first()
-        if account_to_delete:
-            account_to_delete.delete()
-            messages.success(request, f"Compte {account_to_delete.provider.capitalize()} déconnecté.")
+    if request.method == "POST" and "disconnect_token" in request.POST:
+        token = request.POST.get("disconnect_token")
+        try:
+            payload = signing.loads(token, salt=SOCIAL_DISCONNECT_SIGNING_SALT)
+            account_id = int(payload["account_id"])
+            # Ensure it belongs to the user
+            account_to_delete = SocialAccount.objects.filter(id=account_id, user=request.user).first()
+            if account_to_delete:
+                account_to_delete.delete()
+                messages.success(request, f"Compte {account_to_delete.provider.capitalize()} déconnecté.")
+            else:
+                messages.error(request, "Impossible de déconnecter ce compte.")
+        except (BadSignature, ValueError):
+            messages.error(request, "Requête de déconnexion invalide.")
+
         return redirect("dashboard:connections")
 
     social_accounts = SocialAccount.objects.filter(user=request.user)
-    providers = {acc.provider: acc for acc in social_accounts}
-    
+    providers = {}
+    for acc in social_accounts:
+        acc.disconnect_token = signing.dumps(
+            {"account_id": acc.id},
+            salt=SOCIAL_DISCONNECT_SIGNING_SALT,
+        )
+        providers[acc.provider] = acc
+
     return render(request, "dashboard/connections.html", {
         "providers": providers
     })

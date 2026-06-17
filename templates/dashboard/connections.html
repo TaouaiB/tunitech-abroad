@@ -36,7 +36,7 @@
                 {% if "google" in providers %}
                     <form method="post" action="{% url 'dashboard:connections' %}">
                         {% csrf_token %}
-                        <input type="hidden" name="disconnect_id" value="{{ providers.google.id }}">
+                        <input type="hidden" name="disconnect_token" value="{{ providers.google.disconnect_token }}">
                         <button type="submit" class="btn-secondary text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300">
                             Déconnecter
                         </button>
@@ -74,7 +74,7 @@
                 {% if "github" in providers %}
                     <form method="post" action="{% url 'dashboard:connections' %}">
                         {% csrf_token %}
-                        <input type="hidden" name="disconnect_id" value="{{ providers.github.id }}">
+                        <input type="hidden" name="disconnect_token" value="{{ providers.github.disconnect_token }}">
                         <button type="submit" class="btn-secondary text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300">
                             Déconnecter
                         </button>
