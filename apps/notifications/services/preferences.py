@@ -12,6 +12,13 @@ class ServiceResult:
 
 class EmailPreferenceService:
     @staticmethod
+    def token_exists(token: str) -> bool:
+        try:
+            return EmailUnsubscribeToken.objects.filter(token=token).exists()
+        except (ValidationError, ValueError):
+            return False
+
+    @staticmethod
     def update_preferences(user: User, cleaned_data: dict) -> EmailPreference:
         pref, _ = EmailPreference.objects.get_or_create(user=user)
         

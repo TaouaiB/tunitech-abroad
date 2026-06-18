@@ -254,8 +254,36 @@ class EmailPreferenceViewsTests(TestCase):
         url = reverse("notifications:unsubscribe", kwargs={"token": str(token.token)})
         
         self.client.logout() # Ensure it works without login
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
+
+    def test_unsubscribe_view_get_does_not_mutate(self):
+        token = EmailUnsubscribeToken.objects.create(user=self.user, email_type="weekly_digest")
+        pref = EmailPreference.objects.create(user=self.user, weekly_digest_enabled=True)
+        url = reverse("notifications:unsubscribe", kwargs={"token": str(token.token)})
+
+        self.client.logout()
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        pref.refresh_from_db()
+        token.refresh_from_db()
+        self.assertTrue(pref.weekly_digest_enabled)
+        self.assertIsNone(token.used_at)
+
+    def test_unsubscribe_view_post_mutates(self):
+        token = EmailUnsubscribeToken.objects.create(user=self.user, email_type="weekly_digest")
+        pref = EmailPreference.objects.create(user=self.user, weekly_digest_enabled=True)
+        url = reverse("notifications:unsubscribe", kwargs={"token": str(token.token)})
+
+        self.client.logout()
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, 200)
+        pref.refresh_from_db()
+        token.refresh_from_db()
+        self.assertFalse(pref.weekly_digest_enabled)
+        self.assertIsNotNone(token.used_at)
         
     def test_unsubscribe_view_invalid_token(self):
         import uuid

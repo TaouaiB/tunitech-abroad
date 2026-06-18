@@ -26,7 +26,14 @@ def email_preferences_view(request):
     return render(request, "dashboard/email_preferences.html", {"form": form})
 
 def unsubscribe_view(request, token):
-    result = EmailPreferenceService.unsubscribe(str(token))
+    token = str(token)
+
+    if request.method != "POST":
+        if not EmailPreferenceService.token_exists(token):
+            raise Http404("Invalid unsubscribe token")
+        return render(request, "notifications/unsubscribe_confirm.html", {"token": token})
+
+    result = EmailPreferenceService.unsubscribe(token)
     
     if not result.success:
         if result.error == "Invalid token" or result.error == "Invalid token format":
