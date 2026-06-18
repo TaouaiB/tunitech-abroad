@@ -1,0 +1,10 @@
+{% autoescape off %}
+Bonjour,
+
+Une tentative d'inscription a été effectuée avec cette adresse email sur TuniTech Abroad.
+Cependant, un compte existe déjà avec cette adresse email.
+
+Veuillez vous connecter à votre compte existant. Si vous avez oublié votre mot de passe, vous pouvez utiliser la fonction de réinitialisation du mot de passe.
+
+L'équipe TuniTech Abroad
+{% endautoescape %}

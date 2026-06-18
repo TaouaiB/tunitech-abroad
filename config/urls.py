@@ -11,6 +11,7 @@ from django.urls import path, include
 
 
 from apps.core.services.health import HealthCheckService
+from apps.analytics.admin_views import admin_operations_view
 
 def health(request):
     """
@@ -22,6 +23,7 @@ def health(request):
 
 
 urlpatterns = [
+    path("admin/operations/", admin_operations_view, name="admin_operations"),
     path("admin/", admin.site.urls),
     path("health/", health, name="health"),
     path("accounts/", include("allauth.urls")),

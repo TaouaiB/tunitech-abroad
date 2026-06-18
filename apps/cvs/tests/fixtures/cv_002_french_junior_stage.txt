@@ -1,0 +1,19 @@
+Mohamed Ali
+Tunis, Tunisie
+Téléphone: +33 6 12 34 56 78
+Email: mohamed.ali@example.test
+LinkedIn: linkedin.com/in/mohamed-ali-fr
+GitHub: github.com/mohamedali
+Portfolio: mohamedali.fr
+
+Objectif: Stage PFE / Développeur Junior
+
+COMPÉTENCES
+JavaScript, Vue.js, Node.js, Express.js, MongoDB
+
+FORMATION
+École Nationale d'Ingénieurs de Tunis
+
+LANGUES
+Français: Courant
+Anglais: Intermédiaire

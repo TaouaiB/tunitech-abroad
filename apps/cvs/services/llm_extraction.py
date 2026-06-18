@@ -6,5 +6,5 @@ class CVLLMExtractionService:
         return {
             'enabled': getattr(settings, 'CV_LLM_EXTRACTION_ENABLED', False),
             'extracted_data': {},
-            'warnings': ['LLM extraction is disabled in this phase.']
+            'warnings': []
         }

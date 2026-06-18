@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Comptes connectés - TuniTech Abroad{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Comptes liés</h1>
+        <p class="mt-2 text-sm text-gray-600">
+            Gérez vos connexions tierces (Google, GitHub) pour faciliter votre authentification.
+        </p>
+    </div>
+
+    <div class="card p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <div class="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-gray-200 p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <span class="font-semibold text-gray-900">Google</span>
+                    <span class="badge badge-gray">État visible ci-dessous</span>
+                </div>
+            </div>
+            <div class="rounded-lg border border-gray-200 p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <span class="font-semibold text-gray-900">GitHub</span>
+                    <span class="badge badge-gray">État visible ci-dessous</span>
+                </div>
+            </div>
+        </div>
+
+        {% if form.accounts %}
+            <p class="text-sm text-gray-600 mb-6">Vous pouvez utiliser l'un des comptes suivants pour vous connecter :</p>
+            
+            <form method="post" action="{% url 'socialaccount_connections' %}" class="space-y-4">
+                {% csrf_token %}
+                <fieldset class="space-y-4">
+                    {% for base_account in form.accounts %}
+                        {% with base_account.get_provider_account as account %}
+                            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50">
+                                <div class="flex items-center gap-3">
+                                    <input id="id_account_{{ base_account.id }}" type="radio" name="account" value="{{ base_account.id }}" class="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300">
+                                    <label for="id_account_{{ base_account.id }}" class="flex items-center gap-2 cursor-pointer">
+                                        <span class="font-medium text-gray-900 capitalize">{{ account.get_brand.name }}</span>
+                                        <span class="text-sm text-gray-500">({{ account }})</span>
+                                        <span class="badge badge-green">Connecté</span>
+                                    </label>
+                                </div>
+                            </div>
+                        {% endwith %}
+                    {% endfor %}
+                </fieldset>
+
+                <div class="pt-4 flex flex-col sm:flex-row gap-4">
+                    <button type="submit" class="btn-secondary text-sm">Supprimer la connexion</button>
+                </div>
+            </form>
+        {% else %}
+            <div class="text-center py-6">
+                <p class="text-gray-500 mb-4">Google et GitHub ne sont pas connectés à votre compte.</p>
+            </div>
+        {% endif %}
+
+        <div class="mt-10 pt-8 border-t border-gray-200">
+            <h2 class="text-lg font-bold text-gray-900 mb-4">Ajouter une connexion</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                {% include "socialaccount/snippets/provider_list.html" with process="connect" %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

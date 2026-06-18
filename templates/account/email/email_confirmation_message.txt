@@ -1,0 +1,13 @@
+{% autoescape off %}
+Bonjour,
+
+Bienvenue sur TuniTech Abroad ! 
+
+Pour activer votre compte et confirmer votre adresse email, veuillez cliquer sur le lien ci-dessous :
+
+{{ activate_url }}
+
+Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.
+
+L'équipe TuniTech Abroad
+{% endautoescape %}

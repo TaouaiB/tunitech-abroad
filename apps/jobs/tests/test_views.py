@@ -80,3 +80,27 @@ class JobViewTests(TestCase):
             response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
 
         self.assertEqual(response.status_code, 200)
+
+    def test_job_detail_hides_unknown_languages(self):
+        self.job.language_requirements_json = {
+            "anglais": "unknown",
+            "français": "inconnu",
+            "allemand": "",
+            "espagnol": None,
+        }
+        self.job.save()
+        response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Langues exigées")
+        self.assertNotContains(response, "unknown")
+        self.assertNotContains(response, "inconnu")
+
+    def test_job_detail_shows_valid_languages(self):
+        self.job.language_requirements_json = {"anglais": "B2", "français": "unknown"}
+        self.job.save()
+        response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Langues exigées")
+        self.assertContains(response, "anglais")
+        self.assertContains(response, "B2")
+        self.assertNotContains(response, "français")

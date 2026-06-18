@@ -1,28 +1,72 @@
 {% if result.is_pending %}
-    <div class="bg-blue-50 text-blue-800 p-4 rounded-md mb-4 border border-blue-200">
-        <p class="font-semibold">Refreshing your recommendations...</p>
-        <p class="text-sm mt-1">We are actively generating new job recommendations for you. Please check back shortly.</p>
+    <div class="bg-blue-50 p-6 rounded-xl border border-blue-200 text-center shadow-sm"
+         hx-get="{% url 'dashboard:recommendations' %}"
+         hx-trigger="every 4s"
+         hx-target="#recommendation-panel"
+         hx-swap="innerHTML">
+        <svg class="animate-spin mx-auto h-10 w-10 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <h3 class="text-xl font-bold text-blue-900 mb-2">Analyse en cours...</h3>
+        <p class="text-blue-700 max-w-md mx-auto mb-4">Nous générons de nouvelles recommandations personnalisées basées sur votre profil et votre CV.</p>
+        <a href="{% url 'dashboard:recommendations' %}" class="btn-secondary">Actualiser maintenant</a>
     </div>
 {% elif result.is_stale %}
-    <div class="bg-yellow-50 text-yellow-800 p-4 rounded-md mb-4 border border-yellow-200">
-        <p class="font-semibold">Update in progress</p>
-        <p class="text-sm mt-1">We noticed your profile changed. Your recommendations are being refreshed. Showing older results below.</p>
+    <div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200 shadow-sm mb-6 flex items-start gap-4">
+        <div class="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </div>
+        <div>
+            <h3 class="text-lg font-bold text-yellow-900 mb-1">Mise à jour en cours</h3>
+            <p class="text-yellow-700">Nous avons détecté des changements dans votre profil. De nouvelles recommandations sont en cours de calcul. En attendant, voici vos résultats précédents.</p>
+        </div>
+    </div>
+{% elif result.latest_run and result.latest_run.status == 'failed' %}
+    <div class="bg-red-50 p-6 rounded-xl border border-red-200 shadow-sm text-center">
+        <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <h3 class="text-lg font-bold text-red-900 mb-2">Échec de la génération</h3>
+        <p class="text-red-700">Une erreur s'est produite lors du calcul de vos recommandations. Veuillez réessayer plus tard.</p>
     </div>
 {% endif %}
 
-<div class="flex flex-col gap-4 mt-4">
+<div class="grid grid-cols-1 gap-6 mt-4">
     {% for rec in result.recommendations %}
         {% include 'recommendations/partials/recommendation_card.html' with rec=rec %}
     {% empty %}
         {% if not result.is_pending %}
-            <div class="p-8 border rounded-md text-center text-gray-500 bg-gray-50">
-                <p class="text-lg">Aucune recommandation active trouvée.</p>
-                <p class="text-sm mt-2 mb-4">Assurez-vous que votre profil candidat est complet et que votre CV est téléchargé pour recevoir des recommandations personnalisées.</p>
-                <div class="flex justify-center gap-4 mt-4">
-                    <a href="{% url 'dashboard:profile' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Compléter le profil</a>
-                    <a href="{% url 'jobs:list' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Parcourir les offres</a>
+            {% if result.blocked_reason %}
+                <div class="bg-white p-10 rounded-xl border border-gray-200 text-center shadow-sm">
+                    <div class="w-20 h-20 bg-brand-50 text-brand-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Recommandations bloquées</h3>
+                    <p class="text-gray-600 max-w-lg mx-auto mb-8">{{ result.blocked_reason }}</p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <a href="{% url 'dashboard:profile' %}" class="btn-primary shadow-md">Compléter le profil</a>
+                        <a href="{% url 'dashboard:cv' %}" class="btn-secondary">Gérer mon CV</a>
+                    </div>
                 </div>
-            </div>
+            {% elif result.latest_run and result.latest_run.status == 'success' and result.latest_run.candidate_jobs_count == 0 %}
+                <div class="bg-white p-10 rounded-xl border border-gray-200 text-center shadow-sm">
+                    <div class="w-20 h-20 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Aucune offre ne correspond</h3>
+                    <p class="text-gray-600 max-w-md mx-auto mb-6">Il n'y a actuellement aucune offre active correspondant à vos critères spécifiques sur le marché français.</p>
+                    <a href="{% url 'jobs:list' %}" class="btn-primary inline-flex">Parcourir toutes les offres</a>
+                </div>
+            {% else %}
+                <div class="bg-white p-10 rounded-xl border border-gray-200 text-center shadow-sm">
+                    <div class="w-20 h-20 bg-brand-50 text-brand-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">En attente de nouvelles offres</h3>
+                    <p class="text-gray-600 max-w-lg mx-auto mb-8">Nous n'avons pas encore trouvé de recommandations correspondant à votre profil.</p>
+                </div>
+            {% endif %}
         {% endif %}
     {% endfor %}
 </div>

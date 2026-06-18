@@ -1,21 +1,41 @@
 {% extends "base.html" %}
 
+{% block title %}Offres d'emploi en France - TuniTech Abroad{% endblock %}
+
 {% block content %}
-<div class="flex flex-col md:flex-row gap-8">
-    <!-- Filter Panel -->
-    <aside class="w-full md:w-1/4">
-        {% include "jobs/partials/job_filter_panel.html" %}
-    </aside>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Offres d'emploi en France</h1>
+        <p class="mt-2 text-lg text-gray-600">Trouvez le CDI, CDD ou stage qui correspond à votre profil technique.</p>
+    </div>
 
-    <!-- Results Section -->
-    <section class="w-full md:w-3/4">
-        <div class="mb-6 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-900">
-                Jobs Found ({{ total_count }})
-            </h1>
-        </div>
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Filter Panel -->
+        <aside class="w-full lg:w-1/4 lg:flex-shrink-0">
+            <div class="sticky top-20">
+                {% include "jobs/partials/job_filter_panel.html" %}
+            </div>
+        </aside>
 
-        {% include "jobs/partials/job_results.html" %}
-    </section>
+        <!-- Results Section -->
+        <section class="w-full lg:w-3/4 flex-1">
+            <div class="mb-6 flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <h2 class="text-lg font-medium text-gray-900">
+                    <span class="text-brand-600 font-bold">{{ total_count }}</span> offres trouvées
+                </h2>
+                
+                <!-- Sort Dropdown Mobile only (Desktop is in filter panel) -->
+                <div class="lg:hidden">
+                    <select onchange="window.location.href=this.value" class="input-field py-1.5 pl-3 pr-8 text-sm">
+                        <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=relevance" {% if sort == "relevance" %}selected{% endif %}>Pertinence</option>
+                        <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=newest" {% if sort == "newest" %}selected{% endif %}>Plus récentes</option>
+                        <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=company" {% if sort == "company" %}selected{% endif %}>Entreprise</option>
+                    </select>
+                </div>
+            </div>
+
+            {% include "jobs/partials/job_results.html" %}
+        </section>
+    </div>
 </div>
 {% endblock %}

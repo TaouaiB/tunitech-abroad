@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Compte supprimé - TuniTech Abroad{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-16">
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">Votre compte a été supprimé.</h1>
+        <p class="text-gray-700 mb-6">
+            Vos données de compte ont été supprimées ou anonymisées conformément aux règles de confidentialité de TuniTech Abroad.
+        </p>
+        <a href="{% url 'core:home' %}" class="btn-primary inline-flex">
+            Retour à l'accueil
+        </a>
+    </div>
+</div>
+{% endblock %}

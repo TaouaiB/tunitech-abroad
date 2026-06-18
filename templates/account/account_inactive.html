@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Compte inactif - TuniTech Abroad{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow-card sm:rounded-xl sm:px-10 border border-gray-100 text-center">
+            <div class="w-16 h-16 bg-yellow-100 text-yellow-700 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"></path></svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">Compte inactif</h1>
+            <p class="text-gray-600 mb-6 leading-relaxed">
+                Ce compte est actuellement inactif. Contactez l'équipe TuniTech Abroad si vous pensez qu'il s'agit d'une erreur.
+            </p>
+            <a href="{% url 'account_login' %}" class="btn-primary w-full py-2.5">Retour à la connexion</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

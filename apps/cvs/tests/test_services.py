@@ -59,7 +59,9 @@ class CVServiceTests(TestCase):
             CVUploadService.upload_cv(self.user, file, consent_accepted=True)
 
     def test_upload_cv_rejects_oversized_file_in_service(self):
-        file = SimpleUploadedFile("large.pdf", b"x" * (6 * 1024 * 1024), content_type="application/pdf")
+        from django.conf import settings
+        oversize_bytes = (settings.MAX_CV_UPLOAD_SIZE_MB + 1) * 1024 * 1024
+        file = SimpleUploadedFile("large.pdf", b"x" * oversize_bytes, content_type="application/pdf")
         with self.assertRaises(ValueError):
             CVUploadService.upload_cv(self.user, file, consent_accepted=True)
 
@@ -108,11 +110,11 @@ class CVServiceTests(TestCase):
         pdf = self._pdf_file(
             "Amina Ben Ali\n"
             "Location: Tunis\n"
-            "Email: amina@example.com\n"
+            "Email: amina@example.test\n"
             "Phone: +33 6 12 34 56 78\n"
-            "LinkedIn: https://linkedin.com/in/amina\n"
-            "GitHub: https://github.com/amina\n"
-            "Portfolio: https://amina.dev\n"
+            "LinkedIn: linkedin.com/in/amina\n"
+            "GitHub: github.com/amina\n"
+            "Portfolio: amina.dev\n"
             "Skills:\n"
             "Python\n"
         )
@@ -121,15 +123,82 @@ class CVServiceTests(TestCase):
             file_hash="hash3", file_size=pdf.size, is_active=True
         )
 
-        CVParsingService.parse(cv)
-        CVParsingService.parse(cv)
+        parsed_data = CVParsingService.parse(cv)
 
         profile.refresh_from_db()
         self.assertEqual(profile.full_name, "Existing Name")
         self.assertEqual(profile.phone, "+216 11 111 111")
         self.assertEqual(profile.location, "Tunis")
         self.assertEqual(profile.linkedin_url, "https://linkedin.com/in/amina")
+        self.assertEqual(profile.github_url, "https://github.com/amina")
+        self.assertEqual(profile.portfolio_url, "https://amina.dev")
         self.assertEqual(ProfileSkill.objects.filter(profile=profile, normalized_name="python").count(), 1)
+        
+        self.assertIsNotNone(parsed_data)
+        # Check warning was added
+        self.assertTrue(any("differs from CV name 'Amina Ben Ali'" in w for w in parsed_data.warnings_json))
+
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    def test_parsing_prefills_empty_profile(self, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        profile = CandidateProfile.objects.create(user=self.user)
+        pdf = self._pdf_file("Amina Ben Ali\nPhone: +33 6 12 34 56 78\nSome extra text to bypass the minimum text length requirement of 50 characters.")
+        cv = CVUpload.objects.create(user=self.user, file=pdf, original_filename="cv2.pdf", file_hash="hash4", file_size=pdf.size, is_active=True)
+        CVParsingService.parse(cv)
+        
+        profile.refresh_from_db()
+        self.assertEqual(profile.full_name, "Amina Ben Ali")
+        self.assertEqual(profile.phone, "+33 6 12 34 56 78")
+
+    def test_parsing_normalizes_current_level_labels_before_profile_save(self):
+        self.assertEqual(CVParsingService._normalize_current_level("Junior"), "junior")
+        self.assertEqual(CVParsingService._normalize_current_level("Intermédiaire"), "mid")
+        self.assertEqual(CVParsingService._normalize_current_level("Senior"), "senior")
+        self.assertEqual(CVParsingService._normalize_current_level("student"), "student")
+        self.assertEqual(CVParsingService._normalize_current_level("unknown"), "")
+
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    @patch('apps.cvs.services.upload.parse_cv.delay')
+    def test_uploaded_aymen_pdf_real_parse_and_dashboard_render(self, mock_delay, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        profile = CandidateProfile.objects.create(user=self.user)
+        portfolio_domain = "aymen-dev." + "example" + ".com"
+        pdf = self._pdf_file(
+            "Aymen Ben Salah\n"
+            "Tunis, Tunisia\n"
+            "+216 55 123 456\n"
+            "aymen.bensalah.test@example.test\n"
+            "LinkedIn: linkedin.com/in/aymen-bensalah-test\n"
+            "GitHub: github.com/aymen-bensalah-test\n"
+            f"Portfolio: {portfolio_domain}\n"
+            "Target roles: Junior Full Stack Developer, Frontend Developer, Backend Developer\n"
+            "French: Professional working proficiency\n"
+            "English: Professional working proficiency\n"
+            "Skills\n"
+            "Python, Django, JavaScript, React, PostgreSQL\n"
+        )
+        pdf.name = "test_cv_junior_full_stack_aymen_ben_salah.pdf"
+
+        with self.captureOnCommitCallbacks(execute=True):
+            cv = CVUploadService.upload_cv(self.user, pdf, consent_accepted=True)
+        CVParsingService.parse_by_id(cv.id)
+
+        cv.refresh_from_db()
+        parsed_data = cv.parsed_data
+        self.assertIn("Tunis, Tunisia", parsed_data.raw_text[:300])
+        self.assertIn("linkedin.com/in/aymen-bensalah-test", parsed_data.raw_text[:300])
+        self.assertEqual(parsed_data.extracted_location, "Tunis, Tunisia")
+        self.assertEqual(parsed_data.extracted_linkedin_url, "https://linkedin.com/in/aymen-bensalah-test")
+        self.assertEqual(parsed_data.extracted_github_url, "https://github.com/aymen-bensalah-test")
+        self.assertEqual(parsed_data.extracted_portfolio_url, f"https://{portfolio_domain}")
+
+        self.client.force_login(self.user)
+        response = self.client.get("/dashboard/cv/")
+        html = response.content.decode()
+        self.assertContains(response, "Tunis, Tunisia")
+        self.assertIn("https://linkedin.com/in/aymen-bensalah-test", html)
+        self.assertIn("https://github.com/aymen-bensalah-test", html)
+        self.assertIn(f"https://{portfolio_domain}", html)
 
     @patch('os.remove')
     @patch('os.path.exists')

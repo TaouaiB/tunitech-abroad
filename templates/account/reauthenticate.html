@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmer votre identité - TuniTech Abroad{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Confirmer votre identité</h1>
+        <p class="mt-2 text-sm text-gray-600">Cette action nécessite une vérification récente.</p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow-card sm:rounded-xl sm:px-10 border border-gray-100">
+            <form method="post" action="{% url 'account_reauthenticate' %}" class="space-y-6">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md text-sm">
+                        {{ form.non_field_errors|join:", " }}
+                    </div>
+                {% endif %}
+                {% for field in form %}
+                    {% if not field.is_hidden %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            <div class="mt-1">{{ field }}</div>
+                            {% if field.errors %}<p class="mt-1 text-sm text-red-600">{{ field.errors|join:", " }}</p>{% endif %}
+                        </div>
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+                {% endfor %}
+                <button type="submit" class="w-full btn-primary py-2.5 text-base">Confirmer</button>
+            </form>
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    document.querySelectorAll('form input[type="password"], form input[type="text"], form input[type="email"]').forEach(input => {
+                        input.classList.add('appearance-none', 'block', 'w-full', 'px-3', 'py-2', 'border', 'border-gray-300', 'rounded-md', 'shadow-sm', 'focus:outline-none', 'focus:ring-brand-500', 'focus:border-brand-500', 'sm:text-sm');
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+{% endblock %}

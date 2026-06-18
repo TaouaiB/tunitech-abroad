@@ -1,0 +1,21 @@
+Omar Zribi
+Tunis, Tunisia
+omar.z@example.test
++216 22 333 444
+
+LinkedIn:
+linkedin.com/in/omarz
+GitHub:
+github.com/omarzribi
+Portfolio:
+omar.dev
+
+TARGET ROLES
+DevOps Engineer, Site Reliability Engineer
+
+SKILLS
+Linux, Bash, Docker, Kubernetes, Terraform, AWS, Python, Go
+
+LANGUAGES
+English: Fluent
+French: Intermediate

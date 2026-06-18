@@ -1,37 +1,143 @@
-<form action="{% url 'matching:quick_match' public_id=job.public_id %}" method="post" class="space-y-4" hx-post="{% url 'matching:quick_match' public_id=job.public_id %}" hx-target="#quick-match-container" hx-swap="innerHTML">
+<form action="{% url 'matching:quick_match' public_id=job.public_id %}" method="post" class="space-y-4" hx-post="{% url 'matching:quick_match' public_id=job.public_id %}" hx-target="#quick-match-result" hx-swap="innerHTML">
     {% csrf_token %}
     <div>
-        <label for="id_skills" class="block text-sm font-medium text-gray-700">Skills (comma separated)</label>
-        <textarea name="skills" id="id_skills" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required placeholder="Python, Django, React, etc."></textarea>
+        <label for="id_skills" class="label-text block mb-2 font-semibold text-gray-700">Vos Compétences <span class="text-red-500">*</span> <span class="text-gray-400 font-normal text-xs ml-1">(séparées par des virgules)</span></label>
+        <textarea name="skills" id="id_skills" rows="3" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all shadow-sm text-gray-700 placeholder-gray-400" required placeholder="ex: Python, Django, React, Docker, AWS"></textarea>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="space-y-5">
         <div>
-            <label for="id_experience_level" class="block text-sm font-medium text-gray-700">Experience Level</label>
-            <select name="experience_level" id="id_experience_level" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
-                <option value="">---</option>
-                <option value="intern">Internship / Student</option>
-                <option value="junior">Junior (0-2 years)</option>
-                <option value="mid">Mid-Level (2-5 years)</option>
-                <option value="senior">Senior (5+ years)</option>
-            </select>
+            <label class="label-text block mb-2 font-semibold text-gray-700">Votre Expérience <span class="text-red-500">*</span></label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label class="cursor-pointer">
+                    <input type="radio" name="experience_level" value="intern" class="peer sr-only" required>
+                    <div class="h-full flex items-center justify-center text-center px-2 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
+                        Stage / Étudiant
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="experience_level" value="junior" class="peer sr-only" required>
+                    <div class="h-full flex items-center justify-center text-center px-2 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
+                        Junior (0-2 ans)
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="experience_level" value="mid" class="peer sr-only" required>
+                    <div class="h-full flex items-center justify-center text-center px-2 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
+                        Confirmé (2-5)
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="experience_level" value="senior" class="peer sr-only" required>
+                    <div class="h-full flex items-center justify-center text-center px-2 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
+                        Senior (5+ ans)
+                    </div>
+                </label>
+            </div>
         </div>
         <div>
-            <label for="id_french_level" class="block text-sm font-medium text-gray-700">French Level</label>
-            <select name="french_level" id="id_french_level" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                <option value="">---</option>
-                <option value="none">None</option>
-                <option value="basic">Basic (A1/A2)</option>
-                <option value="intermediate">Intermediate (B1/B2)</option>
-                <option value="advanced">Advanced (C1)</option>
-                <option value="fluent">Fluent / Native (C2)</option>
-            </select>
+            <label class="label-text block mb-2 font-semibold text-gray-700">Niveau de Français</label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                <label class="cursor-pointer">
+                    <input type="radio" name="french_level" value="none" class="peer sr-only">
+                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
+                        Aucun
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="french_level" value="basic" class="peer sr-only">
+                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
+                        Débutant (A1/A2)
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="french_level" value="intermediate" class="peer sr-only">
+                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
+                        Intermédiaire (B1/B2)
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="french_level" value="advanced" class="peer sr-only">
+                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
+                        Avancé (C1)
+                    </div>
+                </label>
+                <label class="cursor-pointer sm:col-span-2 md:col-span-1">
+                    <input type="radio" name="french_level" value="fluent" class="peer sr-only">
+                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
+                        Courant (C2)
+                    </div>
+                </label>
+            </div>
         </div>
     </div>
 
-    <div>
-        <button type="submit" id="qm-btn" class="inline-flex justify-center items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="this.innerHTML='Processing...';">
-            Run Quick Match
+    <div class="pt-2">
+        <button type="submit" id="qm-btn" class="w-full btn-primary bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 py-2.5 shadow-md relative overflow-hidden group">
+            <span class="btn-text font-bold tracking-wide">Calculer le Match</span>
+            <span class="btn-loading hidden ml-2 flex items-center gap-2">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Analyse en cours...
+            </span>
         </button>
     </div>
 </form>
+
+<div id="quick-match-result" class="mt-4"></div>
+
+<script>
+    // Reset loading state on pageshow (e.g., when returning via Back button/BFCache)
+    window.addEventListener('pageshow', function(event) {
+        var btn = document.getElementById('qm-btn');
+        if (btn) {
+            btn.disabled = false;
+            var textSpan = btn.querySelector('.btn-text');
+            var loadingSpan = btn.querySelector('.btn-loading');
+            if (textSpan) textSpan.classList.remove('hidden');
+            if (loadingSpan) loadingSpan.classList.add('hidden');
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+    });
+
+    document.body.addEventListener('htmx:beforeRequest', function(evt) {
+        if (evt.target.id === 'qm-btn' || evt.detail.elt.querySelector('#qm-btn')) {
+            var btn = document.getElementById('qm-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-75', 'cursor-not-allowed');
+                var textSpan = btn.querySelector('.btn-text');
+                var loadingSpan = btn.querySelector('.btn-loading');
+                if (textSpan) textSpan.classList.add('hidden');
+                if (loadingSpan) loadingSpan.classList.remove('hidden');
+            }
+        }
+    });
+
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.target.id === 'qm-btn' || evt.detail.elt.querySelector('#qm-btn')) {
+            var btn = document.getElementById('qm-btn');
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                var textSpan = btn.querySelector('.btn-text');
+                var loadingSpan = btn.querySelector('.btn-loading');
+                if (textSpan) textSpan.classList.remove('hidden');
+                if (loadingSpan) loadingSpan.classList.add('hidden');
+            }
+        }
+    });
+
+    // Clear result when input changes
+    var form = document.querySelector('#quick-match-container form');
+    if (form) {
+        form.addEventListener('input', function() {
+            var resultContainer = document.getElementById('quick-match-result');
+            if (resultContainer) {
+                resultContainer.innerHTML = '';
+            }
+        });
+    }
+</script>

@@ -80,8 +80,8 @@ class NormalizerServiceTests(TestCase):
 
 class ReviewServiceTests(TestCase):
     def setUp(self):
-        self.staff_user = create_test_user(username="staff", email="staff@example.com", password="pw", is_staff=True)
-        self.regular_user = create_test_user(username="regular", email="user@example.com", password="pw", is_staff=False)
+        self.staff_user = create_test_user(username="staff", email="staff@example.test", password="pw", is_staff=True)
+        self.regular_user = create_test_user(username="regular", email="user@example.test", password="pw", is_staff=False)
         self.candidate = UnmatchedSkillCandidate.objects.create(
             raw_skill_text="React JS",
             normalized_text="react js",

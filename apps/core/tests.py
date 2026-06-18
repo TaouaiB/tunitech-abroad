@@ -1,4 +1,6 @@
 from django.test import TestCase
+from django.conf import settings
+from django.core.management import call_command
 from .models import SystemSetting
 from .services.system_setting import SystemSettingService
 
@@ -11,6 +13,12 @@ class CoreTests(TestCase):
         
         default_val = SystemSettingService.get_value("missing_key", default="fallback")
         self.assertEqual(default_val, "fallback")
+
+
+class SettingsSafetyTests(TestCase):
+    def test_sessions_use_cached_database_backend(self):
+        self.assertEqual(settings.SESSION_ENGINE, "django.contrib.sessions.backends.cached_db")
+        self.assertEqual(settings.SESSION_CACHE_ALIAS, "default")
 
 from unittest.mock import patch
 from django.urls import reverse
@@ -41,11 +49,11 @@ User = get_user_model()
 
 class AdminAccessTests(TestCase):
     def setUp(self):
-        self.staff_user = User.objects.create(username="staff", email="staff@example.com", is_staff=True, is_superuser=True, is_active=True)
+        self.staff_user = User.objects.create(username="staff", email="staff@example.test", is_staff=True, is_superuser=True, is_active=True)
         self.staff_user.set_password("pass")
         self.staff_user.save()
 
-        self.normal_user = User.objects.create(username="normal", email="normal@example.com", is_staff=False, is_active=True)
+        self.normal_user = User.objects.create(username="normal", email="normal@example.test", is_staff=False, is_active=True)
         self.normal_user.set_password("pass")
         self.normal_user.save()
 
@@ -55,17 +63,17 @@ class AdminAccessTests(TestCase):
         self.assertIn("/admin/login/", response.url)
 
     def test_normal_user_denied(self):
-        self.client.login(email="normal@example.com", password="pass")
+        self.client.login(email="normal@example.test", password="pass")
         response = self.client.get("/admin/")
         self.assertEqual(response.status_code, 302)
 
     def test_staff_user_can_access(self):
-        self.client.login(email="staff@example.com", password="pass")
+        self.client.login(email="staff@example.test", password="pass")
         response = self.client.get("/admin/")
         self.assertEqual(response.status_code, 200)
 
     def test_representative_admin_page_loads(self):
-        self.client.login(email="staff@example.com", password="pass")
+        self.client.login(email="staff@example.test", password="pass")
         response = self.client.get("/admin/core/systemsetting/")
         self.assertEqual(response.status_code, 200)
 
@@ -74,7 +82,7 @@ class AdminAccessTests(TestCase):
         from apps.cvs.models import CVUpload
         cv = CVUpload.objects.create(user=self.normal_user, original_filename="test.pdf", file_hash="abc", file_size=10, is_active=True)
 
-        self.client.login(email="staff@example.com", password="pass")
+        self.client.login(email="staff@example.test", password="pass")
         data = {
             'action': 'reparse_cvs',
             '_selected_action': [cv.id]
@@ -86,10 +94,52 @@ class AdminAccessTests(TestCase):
         messages = list(response.context['messages'])
         self.assertTrue(any("Queued 1 CVs for reparsing" in str(m) for m in messages))
 
+from django.test import override_settings
+
 class ErrorPageTests(TestCase):
+    @override_settings(DEBUG=False)
     def test_custom_404_page(self):
         response = self.client.get('/this-url-does-not-exist-12345/')
         self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, '404.html')
         self.assertContains(response, '404', status_code=404)
         self.assertContains(response, 'trouver la page', status_code=404)
+        self.assertNotContains(response, 'Using the URLconf defined in', status_code=404)
+
+    @override_settings(DEBUG=False)
+    def test_recommendations_root_returns_404(self):
+        # We explicitly don't have a /recommendations/ URL, it should be /dashboard/recommendations/
+        response = self.client.get('/recommendations/')
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, '404.html')
+
+
+class DemoSeedCommandTests(TestCase):
+    def test_seed_demo_data_creates_searchable_demo_jobs_idempotently(self):
+        from apps.jobs.models import JobStatus, NormalizedJob
+
+        call_command("seed_demo_data", verbosity=0)
+
+        demo_jobs = NormalizedJob.objects.filter(
+            status=JobStatus.ACTIVE,
+            title__startswith="[DEMO]",
+            source__slug="france_travail",
+        )
+        first_count = demo_jobs.count()
+
+        self.assertGreaterEqual(first_count, 5)
+        self.assertTrue(demo_jobs.filter(description__icontains="Offre fictive").exists())
+        response = self.client.get("/jobs/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "[DEMO]", count=first_count)
+
+        call_command("seed_demo_data", verbosity=0)
+
+        self.assertEqual(
+            NormalizedJob.objects.filter(
+                status=JobStatus.ACTIVE,
+                title__startswith="[DEMO]",
+                source__slug="france_travail",
+            ).count(),
+            first_count,
+        )

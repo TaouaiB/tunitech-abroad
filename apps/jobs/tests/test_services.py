@@ -224,7 +224,7 @@ class JobServicesTest(TestCase):
         
         self.assertIn(self.skill_python, result.canonical_skills)
         self.assertEqual(job.required_skills_json, ["Python"])
-        self.assertEqual(job.optional_skills_json, ["TunitechScript"])
+        self.assertEqual(job.optional_skills_json, [])
         self.assertEqual(job.skill_extraction_status, "success")
         job_skills = NormalizedJobSkill.objects.filter(job=job)
         self.assertTrue(job_skills.exists())

@@ -188,6 +188,8 @@ class NormalizedJob(models.Model):
     required_skills_json = models.JSONField(default=default_list, blank=True)
     optional_skills_json = models.JSONField(default=default_list, blank=True)
     language_requirements_json = models.JSONField(default=default_dict, blank=True)
+    classification_json = models.JSONField(default=default_dict, blank=True)
+    skill_signal_quality = models.CharField(max_length=32, default="unknown")
     search_vector = SearchVectorField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -245,3 +247,67 @@ class NormalizedJobSkill(models.Model):
 
     def __str__(self):
         return f"{self.job.title} requires {self.skill.canonical_name}"
+
+
+class JobIngestionConfig(models.Model):
+    name = models.CharField(max_length=100, unique=True, default="default")
+    enabled = models.BooleanField(default=True)
+    preset = models.CharField(max_length=50, default="broad_it")
+    custom_keywords = models.JSONField(default=list, blank=True)
+
+    limit_per_keyword = models.PositiveIntegerField(default=50)
+    max_total_per_run = models.PositiveIntegerField(default=1000)
+    max_pages_per_keyword = models.PositiveIntegerField(default=10)
+
+    frequency_minutes = models.PositiveIntegerField(default=240)
+    nightly_enabled = models.BooleanField(default=True)
+    nightly_max_total = models.PositiveIntegerField(default=2000)
+
+    normalize_after_fetch = models.BooleanField(default=True)
+    enrichment_enabled = models.BooleanField(default=True)
+    enrich_every_fetched_it_job = models.BooleanField(default=True)
+    enrichment_limit_per_run = models.PositiveIntegerField(default=1000)
+    daily_enrichment_limit = models.PositiveIntegerField(default=1000)
+
+    expire_after_days = models.PositiveIntegerField(default=21)
+    mark_missing_as_stale_after_days = models.PositiveIntegerField(default=14)
+
+    dry_run = models.BooleanField(default=False)
+    last_run_at = models.DateTimeField(null=True, blank=True)
+    last_success_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True, default="")
+
+    def __str__(self):
+        return self.name
+
+
+class JobIngestionRun(models.Model):
+    config = models.ForeignKey(JobIngestionConfig, on_delete=models.SET_NULL, null=True, blank=True)
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=32, choices=[
+        ('running', 'Running'),
+        ('success', 'Success'),
+        ('partial_success', 'Partial Success'),
+        ('failed', 'Failed'),
+    ])
+    trigger = models.CharField(max_length=32)
+    preset = models.CharField(max_length=50, default="broad_it")
+    keywords_json = models.JSONField(default=list, blank=True)
+    limit_per_keyword = models.PositiveIntegerField(default=50)
+    max_total = models.PositiveIntegerField(default=1000)
+
+    fetched_count = models.PositiveIntegerField(default=0)
+    created_raw_count = models.PositiveIntegerField(default=0)
+    updated_raw_count = models.PositiveIntegerField(default=0)
+    normalized_count = models.PositiveIntegerField(default=0)
+    duplicates_skipped_count = models.PositiveIntegerField(default=0)
+    expired_count = models.PositiveIntegerField(default=0)
+    enrichment_queued_count = models.PositiveIntegerField(default=0)
+    enrichment_skipped_count = models.PositiveIntegerField(default=0)
+    error_count = models.PositiveIntegerField(default=0)
+    error_summary = models.TextField(blank=True, default="")
+
+    def __str__(self):
+        return f"Run {self.id} ({self.status}) for config {self.config_id}"

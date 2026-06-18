@@ -13,10 +13,25 @@ from apps.jobs.models import (
 from apps.skills.services.normalizer import SkillNormalizerService, SkillExtractionResult, normalize_skill_text
 from apps.skills.models import SkillAlias
 
+GENERIC_FT_LABELS = [
+    "application web",
+    "concevoir une application web",
+    "concevoir et développer une solution digitale",
+    "développer un logiciel, un système d'informations, une application",
+    "analyser, exploiter, structurer des données",
+    "recueillir et analyser les besoins client",
+    "coder des données",
+    "tester un logiciel",
+    "collaborer avec des équipes multidisciplinaires",
+    "optimiser les processus de qualité pour assurer la fiabilité des logiciels",
+    "développer un logiciel",
+    "application métier",
+]
 
 class JobSkillExtractionService:
     @staticmethod
     def extract_for_job(job: NormalizedJob) -> SkillExtractionResult:
+        description_lower = (job.description or "").lower()
         combined_text = f"{job.title} {job.description}".lower()
         
         required_raw = job.required_skills_json if isinstance(job.required_skills_json, list) else []
@@ -24,44 +39,45 @@ class JobSkillExtractionService:
 
         raw_skills_dict: Dict[str, str] = {}
         
+        # Check description context
+        strong_requirement_context = bool(re.search(r'(maîtrise de|maitrise de|compétences techniques indispensables|indispensable|exigé|exige|obligatoire|stack technique|compétences techniques|environnement technique|profil recherché)', combined_text))
+
         for req in required_raw:
             if isinstance(req, str) and req.strip():
-                raw_skills_dict[req] = RequirementType.REQUIRED.value
+                if any(g in req.lower() for g in GENERIC_FT_LABELS):
+                    raw_skills_dict[req] = RequirementType.DETECTED.value # Downgrade generic FT
+                else:
+                    raw_skills_dict[req] = RequirementType.REQUIRED.value
+                    
         for opt in optional_raw:
             if isinstance(opt, str) and opt.strip() and opt not in raw_skills_dict:
-                raw_skills_dict[opt] = RequirementType.OPTIONAL.value
+                if any(g in opt.lower() for g in GENERIC_FT_LABELS):
+                    raw_skills_dict[opt] = RequirementType.DETECTED.value
+                elif strong_requirement_context:
+                    raw_skills_dict[opt] = RequirementType.REQUIRED.value
+                else:
+                    raw_skills_dict[opt] = RequirementType.OPTIONAL.value
                 
         # Find aliases in text
         aliases = list(SkillAlias.objects.filter(skill__is_active=True).values_list('normalized_alias', flat=True))
-        
-        # Sort aliases by length descending so longer phrases match first
         aliases.sort(key=len, reverse=True)
         
         for alias in aliases:
             if not alias or len(alias) < 2:
                 continue
-            # Simple text match (could be improved with regex \b boundaries)
-            # But doing \b on things with symbols like c++ or c# is tricky
-            # We will just do a simple substring for now, or word boundary if purely alphanumeric
             if alias.isalnum():
                 pattern = rf"\b{re.escape(alias)}\b"
                 if re.search(pattern, combined_text):
                     if alias not in raw_skills_dict:
-                        raw_skills_dict[alias] = RequirementType.DETECTED.value
+                        req_type = RequirementType.REQUIRED.value if strong_requirement_context else RequirementType.DETECTED.value
+                        raw_skills_dict[alias] = req_type
             else:
                 if alias in combined_text:
                     if alias not in raw_skills_dict:
-                        raw_skills_dict[alias] = RequirementType.DETECTED.value
+                        req_type = RequirementType.REQUIRED.value if strong_requirement_context else RequirementType.DETECTED.value
+                        raw_skills_dict[alias] = req_type
 
         all_raw_skills = list(raw_skills_dict.keys())
-        required_skills = [
-            raw for raw, requirement_type in raw_skills_dict.items()
-            if requirement_type == RequirementType.REQUIRED.value
-        ]
-        optional_skills = [
-            raw for raw, requirement_type in raw_skills_dict.items()
-            if requirement_type == RequirementType.OPTIONAL.value
-        ]
 
         result = SkillNormalizerService.normalize_many(
             raw_skills=all_raw_skills,
@@ -70,40 +86,47 @@ class JobSkillExtractionService:
         )
 
         with transaction.atomic():
+            # Clear old skills
+            NormalizedJobSkill.objects.filter(job=job).delete()
+            
+            canonical_skills_saved = []
+
             for skill in result.canonical_skills:
-                # Approximate requirement type mapping
-                # We need to find which raw skill mapped to this canonical skill
-                # Then map that raw skill to requirement type
                 req_type = RequirementType.DETECTED.value
                 skill_aliases = [
-                    normalize_skill_text(alias.normalized_alias)
-                    for alias in SkillAlias.objects.filter(skill=skill)
+                    normalize_skill_text(a.normalized_alias)
+                    for a in SkillAlias.objects.filter(skill=skill)
                 ]
                 
-                # Check which of our raw_skills mapped to it
                 for raw, type_ in raw_skills_dict.items():
                     norm_raw = normalize_skill_text(raw)
                     if norm_raw in skill_aliases:
-                        # Prioritize REQUIRED over OPTIONAL over DETECTED
                         if type_ == RequirementType.REQUIRED.value:
                             req_type = type_
                             break
                         elif type_ == RequirementType.OPTIONAL.value and req_type != RequirementType.REQUIRED.value:
                             req_type = type_
-
-                NormalizedJobSkill.objects.update_or_create(
+                
+                NormalizedJobSkill.objects.create(
                     job=job,
                     skill=skill,
                     requirement_type=req_type,
-                    defaults={
-                        "source": SkillSource.RULE.value,
-                        "confidence": 1.0,
-                    }
+                    source=SkillSource.RULE.value,
+                    confidence=1.0,
                 )
+                canonical_skills_saved.append((skill, req_type))
 
-            job.required_skills_json = required_skills
-            job.optional_skills_json = optional_skills
+            # Recalculate required/optional json based on actual normalized skills
+            new_required = [s.canonical_name for s, t in canonical_skills_saved if t == RequirementType.REQUIRED.value]
+            new_optional = [s.canonical_name for s, t in canonical_skills_saved if t in [RequirementType.OPTIONAL.value, RequirementType.DETECTED.value]]
+
+            job.required_skills_json = new_required
+            job.optional_skills_json = new_optional
+            from apps.jobs.services.skill_signals import compute_deterministic_skill_signal_quality
+
+            signal_result = compute_deterministic_skill_signal_quality(job)
             job.skill_extraction_status = SkillExtractionStatus.SUCCESS
-            job.save(update_fields=["required_skills_json", "optional_skills_json", "skill_extraction_status"])
+            job.skill_signal_quality = signal_result.quality
+            job.save(update_fields=["required_skills_json", "optional_skills_json", "skill_extraction_status", "skill_signal_quality"])
 
         return result

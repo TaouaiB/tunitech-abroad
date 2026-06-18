@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des adresses email - TuniTech Abroad{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="mb-8">
+        <a href="{% url 'dashboard:account' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Retour aux paramètres
+        </a>
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Adresses Email</h1>
+    </div>
+
+    <div class="card p-8 bg-white border border-gray-200">
+        {% if user.emailaddress_set.all %}
+            <p class="text-sm text-gray-600 mb-4">Les adresses email suivantes sont associées à votre compte :</p>
+            <form action="{% url 'account_email' %}" class="email_list space-y-4 mb-8" method="post">
+                {% csrf_token %}
+                <fieldset class="blockLabels">
+                    {% for emailaddress in user.emailaddress_set.all %}
+                        <div class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <label for="email_radio_{{forloop.counter}}" class="flex items-center gap-3 cursor-pointer w-full">
+                                <input id="email_radio_{{forloop.counter}}" type="radio" name="email" {% if emailaddress.primary or user.emailaddress_set.count == 1 %}checked="checked"{% endif %} value="{{emailaddress.email}}" class="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300"/>
+                                <span class="font-medium text-gray-900">{{ emailaddress.email }}</span>
+                                
+                                <div class="flex gap-2 ml-auto">
+                                    {% if emailaddress.verified %}
+                                        <span class="badge badge-green">Vérifiée</span>
+                                    {% else %}
+                                        <span class="badge badge-yellow">Non vérifiée</span>
+                                    {% endif %}
+                                    {% if emailaddress.primary %}
+                                        <span class="badge badge-brand">Principale</span>
+                                    {% endif %}
+                                </div>
+                            </label>
+                        </div>
+                    {% endfor %}
+                </fieldset>
+                
+                <div class="flex gap-3 mt-6">
+                    <button class="btn-secondary" type="submit" name="action_primary">Définir comme principale</button>
+                    <button class="btn-secondary" type="submit" name="action_send">Renvoyer la vérification</button>
+                    <button class="btn-danger" type="submit" name="action_remove">Supprimer</button>
+                </div>
+            </form>
+        {% endif %}
+
+        <h3 class="text-lg font-bold text-gray-900 mt-8 mb-4 border-t border-gray-100 pt-8">Ajouter une adresse email</h3>
+        <form method="post" action="{% url 'account_email' %}" class="space-y-4">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md text-sm">
+                    {{ form.non_field_errors|join:", " }}
+                </div>
+            {% endif %}
+
+            {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                    <div class="mt-1 flex rounded-md shadow-sm">
+                        {{ field }}
+                    </div>
+                    {% if field.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ field.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <button name="action_add" type="submit" class="btn-primary py-2.5 px-6">Ajouter</button>
+        </form>
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const inputs = document.querySelectorAll('form input[type="email"]');
+                inputs.forEach(input => {
+                    input.classList.add('appearance-none', 'block', 'w-full', 'px-3', 'py-2', 'border', 'border-gray-300', 'rounded-md', 'shadow-sm', 'placeholder-gray-400', 'focus:outline-none', 'focus:ring-brand-500', 'focus:border-brand-500', 'sm:text-sm');
+                });
+            });
+        </script>
+    </div>
+</div>
+{% endblock %}

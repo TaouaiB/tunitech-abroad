@@ -26,11 +26,7 @@ class AccountDeletionService:
             pass
 
         if created:
-            try:
-                from apps.privacy.tasks import process_account_deletion
-                transaction.on_commit(lambda: process_account_deletion.delay(request_obj.id))
-            except Exception:
-                pass
+            AccountDeletionService.process_request(request_obj)
 
         return request_obj
 

@@ -1,0 +1,21 @@
+Jane Doe
+Tunis, Tunisia
++216 12 345 678 | jane.doe@example.test
+LinkedIn: linkedin.com/in/jane-doe
+GitHub: github.com/janedoe
+Portfolio: janedoe.dev
+
+TARGET ROLES
+Backend Developer, Full Stack Engineer
+
+SKILLS
+Python, Django, PostgreSQL, Docker, AWS, React
+
+EXPERIENCE
+Software Engineer
+DigitalBridge Labs
+Jan 2021 - Present
+
+LANGUAGES
+English: Native
+French: Fluent

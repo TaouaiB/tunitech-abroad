@@ -7,8 +7,44 @@ from apps.cvs.services.llm_extraction import CVLLMExtractionService
 from apps.skills.services.normalizer import SkillNormalizerService, normalize_skill_text
 from apps.profiles.models import ProfileSkill
 from apps.profiles.services.completeness import ProfileCompletenessService
+from apps.profiles.services.validation import CURRENT_LEVEL_CHOICES
 
 class CVParsingService:
+    CURRENT_LEVEL_VALUES = {value for value, _label in CURRENT_LEVEL_CHOICES if value}
+    CURRENT_LEVEL_ALIASES = {
+        "junior": "junior",
+        "Junior": "junior",
+        "débutant": "junior",
+        "debutant": "junior",
+        "intern": "intern",
+        "stagiaire": "intern",
+        "stage": "intern",
+        "student": "student",
+        "étudiant": "student",
+        "etudiant": "student",
+        "mid": "mid",
+        "mid-level": "mid",
+        "middle": "mid",
+        "confirmé": "mid",
+        "confirme": "mid",
+        "intermédiaire": "mid",
+        "intermediaire": "mid",
+        "Intermédiaire": "mid",
+        "senior": "senior",
+        "Senior": "senior",
+        "lead": "senior",
+    }
+
+    @classmethod
+    def _normalize_current_level(cls, value: object) -> str:
+        if not isinstance(value, str):
+            return ""
+        cleaned = value.strip()
+        if not cleaned:
+            return ""
+        normalized = cls.CURRENT_LEVEL_ALIASES.get(cleaned, cls.CURRENT_LEVEL_ALIASES.get(cleaned.lower(), cleaned))
+        return normalized if normalized in cls.CURRENT_LEVEL_VALUES else ""
+
     @classmethod
     def parse_by_id(cls, cv_upload_id: int) -> CVParsedData | None:
         try:
@@ -66,6 +102,7 @@ class CVParsingService:
                     'extracted_linkedin_url': det_result.get('extracted_linkedin_url', ''),
                     'extracted_github_url': det_result.get('extracted_github_url', ''),
                     'extracted_portfolio_url': det_result.get('extracted_portfolio_url', ''),
+                    'estimated_years_experience': det_result.get('estimated_years_experience', None),
                     'warnings_json': det_result.get('warnings', []) + llm_result.get('warnings', [])
                 }
             )
@@ -84,9 +121,19 @@ class CVParsingService:
                 profile = user.candidate_profile
                 
                 update_fields = []
-                if not profile.full_name and det_result.get('extracted_name'):
-                    profile.full_name = det_result.get('extracted_name')
-                    update_fields.append('full_name')
+                extracted_name = det_result.get('extracted_name')
+                if extracted_name:
+                    if not profile.full_name:
+                        profile.full_name = extracted_name
+                        update_fields.append('full_name')
+                    elif profile.full_name != extracted_name:
+                        warning_msg = f"Profile name '{profile.full_name}' differs from CV name '{extracted_name}'."
+                        if not isinstance(parsed_data.warnings_json, list):
+                            parsed_data.warnings_json = []
+                        if warning_msg not in parsed_data.warnings_json:
+                            parsed_data.warnings_json.append(warning_msg)
+                            parsed_data.save(update_fields=['warnings_json'])
+
                 if not profile.phone and det_result.get('extracted_phone'):
                     profile.phone = det_result.get('extracted_phone')
                     update_fields.append('phone')
@@ -99,12 +146,31 @@ class CVParsingService:
                 if not profile.github_url and det_result.get('extracted_github_url'):
                     profile.github_url = det_result.get('extracted_github_url')
                     update_fields.append('github_url')
-                if not profile.portfolio_url and det_result.get('extracted_portfolio_url'):
-                    profile.portfolio_url = det_result.get('extracted_portfolio_url')
-                    update_fields.append('portfolio_url')
-                if not profile.website_url and det_result.get('website_url'):
-                    profile.website_url = det_result.get('website_url')
-                    update_fields.append('website_url')
+                if det_result.get('portfolio_url') or det_result.get('extracted_portfolio_url'):
+                    new_portfolio = det_result.get('portfolio_url') or det_result.get('extracted_portfolio_url')
+                    if not profile.portfolio_url or profile.portfolio_url.lower() in ['https://next.js', 'https://react.js', 'https://node.js']:
+                        profile.portfolio_url = new_portfolio
+                        update_fields.append('portfolio_url')
+                if det_result.get('website_url'):
+                    if not profile.website_url or profile.website_url.lower() in ['https://next.js', 'https://react.js', 'https://node.js']:
+                        profile.website_url = det_result.get('website_url')
+                        update_fields.append('website_url')
+                if not profile.french_level and det_result.get('french_level'):
+                    profile.french_level = det_result.get('french_level')
+                    update_fields.append('french_level')
+                if not profile.english_level and det_result.get('english_level'):
+                    profile.english_level = det_result.get('english_level')
+                    update_fields.append('english_level')
+                if not profile.target_roles and det_result.get('target_roles'):
+                    profile.target_roles = det_result.get('target_roles')
+                    update_fields.append('target_roles')
+                extracted_level = cls._normalize_current_level(det_result.get('current_level'))
+                if not profile.current_level and extracted_level:
+                    profile.current_level = extracted_level
+                    update_fields.append('current_level')
+                if profile.years_experience is None and det_result.get('estimated_years_experience') is not None:
+                    profile.years_experience = det_result.get('estimated_years_experience')
+                    update_fields.append('years_experience')
                     
                 if update_fields:
                     profile.save(update_fields=update_fields)

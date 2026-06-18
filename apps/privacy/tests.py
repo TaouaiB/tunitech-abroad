@@ -24,7 +24,7 @@ def create_test_user(username: str, email: str, password: str = "password123") -
 
 class ConsentTests(TestCase):
     def test_consent_service_records(self):
-        user = create_test_user(username="consentuser", email="consent@example.com", password="pw")
+        user = create_test_user(username="consentuser", email="consent@example.test", password="pw")
 
         record = ConsentService.record(
             user=user,
@@ -44,7 +44,7 @@ class ConsentTests(TestCase):
         self.assertEqual(record.user_agent, "TestAgent")
 
     def test_consent_service_records_stable_text_and_source(self):
-        user = create_test_user(username="consentuser2", email="consent2@example.com", password="pw")
+        user = create_test_user(username="consentuser2", email="consent2@example.test", password="pw")
 
         record = ConsentService.record(
             user=user,
@@ -81,7 +81,7 @@ class PrivacyRoutesTests(TestCase):
 )
 class PrivacyDashboardRoutesTests(TestCase):
     def setUp(self):
-        self.user = create_test_user(username="accountuser", email="account@example.com", password="pw")
+        self.user = create_test_user(username="accountuser", email="account@example.test", password="pw")
 
     def test_account_page_requires_login(self):
         response = self.client.get("/dashboard/account/")
@@ -103,27 +103,54 @@ class PrivacyDashboardRoutesTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertFalse(DeletionRequest.objects.filter(user=self.user).exists())
 
-    def test_delete_account_post_creates_request(self):
+    def test_delete_account_post_deletes_immediately_and_logs_out(self):
         self.client.force_login(self.user)
-        with patch("apps.privacy.tasks.process_account_deletion.delay"):
+        cv = CVUpload.objects.create(
+            user=self.user,
+            file="cvs/account/private.pdf",
+            original_filename="private.pdf",
+            file_hash="account-hash",
+            file_size=1,
+            is_active=True,
+        )
+
+        with patch("os.path.exists", return_value=False):
             response = self.client.post("/dashboard/settings/delete-account/", {"confirmation": "DELETE"})
+
+        self.assertRedirects(response, "/dashboard/settings/delete-account/done/")
+        deletion_request = DeletionRequest.objects.get(status="completed")
+        self.assertIsNotNone(deletion_request.processed_at)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+        self.assertFalse(self.user.has_usable_password())
+        self.assertFalse(CVUpload.objects.filter(pk=cv.pk).exists())
+        self.assertTrue(CVUpload.all_objects.filter(pk=cv.pk, deleted_at__isnull=False).exists())
+        self.assertNotIn("_auth_user_id", self.client.session)
+        response = self.client.get("/dashboard/account/")
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(DeletionRequest.objects.filter(user=self.user, status="pending").exists())
+
+    def test_delete_account_done_page_has_no_pending_copy(self):
+        response = self.client.get("/dashboard/settings/delete-account/done/")
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("Votre compte a été supprimé.", html)
+        self.assertNotIn("Suppression en cours", html)
+        self.assertNotIn("en cours de traitement", html)
 
 
 class AccountDeletionServiceTests(TestCase):
     def test_request_deletion_idempotent(self):
-        user = create_test_user(username="deluser", email="del@example.com", password="pw")
+        user = create_test_user(username="deluser", email="del@example.test", password="pw")
         with patch("apps.privacy.tasks.process_account_deletion.delay"):
-            req1 = AccountDeletionService.request_deletion(user)
-            req2 = AccountDeletionService.request_deletion(user)
+            with patch("apps.privacy.services.account_deletion.AccountDeletionService.process_request"):
+                req1 = AccountDeletionService.request_deletion(user)
+                req2 = AccountDeletionService.request_deletion(user)
         self.assertEqual(req1.id, req2.id)
         self.assertEqual(req1.status, 'pending')
 
     def test_process_account_deletion(self):
-        user = create_test_user(username="deluser2", email="del2@example.com", password="pw")
-        with patch("apps.privacy.tasks.process_account_deletion.delay"):
-            req = AccountDeletionService.request_deletion(user)
+        user = create_test_user(username="deluser2", email="del2@example.test", password="pw")
+        req = AccountDeletionService.request_deletion(user)
         processed = AccountDeletionService.process_request(req)
 
         self.assertEqual(processed.status, 'completed')
@@ -133,9 +160,10 @@ class AccountDeletionServiceTests(TestCase):
         self.assertFalse(user.has_usable_password())
 
     def test_process_account_deletion_failure_retry(self):
-        user = create_test_user(username="deluser3", email="del3@example.com", password="pw")
+        user = create_test_user(username="deluser3", email="del3@example.test", password="pw")
         with patch("apps.privacy.tasks.process_account_deletion.delay"):
-            req = AccountDeletionService.request_deletion(user)
+            with patch("apps.privacy.services.account_deletion.AccountDeletionService.process_request"):
+                req = AccountDeletionService.request_deletion(user)
 
         # Simulate a fake failure by temporarily unsetting user
         req.user = None
@@ -146,7 +174,7 @@ class AccountDeletionServiceTests(TestCase):
     @patch("os.remove")
     @patch("os.path.exists", return_value=True)
     def test_process_account_deletion_removes_private_candidate_data(self, mock_exists, mock_remove):
-        user = create_test_user(username="deluser4", email="del4@example.com", password="pw")
+        user = create_test_user(username="deluser4", email="del4@example.test", password="pw")
         profile = CandidateProfile.objects.create(user=user, full_name="Private Name")
         ProfileSkill.objects.create(
             profile=profile,
