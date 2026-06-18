@@ -17,6 +17,27 @@ class JobPresentationService:
     }
 
     @staticmethod
+    def get_card_skill_chips(job, limit=5):
+        canonical_skills = [
+            job_skill.skill.canonical_name
+            for job_skill in job.job_skills.select_related("skill").all()[:limit]
+            if job_skill.skill.canonical_name
+        ]
+        if canonical_skills:
+            return canonical_skills
+
+        raw_skills = job.required_skills_json if isinstance(job.required_skills_json, list) else []
+        chips = []
+        for raw_skill in raw_skills:
+            skill = str(raw_skill).strip()
+            if not skill or len(skill) > 34:
+                continue
+            chips.append(skill)
+            if len(chips) >= limit:
+                break
+        return chips
+
+    @staticmethod
     def get_valid_languages(job):
         """
         Returns a dictionary of language requirements, filtering out

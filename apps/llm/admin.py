@@ -1,5 +1,17 @@
 from django.contrib import admin
+from django.contrib import messages
 from .models import JobEnrichment, LLMRequestLog
+
+
+@admin.action(description="Queue selected eligible enrichments")
+def queue_selected_eligible_enrichments_action(modeladmin, request, queryset):
+    from apps.llm.services.job_enrichment import queue_selected_eligible_enrichments
+
+    queued = queue_selected_eligible_enrichments(enrichment_ids=queryset.values_list("id", flat=True))
+    if queued:
+        modeladmin.message_user(request, f"Queued {queued} eligible enrichment retries.", messages.SUCCESS)
+    else:
+        modeladmin.message_user(request, "No selected enrichment records were eligible for retry.", messages.WARNING)
 
 @admin.register(LLMRequestLog)
 class LLMRequestLogAdmin(admin.ModelAdmin):
@@ -44,6 +56,7 @@ class JobEnrichmentAdmin(admin.ModelAdmin):
         "updated_at",
     )
     exclude = ("raw_request_json", "raw_response_text", "raw_response_json")
+    actions = [queue_selected_eligible_enrichments_action]
 
     def has_add_permission(self, request):
         return False

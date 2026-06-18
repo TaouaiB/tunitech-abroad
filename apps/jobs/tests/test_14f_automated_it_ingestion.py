@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from io import StringIO
 from types import SimpleNamespace
 from apps.jobs.models import JobIngestionConfig, JobIngestionRun, RawJobRecord, NormalizedJob, JobStatus, JobSource
@@ -302,6 +302,7 @@ class TestAutomatedITIngestion(TestCase):
     @patch("apps.jobs.services.france_travail.client.FranceTravailClient.search_offers")
     @patch("apps.jobs.services.ingestion.enrich_job_task.delay")
     @patch("apps.jobs.services.normalization.JobNormalizationService.normalize")
+    @override_settings(JOB_ENRICHMENT_ENABLED=True)
     def test_daily_limit_allows_20_job_sync(self, mock_normalize, mock_enrich_task, mock_search):
         config = JobIngestionConfig.objects.create(
             name="test_daily_limit_20",
@@ -323,7 +324,8 @@ class TestAutomatedITIngestion(TestCase):
                 title=raw_record.raw_payload_json.get("intitule", ""),
                 first_seen_at=now, last_seen_at=now, last_fetched_at=now,
                 status=JobStatus.ACTIVE, country="FR",
-                classification_json={"confidence": "high"}
+                classification_json={"confidence": "high"},
+                skill_signal_quality="strong",
             )
             return norm
         mock_normalize.side_effect = fake_normalize
@@ -337,6 +339,7 @@ class TestAutomatedITIngestion(TestCase):
     @patch("apps.jobs.services.france_travail.client.FranceTravailClient.search_offers")
     @patch("apps.jobs.services.ingestion.enrich_job_task.delay")
     @patch("apps.jobs.services.normalization.JobNormalizationService.normalize")
+    @override_settings(JOB_ENRICHMENT_ENABLED=True)
     def test_skipped_rows_do_not_consume_daily_limit(self, mock_normalize, mock_enrich_task, mock_search):
         config = JobIngestionConfig.objects.create(
             name="test_daily_limit_skipped",
@@ -374,7 +377,8 @@ class TestAutomatedITIngestion(TestCase):
                 title=raw_record.raw_payload_json.get("intitule", ""),
                 first_seen_at=now, last_seen_at=now, last_fetched_at=now,
                 status=JobStatus.ACTIVE, country="FR",
-                classification_json={"confidence": "high"}
+                classification_json={"confidence": "high"},
+                skill_signal_quality="strong",
             )
             return norm
         mock_normalize.side_effect = fake_normalize
@@ -390,6 +394,7 @@ class TestAutomatedITIngestion(TestCase):
     @patch("apps.jobs.services.france_travail.client.FranceTravailClient.search_offers")
     @patch("apps.jobs.services.ingestion.enrich_job_task.delay")
     @patch("apps.jobs.services.normalization.JobNormalizationService.normalize")
+    @override_settings(JOB_ENRICHMENT_ENABLED=True)
     def test_daily_limit_blocks_after_actual_attempted_reach_limit(self, mock_normalize, mock_enrich_task, mock_search):
         config = JobIngestionConfig.objects.create(
             name="test_daily_limit_blocks",
@@ -427,7 +432,8 @@ class TestAutomatedITIngestion(TestCase):
                 title=raw_record.raw_payload_json.get("intitule", ""),
                 first_seen_at=now, last_seen_at=now, last_fetched_at=now,
                 status=JobStatus.ACTIVE, country="FR",
-                classification_json={"confidence": "high"}
+                classification_json={"confidence": "high"},
+                skill_signal_quality="strong",
             )
             return norm
         mock_normalize.side_effect = fake_normalize

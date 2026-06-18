@@ -162,10 +162,33 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Europe/Paris"
 CELERY_BEAT_SCHEDULER = "celery.beat:PersistentScheduler"
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # Suppress Celery 5.x deprecation warning
+CELERY_HEARTBEAT_STALE_MINUTES = int(os.environ.get("CELERY_HEARTBEAT_STALE_MINUTES", "15"))
+CV_PARSE_STALE_MINUTES = int(os.environ.get("CV_PARSE_STALE_MINUTES", "15"))
+INGESTION_STALE_RUNNING_MINUTES = int(os.environ.get("INGESTION_STALE_RUNNING_MINUTES", "60"))
+JOB_ENRICHMENT_PROCESSING_STALE_MINUTES = int(os.environ.get("JOB_ENRICHMENT_PROCESSING_STALE_MINUTES", "60"))
+
+JOB_ENRICHMENT_RETRY_ENABLED = os.environ.get("JOB_ENRICHMENT_RETRY_ENABLED", "False") == "True"
+JOB_ENRICHMENT_RETRY_MAX_PER_RUN = int(os.environ.get("JOB_ENRICHMENT_RETRY_MAX_PER_RUN", "10"))
+JOB_ENRICHMENT_RETRY_COOLDOWN_MINUTES = int(os.environ.get("JOB_ENRICHMENT_RETRY_COOLDOWN_MINUTES", "60"))
+OPENROUTER_ENRICHMENT_RATE_LIMIT = os.environ.get("OPENROUTER_ENRICHMENT_RATE_LIMIT", "3/m")
+OPENROUTER_ENRICHMENT_QUEUE = os.environ.get("OPENROUTER_ENRICHMENT_QUEUE", "llm")
+OPENROUTER_CIRCUIT_BREAKER_ENABLED = os.environ.get("OPENROUTER_CIRCUIT_BREAKER_ENABLED", "True") == "True"
+OPENROUTER_CIRCUIT_BREAKER_FAILURE_THRESHOLD = int(os.environ.get("OPENROUTER_CIRCUIT_BREAKER_FAILURE_THRESHOLD", "5"))
+OPENROUTER_CIRCUIT_BREAKER_WINDOW_MINUTES = int(os.environ.get("OPENROUTER_CIRCUIT_BREAKER_WINDOW_MINUTES", "30"))
+OPENROUTER_CIRCUIT_BREAKER_COOLDOWN_MINUTES = int(os.environ.get("OPENROUTER_CIRCUIT_BREAKER_COOLDOWN_MINUTES", "60"))
+JOB_ENRICHMENT_FORCE_PROVIDER_BLOCKED_RETRY = os.environ.get("JOB_ENRICHMENT_FORCE_PROVIDER_BLOCKED_RETRY", "False") == "True"
+
+CELERY_TASK_ROUTES = {
+    "apps.llm.tasks.enrich_job_task": {"queue": OPENROUTER_ENRICHMENT_QUEUE},
+}
 
 from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
+    "celery_heartbeat": {
+        "task": "apps.jobs.tasks.celery_heartbeat",
+        "schedule": crontab(minute="*/5"),
+    },
     "run_it_job_ingestion": {
         "task": "apps.jobs.tasks.run_it_job_ingestion",
         "schedule": crontab(minute=0, hour="*/4"),
@@ -187,6 +210,12 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=30, hour=4, day_of_week="sun"),
     },
 }
+
+if JOB_ENRICHMENT_RETRY_ENABLED:
+    CELERY_BEAT_SCHEDULE["retry_eligible_job_enrichments"] = {
+        "task": "apps.llm.tasks.retry_eligible_job_enrichments",
+        "schedule": crontab(minute=15, hour="*/2"),
+    }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Internationalisation
@@ -306,12 +335,17 @@ JOB_ENRICHMENT_ENABLED = os.environ.get("JOB_ENRICHMENT_ENABLED", "False") == "T
 JOB_RECOMMENDATIONS_USE_ENRICHED_DATA = os.environ.get("JOB_RECOMMENDATIONS_USE_ENRICHED_DATA", "False") == "True"
 JOB_ENRICHMENT_MODEL = os.environ.get("JOB_ENRICHMENT_MODEL", OPENROUTER_DEFAULT_MODEL)
 JOB_ENRICHMENT_DAILY_LIMIT = int(os.environ.get("JOB_ENRICHMENT_DAILY_LIMIT", "1000"))
+JOB_ENRICHMENT_MAX_PER_INGESTION_RUN = int(os.environ.get("JOB_ENRICHMENT_MAX_PER_INGESTION_RUN", "20"))
+JOB_ENRICHMENT_MIN_RELEVANCE = os.environ.get("JOB_ENRICHMENT_MIN_RELEVANCE", "partial") # strong, partial, generic_only, missing
 JOB_ENRICHMENT_MAX_CHARS = int(os.environ.get("JOB_ENRICHMENT_MAX_CHARS", "6000"))
 JOB_ENRICHMENT_MAX_RETRIES = int(os.environ.get("JOB_ENRICHMENT_MAX_RETRIES", "2"))
 
 # France Travail API
 FRANCE_TRAVAIL_CLIENT_ID = os.environ.get("FRANCE_TRAVAIL_CLIENT_ID", "")
 FRANCE_TRAVAIL_CLIENT_SECRET = os.environ.get("FRANCE_TRAVAIL_CLIENT_SECRET", "")
+FRANCE_TRAVAIL_REQUEST_DELAY_SECONDS = float(os.environ.get("FRANCE_TRAVAIL_REQUEST_DELAY_SECONDS", "0.5"))
+FRANCE_TRAVAIL_MAX_REQUESTS_PER_RUN = int(os.environ.get("FRANCE_TRAVAIL_MAX_REQUESTS_PER_RUN", "100"))
+FRANCE_TRAVAIL_BACKOFF_ON_429_SECONDS = int(os.environ.get("FRANCE_TRAVAIL_BACKOFF_ON_429_SECONDS", "60"))
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 

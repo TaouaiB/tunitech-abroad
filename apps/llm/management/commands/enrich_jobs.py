@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from apps.jobs.models import NormalizedJob, JobStatus
-from apps.llm.services.job_enrichment import job_qualifies_for_enrichment, enrich_job
+from apps.llm.services.job_enrichment import get_openrouter_circuit_status, job_qualifies_for_enrichment, enrich_job
 from apps.llm.tasks import enrich_job_task
 
 class Command(BaseCommand):
@@ -47,6 +47,10 @@ class Command(BaseCommand):
 
         enqueued = 0
         processed = 0
+
+        if not sync and get_openrouter_circuit_status()["is_open"]:
+            self.stdout.write(self.style.WARNING("OpenRouter circuit is open. No jobs enqueued."))
+            return
 
         for job in candidates:
             if sync:

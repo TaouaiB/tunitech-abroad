@@ -88,10 +88,10 @@ class JobITClassificationService:
             if "APP" in nature_contrat or "ALTERNANCE" in type_contrat or "STAGE" in type_contrat:
                  family = "it_training_apprenticeship"
                  reasons.append("it_training_apprenticeship signals")
-        elif has_signals(["software engineer", "développeur logiciel", "développeur d'application", "java", "c#", ".net", "php", "python", "backend", "api", "architecture logicielle", "application métier", "as400", "ibm i", "rpg", "cl"]):
+        elif has_signals(["software engineer", "ingénieur logiciel", "ingenieur logiciel", "développeur", "developpeur", "développeuse", "developpeuse", "développeur logiciel", "développeur d'application", "java", "c#", ".net", "php", "python", "backend", "back-end", "api", "architecture logicielle", "application métier", "as400", "ibm i", "rpg", "cl"]):
             family = "software_development"
             reasons.append("software_development signals")
-        elif has_signals(["full stack", "frontend", "backend web", "mobile", "react", "angular", "vue", "flutter", "swift", "kotlin", "node.js", "typescript", "html", "css", "rest api", "rest apis", "graphql", "application web", "prestashop"]):
+        elif has_signals(["full stack", "full-stack", "frontend", "front-end", "backend web", "mobile", "react", "angular", "vue", "flutter", "swift", "kotlin", "node.js", "typescript", "javascript", "html", "css", "rest api", "rest apis", "graphql", "application web", "prestashop"]):
             family = "web_mobile"
             reasons.append("web_mobile signals")
         else:

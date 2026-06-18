@@ -119,13 +119,23 @@ def mark_jobs_expired(modeladmin, request, queryset):
     updated = JobAdminOperationsService.mark_selected_jobs_status(queryset.values_list("id", flat=True), JobStatus.EXPIRED)
     modeladmin.message_user(request, f"{updated} jobs marked as expired.", messages.SUCCESS)
 
+@admin.action(description="Queue selected eligible enrichments")
+def queue_selected_eligible_job_enrichments(modeladmin, request, queryset):
+    from apps.jobs.services.admin_operations import JobAdminOperationsService
+
+    queued = JobAdminOperationsService.queue_selected_eligible_enrichments(queryset.values_list("id", flat=True))
+    if queued:
+        modeladmin.message_user(request, f"Queued {queued} eligible job enrichments.", messages.SUCCESS)
+    else:
+        modeladmin.message_user(request, "No selected jobs were eligible for enrichment queueing.", messages.WARNING)
+
 @admin.register(NormalizedJob)
 class NormalizedJobAdmin(admin.ModelAdmin):
     list_display = ("title", "company_name", "job_type", "remote_type", "experience_level", "country", "city", "status", "source_job_id")
     list_filter = ("status", "job_type", "remote_type", "experience_level", "source", "country")
     search_fields = ("title", "company_name", "source_job_id", "public_id")
     readonly_fields = ("public_id", "created_at", "updated_at", "first_seen_at", "last_seen_at", "last_fetched_at")
-    actions = [mark_jobs_stale, mark_jobs_expired]
+    actions = [mark_jobs_stale, mark_jobs_expired, queue_selected_eligible_job_enrichments]
 
 
 @admin.register(NormalizedJobSkill)

@@ -5,7 +5,7 @@
     <h1>TuniTech Abroad Operations Dashboard</h1>
 
     <div class="module">
-        <h2>Users & Profiles</h2>
+        <h2>Users &amp; Profiles</h2>
         <table>
             <tr><th>Total Users</th><td>{{ users_total }}</td></tr>
             <tr><th>New Signups (7d)</th><td>{{ new_signups_7d }}</td></tr>
@@ -18,18 +18,337 @@
         <table>
             <tr><th>CV Uploads (7d)</th><td>{{ cv_uploads_7d }}</td></tr>
             <tr><th>Parse Failures (7d)</th><td>{{ cv_parse_failures_7d }}</td></tr>
-            <tr><th>Stuck/Pending Parses (>15m)</th><td>{{ cv_parses_pending_stuck }}</td></tr>
+            <tr><th>Pending CV Parses</th><td>{% if cv_parses_pending > 0 %}<span class="status-warn">{{ cv_parses_pending }}</span>{% else %}{{ cv_parses_pending }}{% endif %}</td></tr>
+            <tr><th>Processing CV Parses Older Than Threshold</th><td>{% if cv_parses_processing_stale > 0 %}<span class="status-bad">{{ cv_parses_processing_stale }}</span>{% else %}{{ cv_parses_processing_stale }}{% endif %}</td></tr>
+            <tr><th>Stuck/Pending Parses</th><td>{% if cv_parses_pending_stuck > 0 %}<span class="status-bad">{{ cv_parses_pending_stuck }}</span>{% else %}{{ cv_parses_pending_stuck }}{% endif %}</td></tr>
         </table>
     </div>
 
     <div class="module">
-        <h2>Jobs & Ingestion</h2>
+        <h2>Celery Queue Health</h2>
+        <table>
+            <tr>
+                <th>Celery Status</th>
+                <td>
+                    {% if celery_status == "healthy" %}
+                        <span class="status-ok">healthy</span>
+                    {% elif celery_status == "stale" %}
+                        <span class="status-bad">stale</span>
+                    {% else %}
+                        <span class="status-warn">unknown</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><th>Last Celery Heartbeat</th><td>{{ celery_last_heartbeat_at|default:"None" }}</td></tr>
+            <tr>
+                <th>Heartbeat Age</th>
+                <td>
+                    {% if celery_heartbeat_age_minutes == None %}
+                        Unknown
+                    {% else %}
+                        {{ celery_heartbeat_age_minutes }}m
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Ingestion Pipeline</h2>
         <table>
             <tr><th>Active Jobs</th><td>{{ active_jobs }}</td></tr>
-            <tr><th>Jobs Ingested (24h)</th><td>{{ jobs_ingested_24h }}</td></tr>
+            <tr><th>Jobs Created (24h)</th><td>{{ jobs_ingested_24h }}</td></tr>
             <tr><th>Stale/Expired Jobs</th><td>{{ stale_expired_jobs }}</td></tr>
-            <tr><th>Latest Successful Ingestion</th><td>{{ latest_successful_ingestion|default:"None" }}</td></tr>
-            <tr><th>Latest Failed Ingestion</th><td>{{ latest_failed_ingestion|default:"None" }}</td></tr>
+        </table>
+
+        <h3 class="subsection">Latest Ingestion Run</h3>
+        <table>
+            <tr>
+                <th>Time</th>
+                <td>{{ ingestion_latest_run_time|default:"Never" }}</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>
+                    {% if ingestion_latest_run_status == "success" %}
+                        <span class="status-ok">{{ ingestion_latest_run_status }}</span>
+                    {% elif ingestion_latest_run_status == "partial_success" %}
+                        <span class="status-warn">{{ ingestion_latest_run_status }}</span>
+                    {% elif ingestion_latest_run_status == "failed" %}
+                        <span class="status-bad">{{ ingestion_latest_run_status }}</span>
+                    {% elif ingestion_latest_run_status == "running" %}
+                        <span class="status-info">{{ ingestion_latest_run_status }}</span>
+                    {% else %}
+                        {{ ingestion_latest_run_status|default:"—" }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><th>Trigger</th><td>{{ ingestion_latest_run_trigger|default:"—" }}</td></tr>
+            <tr><th>Fetched</th><td>{{ ingestion_latest_run_fetched }}</td></tr>
+            <tr><th>Created (raw)</th><td>{{ ingestion_latest_run_created }}</td></tr>
+            <tr><th>Updated (raw)</th><td>{{ ingestion_latest_run_updated }}</td></tr>
+            <tr><th>Normalized</th><td>{{ ingestion_latest_run_normalized }}</td></tr>
+            <tr><th>Errors</th><td>{{ ingestion_latest_run_errors }}</td></tr>
+            {% if ingestion_latest_run_error_summary %}
+            <tr>
+                <th>Latest Run Error</th>
+                <td class="error-text">{{ ingestion_latest_run_error_summary }}</td>
+            </tr>
+            {% endif %}
+            {% if ingestion_latest_run_warning_summary %}
+            <tr>
+                <th>Latest Run Warning</th>
+                <td class="warning-text">{{ ingestion_latest_run_warning_summary }}</td>
+            </tr>
+            {% endif %}
+        </table>
+
+        <h3 class="subsection">Ingestion Health</h3>
+        <table>
+            <tr>
+                <th>Last Successful Ingestion</th>
+                <td>{{ ingestion_last_success_time|default:"Never" }}</td>
+            </tr>
+            <tr>
+                <th>Hours Since Last Success</th>
+                <td>
+                    {% if ingestion_hours_since_success == None %}
+                        <span class="status-bad">Never run</span>
+                    {% elif ingestion_hours_since_success < 6 %}
+                        <span class="status-ok">{{ ingestion_hours_since_success }}h</span>
+                    {% elif ingestion_hours_since_success < 24 %}
+                        <span class="status-warn">{{ ingestion_hours_since_success }}h</span>
+                    {% else %}
+                        <span class="status-bad">{{ ingestion_hours_since_success }}h — STALE</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Last Failed Ingestion</th>
+                <td>{{ ingestion_last_failure_time|default:"None" }}</td>
+            </tr>
+            {% if ingestion_last_failure_error %}
+            <tr>
+                <th>Last Failure Error</th>
+                <td class="error-text">{{ ingestion_last_failure_error }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <th>JobSource Last Sync (France Travail)</th>
+                <td>{{ job_source_last_sync|default:"None" }}</td>
+            </tr>
+            <tr>
+                <th>Stale Running Ingestion Records</th>
+                <td>
+                    {% if ingestion_stale_running_count > 0 %}
+                        <span class="status-bad">{{ ingestion_stale_running_count }} stale running; oldest {{ ingestion_stale_running_age_hours }}h old</span>
+                    {% else %}
+                        {{ ingestion_stale_running_count }}
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <h3 class="subsection">Normalization Queue</h3>
+        <table>
+            <tr>
+                <th>Raw Records Pending Normalization</th>
+                <td>
+                    {% if raw_records_pending_normalization > 0 %}
+                        <span class="status-warn">{{ raw_records_pending_normalization }}</span>
+                    {% else %}
+                        {{ raw_records_pending_normalization }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Raw Records Failed Normalization</th>
+                <td>
+                    {% if raw_records_failed_normalization > 0 %}
+                        <span class="status-bad">{{ raw_records_failed_normalization }}</span>
+                    {% else %}
+                        {{ raw_records_failed_normalization }}
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Job Enrichment</h2>
+        <table>
+            <tr><th>Total Enrichment Records</th><td>{{ enrichment_total }}</td></tr>
+            <tr><th>Cost Today (OpenRouter)</th><td>${{ enrichment_cost_today|floatformat:2 }}</td></tr>
+            <tr>
+                <th>OpenRouter Circuit</th>
+                <td>
+                    {% if openrouter_circuit_status == "open" %}
+                        <span class="status-bad">open</span>
+                    {% else %}
+                        <span class="status-ok">closed</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><th>Recent Provider Failures</th><td>{{ openrouter_circuit_recent_failures }} / {{ openrouter_circuit_failure_threshold }} in {{ openrouter_circuit_window_minutes }}m</td></tr>
+            {% if openrouter_circuit_latest_failure_reason %}
+            <tr><th>Circuit Latest Reason</th><td class="error-text">{{ openrouter_circuit_latest_failure_reason }}</td></tr>
+            {% endif %}
+            {% if openrouter_circuit_cooldown_remaining_minutes %}
+            <tr><th>Circuit Cooldown Remaining</th><td><span class="status-bad">{{ openrouter_circuit_cooldown_remaining_minutes }}m</span></td></tr>
+            {% endif %}
+            <tr><th>LLM Queue</th><td>{{ openrouter_enrichment_queue }}</td></tr>
+            <tr><th>LLM Task Rate Limit</th><td>{{ openrouter_enrichment_rate_limit }}</td></tr>
+            <tr><th>Queued/Pending/Processing</th><td>{{ enrichment_queued_pending_processing }}</td></tr>
+            <tr>
+                <th>Success</th>
+                <td><span class="status-ok">{{ enrichment_success }}</span></td>
+            </tr>
+            <tr>
+                <th>Pending</th>
+                <td>
+                    {% if enrichment_pending > 0 %}
+                        <span class="status-info">{{ enrichment_pending }}</span>
+                    {% else %}
+                        {{ enrichment_pending }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Stale Processing</th>
+                <td>
+                    {% if enrichment_stale_processing > 0 %}
+                        <span class="status-bad">{{ enrichment_stale_processing }}</span>
+                    {% else %}
+                        {{ enrichment_stale_processing }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Processing</th>
+                <td>
+                    {% if enrichment_processing > 0 %}
+                        <span class="status-info">{{ enrichment_processing }}</span>
+                    {% else %}
+                        {{ enrichment_processing }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Failed</th>
+                <td>
+                    {% if enrichment_failed > 0 %}
+                        <span class="status-bad">{{ enrichment_failed }}</span>
+                    {% else %}
+                        {{ enrichment_failed }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Validation Error</th>
+                <td>
+                    {% if enrichment_validation_error > 0 %}
+                        <span class="status-warn">{{ enrichment_validation_error }}</span>
+                    {% else %}
+                        {{ enrichment_validation_error }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr><th>Skipped</th><td>{{ enrichment_skipped }}</td></tr>
+            <tr>
+                <th>Permanent Blocked</th>
+                <td>
+                    {% if enrichment_permanent_blocked_count > 0 %}
+                        <span class="status-bad">{{ enrichment_permanent_blocked_count }}</span>
+                    {% else %}
+                        {{ enrichment_permanent_blocked_count }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Retry Eligible</th>
+                <td>
+                    {% if enrichment_retry_eligible_count > 0 %}
+                        <span class="status-info">{{ enrichment_retry_eligible_count }}</span>
+                    {% else %}
+                        {{ enrichment_retry_eligible_count }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Active Jobs Without Enrichment (successful)</th>
+                <td>
+                    {% if jobs_without_enrichment > 0 %}
+                        <span class="status-warn">{{ jobs_without_enrichment }}</span>
+                    {% else %}
+                        {{ jobs_without_enrichment }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>&nbsp;&nbsp;↳ Eligible</th>
+                <td>
+                    {% if active_jobs_without_enrichment_eligible > 0 %}
+                        <span class="status-warn">{{ active_jobs_without_enrichment_eligible }}</span>
+                    {% else %}
+                        {{ active_jobs_without_enrichment_eligible }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>&nbsp;&nbsp;↳ Skipped/reserved/other total</th>
+                <td>{{ active_jobs_without_enrichment_skipped }}</td>
+            </tr>
+            <tr><th>&nbsp;&nbsp;↳ Skipped due low relevance</th><td>{{ active_jobs_without_enrichment_skipped_low_relevance }}</td></tr>
+            <tr><th>&nbsp;&nbsp;↳ Skipped due low confidence</th><td>{{ active_jobs_without_enrichment_skipped_low_confidence }}</td></tr>
+            <tr><th>&nbsp;&nbsp;↳ Skipped due non-FR/excluded country</th><td>{{ active_jobs_without_enrichment_skipped_non_fr }}</td></tr>
+            <tr><th>&nbsp;&nbsp;↳ Skipped due existing pending/reservation</th><td>{{ active_jobs_without_enrichment_skipped_existing_pending }}</td></tr>
+            <tr><th>&nbsp;&nbsp;↳ Other/unclassified</th><td>{{ active_jobs_without_enrichment_other }}</td></tr>
+        </table>
+
+        <h3 class="subsection">Latest Enrichment Events</h3>
+        <table>
+            <tr>
+                <th>Latest Success</th>
+                <td>
+                    {% if enrichment_latest_success_time %}
+                        {{ enrichment_latest_success_time }} — {{ enrichment_latest_success_job }}
+                    {% else %}
+                        None
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Latest Failure</th>
+                <td>
+                    {% if enrichment_latest_failure_time %}
+                        {{ enrichment_latest_failure_time }} — {{ enrichment_latest_failure_job }}
+                    {% else %}
+                        None
+                    {% endif %}
+                </td>
+            </tr>
+            {% if enrichment_latest_failure_error %}
+            <tr>
+                <th>Failure Error</th>
+                <td class="error-text">{{ enrichment_latest_failure_error }}</td>
+            </tr>
+            {% endif %}
+            {% if enrichment_latest_key_limit_error %}
+            <tr>
+                <th>Latest Key Limit / Credits Stop</th>
+                <td class="error-text">
+                    {{ enrichment_latest_key_limit_time }} — {{ enrichment_latest_key_limit_job }} — {{ enrichment_latest_key_limit_error }}
+                </td>
+            </tr>
+            {% endif %}
+            {% if enrichment_latest_forbidden_error %}
+            <tr>
+                <th>Latest Provider Block</th>
+                <td class="error-text">
+                    {{ enrichment_latest_forbidden_time }} — {{ enrichment_latest_forbidden_job }} — {{ enrichment_latest_forbidden_error }}
+                </td>
+            </tr>
+            {% endif %}
         </table>
     </div>
 
@@ -44,10 +363,13 @@
     </div>
 
     <div class="module">
-        <h2>LLM & Emails</h2>
+        <h2>LLM &amp; Emails</h2>
         <table>
             <tr><th>LLM Calls Today</th><td>{{ llm_calls_today }}</td></tr>
             <tr><th>LLM Failures Today</th><td>{{ llm_failures_today }}</td></tr>
+            <tr><th>France Travail Max Requests / Run</th><td>{{ ft_max_requests_per_run }}</td></tr>
+            <tr><th>France Travail Request Delay</th><td>{{ ft_request_delay_seconds }}s</td></tr>
+            <tr><th>France Travail 429 Backoff</th><td>{{ ft_backoff_on_429_seconds }}s</td></tr>
             <tr><th>Emails Sent (24h)</th><td>{{ emails_sent_24h }}</td></tr>
             <tr><th>Emails Failed (24h)</th><td>{{ emails_failed_24h }}</td></tr>
         </table>
@@ -77,6 +399,17 @@
         font-size: 14px;
         color: #666;
     }
+    .module h3.subsection {
+        margin: 0;
+        padding: 8px 10px;
+        background: #fafafa;
+        border-bottom: 1px solid #eee;
+        border-top: 1px solid #eee;
+        font-size: 12px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
     .module table {
         width: 100%;
         border-collapse: collapse;
@@ -93,6 +426,31 @@
     }
     .module td {
         font-weight: bold;
+    }
+    .status-ok {
+        color: #28a745;
+    }
+    .status-warn {
+        color: #e67e22;
+    }
+    .status-bad {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .status-info {
+        color: #17a2b8;
+    }
+    .error-text {
+        color: #dc3545;
+        font-size: 12px;
+        font-family: monospace;
+        word-break: break-all;
+    }
+    .warning-text {
+        color: #8a5a00;
+        font-size: 12px;
+        font-family: monospace;
+        word-break: break-all;
     }
 </style>
 {% endblock %}

@@ -120,28 +120,13 @@ class JobSkillExtractionService:
             new_required = [s.canonical_name for s, t in canonical_skills_saved if t == RequirementType.REQUIRED.value]
             new_optional = [s.canonical_name for s, t in canonical_skills_saved if t in [RequirementType.OPTIONAL.value, RequirementType.DETECTED.value]]
 
-            # Skill Signal Quality Logic
-            skill_signal_quality = "unknown"
-            classification_json = job.classification_json or {}
-            family = classification_json.get("family", "unknown")
-            is_it = classification_json.get("is_it", False)
-
-            if not is_it or family == "non_it":
-                skill_signal_quality = "excluded_non_it"
-            else:
-                if len(new_required) > 0:
-                    skill_signal_quality = "strong"
-                elif len(new_optional) > 0:
-                    skill_signal_quality = "partial"
-                elif any(any(g in r.lower() for g in GENERIC_FT_LABELS) for r in all_raw_skills):
-                    skill_signal_quality = "generic_only"
-                else:
-                    skill_signal_quality = "missing"
-
             job.required_skills_json = new_required
             job.optional_skills_json = new_optional
+            from apps.jobs.services.skill_signals import compute_deterministic_skill_signal_quality
+
+            signal_result = compute_deterministic_skill_signal_quality(job)
             job.skill_extraction_status = SkillExtractionStatus.SUCCESS
-            job.skill_signal_quality = skill_signal_quality
+            job.skill_signal_quality = signal_result.quality
             job.save(update_fields=["required_skills_json", "optional_skills_json", "skill_extraction_status", "skill_signal_quality"])
 
         return result

@@ -21,14 +21,34 @@ def ingest_fixture_jobs(path: str, source_slug: str = "france_travail"):
     return JobFixtureIngestionService.ingest_fixture_and_dispatch_normalization(path, source_slug=source_slug)
 
 
+from django.core.cache import cache
+from django.utils import timezone
+
+
+CELERY_HEARTBEAT_CACHE_KEY = "ops:celery:last_heartbeat_at"
+
+
+@shared_task
+def celery_heartbeat():
+    now = timezone.now()
+    cache.set(CELERY_HEARTBEAT_CACHE_KEY, now.isoformat(), timeout=60 * 60 * 24 * 7)
+    return now.isoformat()
+
 @shared_task
 def run_it_job_ingestion(config_name: str = "default"):
-    from apps.jobs.models import JobIngestionConfig
-    from apps.jobs.services.ingestion import JobIngestionService
+    lock_id = f"job_ingestion_lock_{config_name}"
+    if not cache.add(lock_id, "true", 60 * 15):
+        return f"Ingestion already running for config {config_name}"
 
     try:
-        config = JobIngestionConfig.objects.get(name=config_name, enabled=True)
-        JobIngestionService.run(config, trigger="celery")
-        return f"Ingestion completed for config {config_name}"
-    except JobIngestionConfig.DoesNotExist:
-        return f"Config {config_name} not found or disabled."
+        from apps.jobs.models import JobIngestionConfig
+        from apps.jobs.services.ingestion import JobIngestionService
+
+        try:
+            config = JobIngestionConfig.objects.get(name=config_name, enabled=True)
+            JobIngestionService.run(config, trigger="celery")
+            return f"Ingestion completed for config {config_name}"
+        except JobIngestionConfig.DoesNotExist:
+            return f"Config {config_name} not found or disabled."
+    finally:
+        cache.delete(lock_id)
