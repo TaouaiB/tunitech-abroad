@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Component states · TuniTech Abroad Prototype</title>
+  <link rel="stylesheet" href="assets/prototype.css">
+  <script src="assets/prototype.js" defer></script>
+</head>
+<body>
+  <div class="tta-shell ">
+    <header class="tta-nav">
+      <div class="tta-container tta-nav-row">
+        <a class="tta-brand" href="index.html"><span class="tta-logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 17.5 12 4l7 13.5-7-3-7 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><span>TuniTech Abroad</span></a>
+        <nav class="tta-nav-links"><a class="tta-nav-link  hide-md" href="jobs.html">Offres</a><a class="tta-nav-link  hide-md" href="cv-checker.html">Analyse CV</a><a class="tta-nav-link hide-md" href="index.html#comment-ca-marche">Comment ça marche</a><a class="tta-nav-link hide-md" href="login.html">Connexion</a><a class="tta-btn tta-btn-primary" href="signup.html">Créer un compte</a></nav>
+      </div>
+    </header>
+    <main class="tta-main"><div class="tta-container">
+  <div class="tta-section-head">
+    <div><span class="tta-eyebrow">Micro-interactions v2</span><h1 class="tta-page-title" style="margin-top:12px">États UI critiques</h1><p class="tta-muted">Toast, skeleton loading, feedback tactile mobile, et états d’erreur. Ces composants sont visuels seulement pour le prototype.</p></div>
+  </div>
+  <section class="tta-section">
+    <h2 class="tta-section-title">Toasts dans le contenu de démonstration</h2>
+    <p class="tta-muted">Sur les vraies pages, les toasts peuvent être fixes en haut à droite. Sur cette page de démonstration, ils restent dans le body pour ne pas toucher le header.</p>
+    <div class="tta-toast-container tta-toast-demo-container" aria-live="polite">
+      <div class="tta-toast tta-toast-success" data-toast-autodismiss="7000"><span class="tta-toast-title">Offre sauvegardée</span><span class="tta-toast-body">Elle est maintenant dans vos favoris.</span></div>
+      <div class="tta-toast tta-toast-warning" data-toast-autodismiss="9000"><span class="tta-toast-title">CV encore en analyse</span><span class="tta-toast-body">Les recommandations seront affinées après validation.</span></div>
+    </div>
+  </section>
+  <section class="tta-section">
+    <h2 class="tta-section-title">Boutons et cartes avec feedback tactile</h2>
+    <p class="tta-muted">Les boutons utilisent <code>active:scale</code> dans la version Tailwind finale. Testez en cliquant.</p>
+    <div class="tta-chip-row"><button class="tta-btn tta-btn-primary">Action principale</button><button class="tta-btn tta-btn-secondary">Action secondaire</button><button class="tta-btn tta-btn-ghost">Action discrète</button></div>
+  </section>
+  <section class="tta-section">
+    <h2 class="tta-section-title">Skeleton loading pour listes d’offres</h2>
+    <p class="tta-muted">À utiliser pendant les swaps HTMX de filtres/recherche au lieu d’un spinner seul.</p>
+    <div class="tta-state-row" style="margin-top:18px">
+      <div class="tta-skeleton"><div class="tta-skeleton-badges"><span class="tta-skeleton-badge"></span><span class="tta-skeleton-badge"></span><span class="tta-skeleton-badge"></span></div><span class="tta-skeleton-line-short"></span><span class="tta-skeleton-line"></span><span class="tta-skeleton-line"></span><div style="display:flex;justify-content:space-between;gap:14px;margin-top:18px"><span class="tta-skeleton-badge"></span><span class="tta-skeleton-button"></span></div></div>
+      <div class="tta-skeleton"><div class="tta-skeleton-badges"><span class="tta-skeleton-badge"></span><span class="tta-skeleton-badge"></span></div><span class="tta-skeleton-line-short"></span><span class="tta-skeleton-line"></span><span class="tta-skeleton-line"></span><div style="display:flex;justify-content:space-between;gap:14px;margin-top:18px"><span class="tta-skeleton-badge"></span><span class="tta-skeleton-button"></span></div></div>
+      <div class="tta-skeleton"><div class="tta-skeleton-badges"><span class="tta-skeleton-badge"></span><span class="tta-skeleton-badge"></span><span class="tta-skeleton-badge"></span></div><span class="tta-skeleton-line-short"></span><span class="tta-skeleton-line"></span><span class="tta-skeleton-line"></span><div style="display:flex;justify-content:space-between;gap:14px;margin-top:18px"><span class="tta-skeleton-badge"></span><span class="tta-skeleton-button"></span></div></div>
+    </div>
+  </section>
+  <section class="tta-section">
+    <h2 class="tta-section-title">Alertes persistantes vs toasts</h2>
+    <div class="tta-grid-3" style="margin-top:18px">
+      <div class="tta-alert tta-alert-info"><strong>Info persistante</strong><br><span>Utilisée dans les pages pour un contexte important.</span></div>
+      <div class="tta-alert tta-alert-warning"><strong>Point de vigilance</strong><br><span>Utilisée pour les risques CV/offre.</span></div>
+      <div class="tta-alert tta-alert-danger"><strong>Action dangereuse</strong><br><span>Utilisée dans la suppression de compte/CV.</span></div>
+    </div>
+  </section>
+</div></main>
+    <footer class="tta-footer"><div class="tta-container" style="display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap"><div><strong style="color:var(--text)">TuniTech Abroad</strong><div class="tta-small">Job intelligence France pour profils IT tunisiens.</div></div><div style="display:flex;gap:14px"><a href="privacy.html">Confidentialité</a><a href="terms.html">CGU</a><a href="jobs.html">Offres</a></div></div></footer>
+  </div>
+</body>
+</html>
