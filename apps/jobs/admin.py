@@ -29,7 +29,7 @@ class JobSourceAdmin(admin.ModelAdmin):
 
 @admin.register(IngestionRun)
 class IngestionRunAdmin(admin.ModelAdmin):
-    list_display = ("id", "source", "status", "trigger_type", "started_at", "fetched_count")
+    list_display = ("id", "source", "status", "trigger_type", "started_at", "fetched_count", "error_count")
     list_filter = ("status", "trigger_type", "source")
     search_fields = ("source__name",)
     readonly_fields = ("started_at", "finished_at", "created_at")
@@ -96,19 +96,36 @@ class JobIngestionRunAdmin(admin.ModelAdmin):
 
 @admin.register(RawJobRecord)
 class RawJobRecordAdmin(admin.ModelAdmin):
-    list_display = ("source_job_id", "source", "normalization_status", "first_seen_at")
+    list_display = ("source_job_id", "source", "normalization_status", "first_seen_at", "last_seen_at")
     list_filter = ("normalization_status", "source")
-    search_fields = ("source_job_id",)
-    readonly_fields = ("created_at", "updated_at")
+    search_fields = ("source_job_id", "payload_hash")
+    readonly_fields = ("created_at", "updated_at", "payload_hash", "normalization_error")
     actions = [reprocess_raw_jobs]
 
 
+@admin.action(description="Mark selected jobs as stale")
+def mark_jobs_stale(modeladmin, request, queryset):
+    from apps.jobs.models import JobStatus
+    from apps.jobs.services.admin_operations import JobAdminOperationsService
+
+    updated = JobAdminOperationsService.mark_selected_jobs_status(queryset.values_list("id", flat=True), JobStatus.STALE)
+    modeladmin.message_user(request, f"{updated} jobs marked as stale.", messages.SUCCESS)
+
+@admin.action(description="Mark selected jobs as expired")
+def mark_jobs_expired(modeladmin, request, queryset):
+    from apps.jobs.models import JobStatus
+    from apps.jobs.services.admin_operations import JobAdminOperationsService
+
+    updated = JobAdminOperationsService.mark_selected_jobs_status(queryset.values_list("id", flat=True), JobStatus.EXPIRED)
+    modeladmin.message_user(request, f"{updated} jobs marked as expired.", messages.SUCCESS)
+
 @admin.register(NormalizedJob)
 class NormalizedJobAdmin(admin.ModelAdmin):
-    list_display = ("title", "company_name", "job_type", "remote_type", "status", "source_job_id")
-    list_filter = ("status", "job_type", "remote_type", "experience_level", "source")
+    list_display = ("title", "company_name", "job_type", "remote_type", "experience_level", "country", "city", "status", "source_job_id")
+    list_filter = ("status", "job_type", "remote_type", "experience_level", "source", "country")
     search_fields = ("title", "company_name", "source_job_id", "public_id")
-    readonly_fields = ("public_id", "created_at", "updated_at")
+    readonly_fields = ("public_id", "created_at", "updated_at", "first_seen_at", "last_seen_at", "last_fetched_at")
+    actions = [mark_jobs_stale, mark_jobs_expired]
 
 
 @admin.register(NormalizedJobSkill)

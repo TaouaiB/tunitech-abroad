@@ -34,7 +34,7 @@ class StuckCVFilter(admin.SimpleListFilter):
 @admin.register(CVUpload)
 class CVUploadAdmin(admin.ModelAdmin):
     list_display = ("user", "original_filename", "is_active", "parse_status", "uploaded_at", "deleted_at")
-    list_filter = ("is_active", "parse_status", StuckCVFilter, "text_extraction_status")
+    list_filter = ("is_active", "parse_status", StuckCVFilter, "text_extraction_status", "uploaded_at", "deleted_at")
     search_fields = ("user__email", "original_filename", "public_id")
     readonly_fields = ("public_id", "uploaded_at", "parsed_at", "deleted_at", "file_hash", "file_size", "mime_type", "parse_error")
     exclude = ("file",)

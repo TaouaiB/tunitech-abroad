@@ -1,0 +1,98 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+    <h1>TuniTech Abroad Operations Dashboard</h1>
+
+    <div class="module">
+        <h2>Users & Profiles</h2>
+        <table>
+            <tr><th>Total Users</th><td>{{ users_total }}</td></tr>
+            <tr><th>New Signups (7d)</th><td>{{ new_signups_7d }}</td></tr>
+            <tr><th>Active Users (7d)</th><td>{{ active_users_7d }}</td></tr>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>CV Processing</h2>
+        <table>
+            <tr><th>CV Uploads (7d)</th><td>{{ cv_uploads_7d }}</td></tr>
+            <tr><th>Parse Failures (7d)</th><td>{{ cv_parse_failures_7d }}</td></tr>
+            <tr><th>Stuck/Pending Parses (>15m)</th><td>{{ cv_parses_pending_stuck }}</td></tr>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Jobs & Ingestion</h2>
+        <table>
+            <tr><th>Active Jobs</th><td>{{ active_jobs }}</td></tr>
+            <tr><th>Jobs Ingested (24h)</th><td>{{ jobs_ingested_24h }}</td></tr>
+            <tr><th>Stale/Expired Jobs</th><td>{{ stale_expired_jobs }}</td></tr>
+            <tr><th>Latest Successful Ingestion</th><td>{{ latest_successful_ingestion|default:"None" }}</td></tr>
+            <tr><th>Latest Failed Ingestion</th><td>{{ latest_failed_ingestion|default:"None" }}</td></tr>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Recommendations</h2>
+        <table>
+            <tr><th>Recommendation Runs (24h)</th><td>{{ recommendation_runs_24h }}</td></tr>
+            <tr><th>Recommendation Failures (24h)</th><td>{{ recommendation_failures_24h }}</td></tr>
+            <tr><th>Stale Recommendations</th><td>{{ stale_recommendations }}</td></tr>
+            <tr><th>Saved Jobs</th><td>{{ saved_jobs_count }}</td></tr>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>LLM & Emails</h2>
+        <table>
+            <tr><th>LLM Calls Today</th><td>{{ llm_calls_today }}</td></tr>
+            <tr><th>LLM Failures Today</th><td>{{ llm_failures_today }}</td></tr>
+            <tr><th>Emails Sent (24h)</th><td>{{ emails_sent_24h }}</td></tr>
+            <tr><th>Emails Failed (24h)</th><td>{{ emails_failed_24h }}</td></tr>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Privacy</h2>
+        <table>
+            <tr><th>Pending Deletion Requests</th><td>{{ pending_deletion_requests }}</td></tr>
+        </table>
+    </div>
+
+</div>
+
+<style>
+    .module {
+        margin-bottom: 20px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .module h2 {
+        margin: 0;
+        padding: 10px;
+        background: #f8f8f8;
+        border-bottom: 1px solid #ccc;
+        font-size: 14px;
+        color: #666;
+    }
+    .module table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .module th, .module td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+    }
+    .module th {
+        width: 300px;
+        font-weight: normal;
+        color: #333;
+    }
+    .module td {
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

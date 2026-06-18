@@ -15,7 +15,7 @@ def refresh_recommendations(modeladmin, request, queryset):
 class CandidateProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'full_name', 'current_level', 'target_type', 'is_confirmed', 'created_at')
     search_fields = ('user__email', 'user__username', 'full_name')
-    list_filter = ('is_confirmed', 'current_level', 'target_type')
+    list_filter = ('is_confirmed', 'current_level', 'target_type', 'french_level', 'english_level')
     readonly_fields = ('public_id', 'created_at', 'updated_at')
     actions = [refresh_recommendations]
 
