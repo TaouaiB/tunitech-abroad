@@ -9,19 +9,19 @@
 {% if page_obj.has_other_pages %}
 <nav class="tta-pagination" style="margin-top:22px;" aria-label="Pagination">
     {% if page_obj.has_previous %}
-        <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="tta-page" aria-label="Page précédente">&lsaquo;</a>
+        <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="tta-pagination-link" aria-label="Page précédente">&lsaquo;</a>
     {% endif %}
 
     {% for i in paginator.page_range %}
         {% if page_obj.number == i %}
-            <span class="tta-page active" aria-current="page">{{ i }}</span>
+            <span class="tta-pagination-current" aria-current="page">{{ i }}</span>
         {% elif i > page_obj.number|add:"-3" and i < page_obj.number|add:"3" %}
-            <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ i }}" class="tta-page">{{ i }}</a>
+            <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ i }}" class="tta-pagination-link">{{ i }}</a>
         {% endif %}
     {% endfor %}
 
     {% if page_obj.has_next %}
-        <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="tta-page" aria-label="Page suivante">&rsaquo;</a>
+        <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="tta-pagination-link" aria-label="Page suivante">&rsaquo;</a>
     {% endif %}
 </nav>
 {% endif %}

@@ -44,15 +44,50 @@
 
     /* 5.1 Layout */
     .tta-page { @apply min-h-screen bg-slate-50 text-slate-950 antialiased dark:bg-slate-950 dark:text-slate-50; }
+    .tta-shell { @apply flex min-h-screen flex-col bg-slate-50 text-slate-950 antialiased dark:bg-slate-950 dark:text-slate-50; }
+    .tta-main { @apply flex-1 py-6 md:py-8; }
     .tta-section { @apply py-10 md:py-14; }
     .tta-container { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
+    .tta-container-narrow { @apply mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8; }
+    .tta-container-form { @apply mx-auto w-full max-w-xl px-4 sm:px-6 lg:px-8; }
     .tta-surface { @apply bg-white dark:bg-slate-900; }
     .tta-surface-muted { @apply bg-slate-50 dark:bg-slate-800/60; }
     .tta-card { @apply rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900; }
+    .tta-card-body { @apply p-5 md:p-6; }
+    .tta-card-muted { @apply rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/60; }
     .tta-card-hover { @apply cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-brand-300 hover:shadow-xl focus-within:border-brand-300 dark:hover:border-brand-700 dark:hover:shadow-none active:scale-[0.99]; }
     .tta-card-compact { @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 p-4; }
     .tta-panel { @apply rounded-2xl bg-white shadow-sm dark:bg-slate-900; }
     .tta-divider { @apply border-t border-slate-200 dark:border-slate-800; }
+    .tta-app-grid { @apply grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)]; }
+    .tta-bento { @apply grid grid-cols-1 gap-4 md:grid-cols-2; }
+    .tta-bento-row { @apply grid grid-cols-1 gap-4 md:grid-cols-3; }
+    .tta-hero { @apply min-h-[68vh] md:min-h-[72vh]; }
+    .tta-hero-grid { @apply items-center; }
+    .tta-grid-3 { @apply grid grid-cols-1 gap-4 md:grid-cols-3; }
+    .desktop-only { @apply hidden lg:block; }
+    .mobile-only { @apply inline-flex lg:hidden; }
+
+    /* 5.1.1 Navigation and footer */
+    .tta-nav { @apply border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90; }
+    .tta-nav-row { @apply flex min-h-16 items-center justify-between; }
+    .tta-brand { @apply text-sm font-black tracking-tight text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:text-white dark:focus-visible:ring-offset-slate-950 sm:text-base; }
+    .tta-logo { @apply inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm dark:bg-brand-500; }
+    .tta-nav-links { @apply items-center gap-2; }
+    .tta-nav-link { @apply inline-flex min-h-10 items-center rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-offset-slate-950; }
+    .tta-footer { @apply border-t border-slate-200 bg-white py-6 text-sm dark:border-slate-800 dark:bg-slate-950; }
+
+    /* 5.1.2 Text helpers */
+    .tta-section-head { @apply mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between; }
+    .tta-eyebrow { @apply text-xs font-bold uppercase tracking-wide text-brand-600 dark:text-brand-400; }
+    .tta-title { @apply text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl; }
+    .tta-page-title { @apply text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl; }
+    .tta-section-title { @apply text-xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-2xl; }
+    .tta-subtitle { @apply text-base leading-relaxed text-slate-600 dark:text-slate-300; }
+    .tta-muted { @apply text-slate-600 dark:text-slate-400; }
+    .tta-small { @apply text-sm leading-relaxed; }
+    .tta-chip-row { @apply flex flex-wrap items-center gap-2; }
+    .tta-chip { @apply inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300; }
 
     /* 5.2 Buttons */
     .tta-btn { @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97] dark:focus-visible:ring-offset-slate-950; }
@@ -106,6 +141,9 @@
     /* 5.6 Drawer and dropdown */
     .tta-drawer-backdrop { @apply fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity dark:bg-slate-900/80; }
     .tta-drawer-panel { @apply fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl dark:bg-slate-900 flex flex-col; }
+    .tta-filter-drawer { @apply fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto bg-white p-5 shadow-2xl dark:bg-slate-900; }
+    .tta-avatar-button { @apply inline-flex items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950; }
+    .tta-avatar { @apply inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700 dark:bg-brand-950 dark:text-brand-300; }
     .tta-dropdown-menu { @apply absolute z-50 mt-2 w-56 origin-top-right rounded-xl bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-slate-800 dark:ring-white/10; }
     .tta-dropdown-item { @apply block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white transition-colors; }
 
