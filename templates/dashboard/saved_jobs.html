@@ -44,7 +44,7 @@
                         {{ saved_job.job.title|default:"Offre sans titre" }}
                     </h3>
 
-                    <div class="tta-job-meta">
+                    <div class="tta-card-meta">
                         {% if saved_job.job.company_name and saved_job.job.company_name|length > 1 and saved_job.job.company_name|lower != hidden_value %}
                             <span>{{ saved_job.job.company_name }}</span>
                         {% endif %}
@@ -57,11 +57,11 @@
                             <span>{{ saved_job.job.source.name }}</span>
                         {% endif %}
                         {% if saved_job.job.published_at %}
-                            <span>Publié le {{ saved_job.job.published_at|date:"d M Y" }}</span>
+                            <span class="tta-card-date">Publié le {{ saved_job.job.published_at|date:"d M Y" }}</span>
                         {% elif saved_job.job.first_seen_at %}
-                            <span>Vu le {{ saved_job.job.first_seen_at|date:"d M Y" }}</span>
+                            <span class="tta-card-date">Vu le {{ saved_job.job.first_seen_at|date:"d M Y" }}</span>
                         {% elif saved_job.job.last_seen_at %}
-                            <span>Vu le {{ saved_job.job.last_seen_at|date:"d M Y" }}</span>
+                            <span class="tta-card-date">Vu le {{ saved_job.job.last_seen_at|date:"d M Y" }}</span>
                         {% endif %}
                     </div>
 
@@ -88,9 +88,6 @@
                   <div class="tta-job-actions">
                     <a class="tta-btn tta-btn-primary" href="{% url 'jobs:detail' saved_job.job.public_id %}">Voir l’offre</a>
                     {% include 'jobs/partials/save_button.html' with job=saved_job.job is_saved=True %}
-                    {% if saved_job.job.source_url %}
-                        <a class="tta-btn tta-btn-secondary" href="{{ saved_job.job.source_url }}" target="_blank" rel="noopener noreferrer">Postuler sur la source</a>
-                    {% endif %}
                   </div>
                 </article>
             {% empty %}

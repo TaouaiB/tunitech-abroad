@@ -27,20 +27,6 @@ class RecommendationQueryService:
 
     @classmethod
     def _sort_recommendations(cls, recommendations: list[JobRecommendation]) -> list[JobRecommendation]:
-        ranks = [recommendation.rank for recommendation in recommendations if recommendation.rank]
-        ranks_are_meaningful = len(ranks) == len(recommendations) and len(set(ranks)) == len(ranks)
-
-        if ranks_are_meaningful:
-            return sorted(
-                recommendations,
-                key=lambda recommendation: (
-                    recommendation.rank,
-                    -recommendation.fit_score,
-                    -float(recommendation.ranking_score),
-                    -cls._freshness_value(recommendation).timestamp(),
-                ),
-            )
-
         return sorted(
             recommendations,
             key=lambda recommendation: (
@@ -58,7 +44,7 @@ class RecommendationQueryService:
                 status=status,
             )
             .select_related("job", "job__source")
-            .order_by("rank", "-fit_score", "-ranking_score", "-job__published_at", "-job__first_seen_at", "-job__last_seen_at")[
+            .order_by("-fit_score", "-ranking_score", "-job__published_at", "-job__first_seen_at", "-job__last_seen_at")[
                 : max(limit * 3, limit)
             ]
         )

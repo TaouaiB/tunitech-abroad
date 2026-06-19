@@ -1,3 +1,4 @@
+from django.template.loader import render_to_string
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -25,6 +26,8 @@ class JobViewTests(TestCase):
         response = self.client.get(reverse("jobs:list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test View Job")
+        self.assertNotContains(response, "recherche depuis la base locale")
+        self.assertContains(response, "Offres IT françaises actualisées")
         
     def test_job_list_view_filters(self):
         response = self.client.get(reverse("jobs:list"), {"q": "Test", "location": "Paris"})
@@ -67,6 +70,40 @@ class JobViewTests(TestCase):
         self.assertContains(response, reverse("jobs:detail", args=[self.job.public_id]))
         self.assertNotContains(response, f'href="/jobs/{self.job.id}/"')
 
+    def test_public_job_card_matches_prototype_structure_and_order(self):
+        self.job.contract_type = "CDI"
+        self.job.location = "Paris"
+        self.job.description = "Build Django services for a France-first job intelligence product."
+        self.job.required_skills_json = ["Django", "REST API"]
+        self.job.published_at = timezone.now()
+        self.job.save(
+            update_fields=[
+                "contract_type",
+                "location",
+                "description",
+                "required_skills_json",
+                "published_at",
+            ]
+        )
+
+        response = self.client.get(reverse("jobs:list"))
+        html = response.content.decode()
+        detail_url = reverse("jobs:detail", args=[self.job.public_id])
+
+        self.assertContains(response, "tta-job-main")
+        self.assertContains(response, "tta-job-side")
+        self.assertContains(response, "tta-job-freshness")
+        self.assertContains(response, "tta-job-actions")
+        self.assertContains(response, "tta-card-date")
+        self.assertContains(response, f'href="{detail_url}"')
+        self.assertNotContains(response, f'href="/jobs/{self.job.id}/"')
+
+        self.assertLess(html.index("tta-chip-row"), html.index("tta-job-title"))
+        self.assertLess(html.index("tta-job-title"), html.index("tta-card-meta"))
+        self.assertLess(html.index("tta-card-meta"), html.index("tta-job-desc"))
+        self.assertLess(html.index("tta-job-desc"), html.index("tta-job-skill-row"))
+        self.assertLess(html.index("</a>"), html.index("tta-job-actions"))
+
     def test_job_card_hides_placeholder_badges_and_shows_date(self):
         self.job.contract_type = "Unknown"
         self.job.remote_type = "unknown"
@@ -96,7 +133,40 @@ class JobViewTests(TestCase):
         self.assertNotContains(response, "unknown")
         self.assertNotContains(response, ">t<", html=False)
         self.assertContains(response, "Vu le")
+        self.assertContains(response, "tta-card-date")
         self.assertContains(response, reverse("jobs:detail", args=[self.job.public_id]))
+        self.assertContains(response, "Compétences en cours d'analyse")
+
+    def test_job_card_prefers_published_date(self):
+        published_at = timezone.datetime(2026, 1, 15, 9, 0, tzinfo=timezone.get_current_timezone())
+        self.job.published_at = published_at
+        self.job.save(update_fields=["published_at"])
+
+        response = self.client.get(reverse("jobs:list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Publié le")
+        self.assertContains(response, "15")
+        self.assertNotContains(response, "Vu le")
+
+    def test_job_card_falls_back_to_first_seen_date(self):
+        self.job.published_at = None
+        self.job.save(update_fields=["published_at"])
+
+        response = self.client.get(reverse("jobs:list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Vu le")
+        self.assertContains(response, "tta-card-date")
+
+    def test_job_card_falls_back_to_last_seen_date(self):
+        self.job.published_at = None
+        self.job.first_seen_at = None
+
+        html = render_to_string("jobs/partials/job_card.html", {"job": self.job})
+
+        self.assertIn("Vu le", html)
+        self.assertIn("tta-card-date", html)
 
     def test_public_pages_survive_analytics_failure(self):
         with patch("apps.jobs.views.UserEventService.record_event", side_effect=Exception("analytics down")):

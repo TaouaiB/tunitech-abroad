@@ -154,17 +154,45 @@
     .tta-btn-outline { @apply tta-btn min-h-11 border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-800; }
     .tta-btn-sm { @apply min-h-9 px-3 py-1.5 text-xs rounded-lg; }
     .tta-btn-lg { @apply min-h-12 px-6 py-3 text-base rounded-2xl; }
+    .tta-mobile-filter-button { @apply inline-flex lg:hidden; }
 
     /* 5.3 Cards */
-    .tta-job-card { @apply tta-card p-5 sm:p-6 flex flex-col gap-4; }
-    .tta-job-title { @apply text-lg font-bold leading-snug text-slate-950 dark:text-white; }
+    .tta-job-card {
+        @apply grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-transparent transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg focus-within:border-brand-300 dark:border-slate-800 dark:bg-slate-950/90 dark:hover:border-brand-700 dark:hover:shadow-none sm:p-5;
+        grid-template-columns: minmax(0, 1fr);
+    }
+    @screen lg {
+        .tta-job-card {
+            grid-template-columns: minmax(0, 1fr) minmax(10.5rem, auto);
+            @apply gap-5;
+        }
+    }
+    .tta-job-main { @apply min-w-0; }
+    .tta-job-card-link { @apply block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950; }
+    .tta-job-title { @apply mt-3 text-lg font-black leading-snug text-slate-950 transition-colors dark:text-white; }
     .tta-job-title a { @apply text-slate-950 hover:text-brand-700 dark:text-white dark:hover:text-brand-300; }
-    .tta-job-meta { @apply mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-slate-600 dark:text-slate-300; }
-    .tta-job-desc { @apply mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300; }
-    .tta-job-actions { @apply mt-auto flex flex-wrap gap-3 pt-1; }
+    .tta-job-card-link:hover .tta-job-title { @apply text-brand-700 dark:text-brand-300; }
+    .tta-card-meta { @apply mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-semibold text-slate-600 dark:text-slate-300; }
+    .tta-card-meta > span { @apply inline-flex items-center; }
+    .tta-card-date { @apply font-black text-blue-700 dark:text-blue-300; }
+    .tta-job-meta { @apply tta-card-meta; }
+    .tta-job-desc {
+        @apply mt-3 overflow-hidden text-sm leading-6 text-slate-700 dark:text-slate-300;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    .tta-card-actions { @apply mt-5 flex flex-wrap items-center gap-3; }
+    .tta-job-side { @apply flex min-w-0 flex-col items-stretch gap-4 lg:min-w-[10.5rem] lg:items-end lg:justify-between; }
+    .tta-job-freshness { @apply rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs leading-5 text-slate-500 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400 lg:text-right; }
+    .tta-job-freshness strong { @apply block text-sm font-black text-slate-950 dark:text-white; }
+    .tta-job-freshness span { @apply block; }
+    .tta-job-actions { @apply mt-auto flex flex-wrap items-center gap-3 pt-1 lg:justify-end; }
+    .tta-job-actions .tta-btn { @apply shrink-0; }
+    .tta-job-skill-row { @apply mt-3; }
     .tta-card :where(h2, h3) { @apply text-slate-950 dark:text-white; }
     .tta-card :where(strong) { @apply text-slate-950 dark:text-slate-100; }
-    .tta-recommendation-card { @apply tta-card p-5 sm:p-6 border-l-4 border-l-brand-500; }
+    .tta-recommendation-card { @apply p-5 sm:p-6 border-l-4 border-l-brand-500; }
     .tta-dashboard-card { @apply tta-card p-5 sm:p-6; }
     .tta-auth-card { @apply w-full max-w-md mx-auto tta-card p-8; }
     .tta-stat-card { @apply tta-card p-5 flex items-center justify-between; }
@@ -182,6 +210,9 @@
     .tta-skill-chip-required { @apply tta-skill-chip border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-800 dark:bg-brand-950/50 dark:text-brand-300; }
     .tta-skill-chip-optional { @apply tta-skill-chip border-dashed; }
     .tta-skill-chip-success { @apply border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40; }
+    .tta-skill-chip-missing { @apply border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200 dark:hover:border-rose-800 dark:hover:bg-rose-950/40; }
+    .tta-chip-strong { @apply bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-900; }
+    .tta-chip-empty { @apply border border-dashed border-slate-300 bg-transparent text-slate-600 dark:border-slate-700 dark:text-slate-400; }
 
     .tta-score-strong { @apply text-emerald-600 dark:text-emerald-400 font-bold; }
     .tta-score-good { @apply text-brand-600 dark:text-brand-400 font-semibold; }

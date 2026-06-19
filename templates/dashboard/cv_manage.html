@@ -116,6 +116,7 @@
                       fileName: '',
                       fileSize: '',
                       isUploading: false,
+                      isDragging: false,
                       handleFileChange(event) {
                           const file = event.target.files[0];
                           if (file) {
@@ -124,6 +125,20 @@
                           } else {
                               this.fileName = '';
                               this.fileSize = '';
+                          }
+                      },
+                      selectFile() {
+                          const fileInput = this.$el.querySelector('input[type=file]');
+                          if (fileInput) {
+                              fileInput.click();
+                          }
+                      },
+                      handleDrop(event) {
+                          this.isDragging = false;
+                          const fileInput = this.$el.querySelector('input[type=file]');
+                          if (fileInput && event.dataTransfer.files.length) {
+                              fileInput.files = event.dataTransfer.files;
+                              fileInput.dispatchEvent(new Event('change', { bubbles: true }));
                           }
                       },
                       init() {
@@ -146,18 +161,27 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                     <div class="md:col-span-2">
                         <label class="tta-label font-bold mb-2" for="{{ form.file.id_for_label }}">Sélectionner un fichier (PDF uniquement, max 5 Mo)</label>
-                        <div class="tta-dropzone mt-1 flex justify-center relative group"
-                             :class="fileName ? 'border-green-400 bg-green-50 dark:bg-green-950/20' : 'border-slate-300 bg-slate-50 hover:border-brand-500 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-800/40 dark:hover:border-brand-400 dark:hover:bg-brand-950/30'">
+                        <label for="{{ form.file.id_for_label }}"
+                               class="tta-dropzone mt-1 flex justify-center relative group"
+                               role="button"
+                               tabindex="0"
+                               @keydown.enter.prevent="selectFile()"
+                               @keydown.space.prevent="selectFile()"
+                               @dragenter.prevent="isDragging = true"
+                               @dragover.prevent="isDragging = true"
+                               @dragleave.prevent="isDragging = false"
+                               @drop.prevent="handleDrop($event)"
+                               :class="fileName ? 'border-green-400 bg-green-50 dark:bg-green-950/20' : (isDragging ? 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-950/30' : 'border-slate-300 bg-slate-50 hover:border-brand-500 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-800/40 dark:hover:border-brand-400 dark:hover:bg-brand-950/30')">
 
                             <div class="space-y-1 text-center" x-show="!fileName">
                                 <svg class="mx-auto h-9 w-9 text-gray-400 group-hover:text-brand-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                                 <div class="flex text-sm text-slate-700 dark:text-slate-300 justify-center">
-                                    <label for="{{ form.file.id_for_label }}" class="relative cursor-pointer rounded-md font-medium text-brand-600 hover:text-brand-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-500 px-1">
+                                    <span class="relative cursor-pointer rounded-md font-medium text-brand-600 group-hover:text-brand-500 px-1">
                                         <span>Parcourir</span>
                                         {{ form.file }}
-                                    </label>
+                                    </span>
                                     <p class="pl-1">ou glisser-déposer</p>
                                 </div>
                                 <p class="text-xs text-slate-500 dark:text-slate-400">PDF jusqu'à 5 Mo</p>
@@ -170,13 +194,13 @@
                                 <p class="text-sm font-bold text-slate-950 dark:text-white" x-text="fileName"></p>
                                 <p class="text-xs text-slate-500 dark:text-slate-400" x-text="fileSize"></p>
                                 <div class="mt-4">
-                                    <label for="{{ form.file.id_for_label }}" class="text-sm font-medium text-brand-600 hover:text-brand-800 cursor-pointer">
+                                    <span class="text-sm font-medium text-brand-600 group-hover:text-brand-800 cursor-pointer">
                                         Changer de fichier
-                                    </label>
+                                    </span>
                                 </div>
                             </div>
 
-                        </div>
+                        </label>
                         {% if form.file.errors %}
                             <p class="mt-2 text-sm text-red-600">{{ form.file.errors|join:", " }}</p>
                         {% endif %}

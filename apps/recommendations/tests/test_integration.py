@@ -117,7 +117,8 @@ class DashboardIntegrationTests(TestCase):
         self.job.job_type = "unknown"
         self.job.experience_level = "unknown"
         self.job.published_at = None
-        self.job.save(update_fields=["contract_type", "remote_type", "job_type", "experience_level", "published_at"])
+        self.job.source_url = "https://example.test/apply"
+        self.job.save(update_fields=["contract_type", "remote_type", "job_type", "experience_level", "published_at", "source_url"])
         recommendation = JobRecommendation.objects.create(
             user=self.user,
             profile=profile,
@@ -159,6 +160,8 @@ class DashboardIntegrationTests(TestCase):
         self.assertContains(response, reverse("matching:detail", kwargs={"public_id": match.public_id}))
         self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
         self.assertContains(response, "Vu le")
+        self.assertNotContains(response, "Postuler sur la source")
+        self.assertNotContains(response, "https://example.test/apply")
 
     def test_recommendation_card_hides_match_cta_when_no_match_exists(self):
         self.client.force_login(self.user)
@@ -204,8 +207,9 @@ class DashboardIntegrationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Voir la compatibilité")
         self.assertContains(response, "Voir l'offre")
+        self.assertNotContains(response, "Postuler sur la source")
 
-    def test_recommendations_page_defaults_to_strongest_first_when_ranks_are_tied(self):
+    def test_recommendations_page_defaults_to_highest_visible_score_first(self):
         self.client.force_login(self.user)
         profile = CandidateProfile.objects.create(
             user=self.user,
@@ -256,7 +260,7 @@ class DashboardIntegrationTests(TestCase):
             job=stronger_job,
             fit_score=93,
             ranking_score=93,
-            rank=1,
+            rank=2,
             computed_at=timezone.now(),
             status="active",
         )
@@ -266,6 +270,56 @@ class DashboardIntegrationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
         self.assertLess(content.index("Senior Django Role"), content.index("Junior Backend Role"))
+        self.assertLess(content.index("93%"), content.index("61%"))
+
+    def test_recommendation_card_warning_copy_is_professional(self):
+        self.client.force_login(self.user)
+        profile = CandidateProfile.objects.create(
+            user=self.user,
+            full_name="Amina Ben Ali",
+            phone="+216 20 000 000",
+            location="Tunis",
+            current_level="junior",
+            years_experience=2,
+            target_roles=["Backend Developer"],
+            target_job_types=["full_time_job"],
+            target_type="job",
+            french_level="intermediate",
+            english_level="fluent",
+            relocation_preference="yes",
+            remote_preference="hybrid",
+        )
+        cv = CVUpload.objects.create(
+            user=self.user,
+            file="cvs/test.pdf",
+            original_filename="amina.pdf",
+            file_hash=str(uuid.uuid4()),
+            file_size=1234,
+            is_active=True,
+            parse_status="parsed",
+        )
+        CVParsedData.objects.create(cv_upload=cv, raw_text="")
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=profile,
+            cv_upload=cv,
+            job=self.job,
+            fit_score=72,
+            ranking_score=72,
+            rank=1,
+            missing_skills_json=["PostgreSQL"],
+            computed_at=timezone.now(),
+            status="active",
+        )
+
+        response = self.client.get(reverse("dashboard:recommendations"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "À renforcer")
+        self.assertContains(response, "Certaines compétences obligatoires ne sont pas encore dans votre profil.")
+        self.assertContains(response, "tta-skill-chip-missing")
+        self.assertNotContains(response, "Points de vigilance")
+        self.assertNotContains(response, "Compétences obligatoires non détectées")
 
     def test_saved_jobs_card_hides_placeholder_and_garbage_metadata(self):
         self.client.force_login(self.user)

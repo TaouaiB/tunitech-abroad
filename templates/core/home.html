@@ -37,7 +37,7 @@
     <div class="tta-section-head mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 id="offres-recentes" class="tta-section-title text-2xl font-bold text-slate-950 dark:text-white">Offres récentes</h2>
-        <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Parcourez les offres IT françaises normalisées depuis la base locale.</p>
+        <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Parcourez les offres IT françaises actualisées.</p>
       </div>
       <a class="tta-btn tta-btn-secondary" href="{% url 'jobs:list' %}">Toutes les offres</a>
     </div>
@@ -96,12 +96,23 @@
   <div class="tta-card tta-card-body p-5 md:p-6">
     <div class="tta-section-head flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
+        {% if request.user.is_authenticated %}
+        <h2 id="cta-final" class="tta-section-title text-2xl font-bold text-slate-950 dark:text-white">Continuez depuis votre espace candidat</h2>
+        <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Retrouvez votre tableau de bord, vos recommandations et votre CV.</p>
+        {% else %}
         <h2 id="cta-final" class="tta-section-title text-2xl font-bold text-slate-950 dark:text-white">Commencez par les offres France</h2>
         <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Recherchez maintenant, puis créez un compte pour préparer votre CV et vos recommandations.</p>
+        {% endif %}
       </div>
       <div class="tta-chip-row flex flex-wrap gap-3">
+        {% if request.user.is_authenticated %}
+        <a class="tta-btn tta-btn-primary" href="{% url 'dashboard:home' %}">Aller au tableau de bord</a>
+        <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:recommendations' %}">Voir mes recommandations</a>
+        <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:cv' %}">Gérer mon CV</a>
+        {% else %}
         <a class="tta-btn tta-btn-primary" href="{% url 'jobs:list' %}">Explorer les offres</a>
         <a class="tta-btn tta-btn-secondary" href="{% url 'account_signup' %}">Créer un compte</a>
+        {% endif %}
       </div>
     </div>
   </div>

@@ -628,7 +628,7 @@ class RecommendationQueryServiceTests(TestCase):
         self.assertEqual(result.recommendations[0].job_id, stronger_job.pk)
         self.assertEqual(result.recommendations[1].job_id, weaker_job.pk)
 
-    def test_get_dashboard_recommendations_prefers_meaningful_rank_order(self):
+    def test_get_dashboard_recommendations_prefers_visible_score_over_rank(self):
         top_ranked_job = make_job(self.source, "q-rank-1", title="Rank One Recommendation", status=JobStatus.ACTIVE)
         lower_ranked_job = make_job(self.source, "q-rank-2", title="Rank Two Recommendation", status=JobStatus.ACTIVE)
         JobRecommendation.objects.create(
@@ -657,8 +657,89 @@ class RecommendationQueryServiceTests(TestCase):
         ):
             result = RecommendationQueryService.get_dashboard_recommendations(self.user)
 
-        self.assertEqual(result.recommendations[0].job_id, top_ranked_job.pk)
-        self.assertEqual(result.recommendations[1].job_id, lower_ranked_job.pk)
+        self.assertEqual(result.recommendations[0].job_id, lower_ranked_job.pk)
+        self.assertEqual(result.recommendations[1].job_id, top_ranked_job.pk)
+
+    def test_get_dashboard_recommendations_tiebreaks_by_ranking_score_then_date(self):
+        older = timezone.now() - timedelta(days=5)
+        newer = timezone.now() - timedelta(days=1)
+        weaker_ranking_job = make_job(
+            self.source,
+            "q-tie-ranking-low",
+            title="Lower Ranking Tie",
+            status=JobStatus.ACTIVE,
+            published_at=newer,
+        )
+        stronger_ranking_job = make_job(
+            self.source,
+            "q-tie-ranking-high",
+            title="Higher Ranking Tie",
+            status=JobStatus.ACTIVE,
+            published_at=older,
+        )
+        newest_job = make_job(
+            self.source,
+            "q-tie-newest",
+            title="Newest Date Tie",
+            status=JobStatus.ACTIVE,
+            published_at=newer,
+        )
+        older_job = make_job(
+            self.source,
+            "q-tie-older",
+            title="Older Date Tie",
+            status=JobStatus.ACTIVE,
+            published_at=older,
+        )
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=weaker_ranking_job,
+            fit_score=88,
+            ranking_score=Decimal("80.00"),
+            rank=1,
+            computed_at=timezone.now(),
+            status="active",
+        )
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=stronger_ranking_job,
+            fit_score=88,
+            ranking_score=Decimal("90.00"),
+            rank=2,
+            computed_at=timezone.now(),
+            status="active",
+        )
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=older_job,
+            fit_score=77,
+            ranking_score=Decimal("77.00"),
+            rank=3,
+            computed_at=timezone.now(),
+            status="active",
+        )
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=newest_job,
+            fit_score=77,
+            ranking_score=Decimal("77.00"),
+            rank=4,
+            computed_at=timezone.now(),
+            status="active",
+        )
+
+        with patch(
+            "apps.recommendations.services.query.RecommendationQueryService._enqueue_refresh"
+        ):
+            result = RecommendationQueryService.get_dashboard_recommendations(self.user)
+
+        returned_job_ids = [rec.job_id for rec in result.recommendations]
+        self.assertLess(returned_job_ids.index(stronger_ranking_job.pk), returned_job_ids.index(weaker_ranking_job.pk))
+        self.assertLess(returned_job_ids.index(newest_job.pk), returned_job_ids.index(older_job.pk))
 
     def test_get_dashboard_recommendations_returns_only_requesting_users_rows(self):
         self._make_active_rec(self.user, self.profile, self.job)

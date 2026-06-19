@@ -103,7 +103,7 @@
                 {% if match.strong_skills_json %}
                 <div class="mt-3 flex flex-wrap gap-2">
                     {% for skill in match.strong_skills_json %}
-                    <span class="tta-skill-chip border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">{{ skill.name|default:skill }}</span>
+                    <span class="tta-skill-chip tta-skill-chip-success">{{ skill.name|default:skill }}</span>
                     {% endfor %}
                 </div>
                 {% else %}
@@ -120,7 +120,7 @@
                 {% elif match.missing_required_skills_json %}
                 <div class="mt-3 flex flex-wrap gap-2">
                     {% for skill in match.missing_required_skills_json %}
-                    <span class="tta-skill-chip border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">{{ skill.name|default:skill }}</span>
+                    <span class="tta-skill-chip tta-skill-chip-missing">{{ skill.name|default:skill }}</span>
                     {% endfor %}
                 </div>
                 {% else %}
@@ -145,7 +145,7 @@
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2" style="margin-top:18px">
             {% if match.risk_flags_json %}
             <div class="tta-card p-5 sm:p-6">
-                <h2>Points de vigilance</h2>
+                <h2>À renforcer</h2>
                 {% for flag in match.human_risk_flags %}
                 <div class="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">{{ flag }}</div>
                 {% endfor %}
