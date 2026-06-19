@@ -1,0 +1,23 @@
+<aside class="tta-card tta-sidebar">
+    <a class="tta-side-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">
+        <span>Vue d’ensemble</span><span>›</span>
+    </a>
+    <a class="tta-side-link {% if request.resolver_match.url_name == 'recommendations' %}active{% endif %}" href="{% url 'dashboard:recommendations' %}">
+        <span>Recommandations</span><span>›</span>
+    </a>
+    <a class="tta-side-link {% if request.resolver_match.url_name == 'cv' or request.resolver_match.url_name == 'cv_status' %}active{% endif %}" href="{% url 'dashboard:cv' %}">
+        <span>Mon CV</span><span>›</span>
+    </a>
+    <a class="tta-side-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'dashboard:profile' %}">
+        <span>Mon profil</span><span>›</span>
+    </a>
+    <a class="tta-side-link {% if request.resolver_match.url_name == 'saved_jobs' %}active{% endif %}" href="{% url 'dashboard:saved_jobs' %}">
+        <span>Favoris</span><span>›</span>
+    </a>
+    <a class="tta-side-link {% if request.resolver_match.url_name == 'email_preferences' %}active{% endif %}" href="{% url 'dashboard:email_preferences' %}">
+        <span>Préférences email</span><span>›</span>
+    </a>
+    <a class="tta-side-link {% if request.resolver_match.url_name == 'account' or request.resolver_match.url_name == 'delete_account' %}active{% endif %}" href="{% url 'dashboard:account' %}">
+        <span>Compte</span><span>›</span>
+    </a>
+</aside>

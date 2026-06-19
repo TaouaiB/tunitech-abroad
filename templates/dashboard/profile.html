@@ -3,91 +3,113 @@
 {% block title %}Mon Profil - TuniTech Abroad{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8">
-        <a href="{% url 'dashboard:home' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Retour au tableau de bord
-        </a>
-        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Profil Candidat</h1>
-        <p class="mt-2 text-lg text-gray-600">Complétez votre profil pour améliorer la pertinence de vos recommandations.</p>
-    </div>
-    
-    <!-- Profile Completion Status -->
-    <div class="bg-gradient-to-r from-brand-50 to-white p-6 rounded-xl border border-brand-100 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h3 class="text-lg font-bold text-gray-900 mb-1">État du profil</h3>
-            <p class="text-sm text-gray-600">Plus votre profil est complet, plus le matching est précis.</p>
+<div class="tta-app-grid" style="margin-top: 2rem; margin-bottom: 3rem;">
+    {% include 'dashboard/sidebar.html' %}
+    <section>
+        <div class="tta-section-head">
+            <div>
+                <a href="{% url 'dashboard:home' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Retour au tableau de bord
+                </a>
+                <span class="tta-eyebrow">Profil</span>
+                <h1 class="tta-page-title" style="margin-top:12px">Mon profil candidat</h1>
+                <p class="tta-muted">Complétez votre profil pour améliorer la pertinence de vos recommandations.</p>
+            </div>
         </div>
-        <div class="w-full md:w-1/3">
+
+        <!-- Profile Completion Status -->
+        <div class="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-brand-900 dark:border-brand-900/50 dark:bg-brand-950/30 dark:text-brand-200" style="margin-bottom:18px">
             <div class="flex justify-between items-center mb-1">
-                <span class="text-sm font-medium text-brand-700">Progression</span>
+                <strong class="text-sm font-bold">
+                    Progression
+                    {% if profile.profile_completion_score|default:0 >= 80 %}
+                        <span class="tta-badge tta-badge-success ml-2">Fort</span>
+                    {% elif profile.profile_completion_score|default:0 >= 50 %}
+                        <span class="tta-badge tta-badge-brand ml-2">Utilisable</span>
+                    {% else %}
+                        <span class="tta-badge tta-badge-warning ml-2">Incomplet</span>
+                    {% endif %}
+                </strong>
                 <span class="text-sm font-bold text-brand-700">{{ profile.profile_completion_score|default:0 }}%</span>
             </div>
-            <div class="w-full bg-brand-100 rounded-full h-2.5">
-                <div class="bg-brand-500 h-2.5 rounded-full transition-all duration-500" style="width: {{ profile.profile_completion_score|default:0 }}%"></div>
+            <div class="tta-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ profile.profile_completion_score|default:0 }}" style="margin-top:10px">
+                <div class="tta-progress-bar" style="width: {{ profile.profile_completion_score|default:0 }}%"></div>
             </div>
+            <p class="text-sm mt-2 text-brand-700">Plus votre profil est complet, plus le matching est précis.</p>
         </div>
-    </div>
 
-    {% if not is_complete_enough and missing_fields %}
-    <div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200 shadow-sm mb-8 flex flex-col sm:flex-row items-start gap-4">
-        <div class="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center flex-shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-        </div>
-        <div>
-            <h3 class="text-lg font-bold text-yellow-900 mb-1">Complétez votre profil pour améliorer vos recommandations</h3>
-            <p class="text-sm text-yellow-800 mb-2">Les recommandations d'emploi sont actuellement bloquées (minimum 50% requis). Veuillez remplir ces champs pour débloquer le service :</p>
-            <ul class="list-disc list-inside text-sm text-yellow-700 font-medium space-y-1">
+        {% if not is_complete_enough and missing_fields %}
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200" style="margin-bottom:18px">
+            <strong class="block mb-2">Complétez votre profil pour améliorer vos recommandations</strong>
+            <p class="text-sm mb-2">Les recommandations d'emploi sont actuellement bloquées (minimum 50% requis). Veuillez remplir ces champs pour débloquer le service :</p>
+            <ul class="list-disc list-inside text-sm font-medium space-y-1">
                 {% for field in missing_fields %}
                 <li>{{ field }}</li>
                 {% endfor %}
             </ul>
         </div>
-    </div>
-    {% elif is_complete_enough %}
-    <div class="bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm mb-8 flex flex-col sm:flex-row items-start gap-4">
-        <div class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        {% elif is_complete_enough %}
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200" style="margin-bottom:18px">
+            <strong class="block mb-1">Profil prêt pour les recommandations</strong>
+            <p class="text-sm">Votre profil est suffisamment complet pour recevoir des recommandations pertinentes.</p>
         </div>
-        <div>
-            <h3 class="text-lg font-bold text-green-900 mb-1">Profil prêt pour les recommandations</h3>
-            <p class="text-sm text-green-800 mb-2">Votre profil est suffisamment complet pour recevoir des recommandations pertinentes.</p>
-        </div>
-    </div>
-    {% endif %}
+        {% endif %}
 
-    <div class="card bg-white shadow-sm border border-gray-200">
-        <form method="post" class="divide-y divide-gray-100">
+        <form method="post" class="tta-card tta-card-body" style="padding:0">
             {% csrf_token %}
             
             {% if form.non_field_errors %}
                 <div class="p-6 pb-0">
-                    <div class="bg-red-50 border border-red-200 rounded-md p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800">
-                                    {{ form.non_field_errors|join:", " }}
-                                </h3>
-                            </div>
-                        </div>
+                    <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
+                        <h3 class="text-sm font-medium">
+                            {{ form.non_field_errors|join:", " }}
+                        </h3>
                     </div>
                 </div>
             {% endif %}
 
-            <div class="p-6 md:p-8 space-y-8">
+            <div class="p-6 space-y-6">
                 {% for field in form %}
                     {% if not field.is_hidden %}
+                    {% if field.name == 'full_name' %}
+                    <div class="border-b border-slate-200 pb-3 dark:border-slate-800">
+                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Identité</h2>
+                        <p class="tta-muted text-sm">Informations de base utilisées pour présenter votre profil candidat.</p>
+                    </div>
+                    {% elif field.name == 'linkedin_url' %}
+                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
+                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Liens professionnels</h2>
+                        <p class="tta-muted text-sm">Ajoutez les liens qui renforcent vos signaux techniques.</p>
+                    </div>
+                    {% elif field.name == 'current_level' %}
+                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
+                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Expérience</h2>
+                        <p class="tta-muted text-sm">Aidez le matching à évaluer votre niveau actuel.</p>
+                    </div>
+                    {% elif field.name == 'target_roles' %}
+                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
+                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Objectif France</h2>
+                        <p class="tta-muted text-sm">Précisez les rôles et formats d'opportunités visés.</p>
+                    </div>
+                    {% elif field.name == 'french_level' %}
+                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
+                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Langues</h2>
+                        <p class="tta-muted text-sm">Ces niveaux aident à détecter les risques sur les offres françaises.</p>
+                    </div>
+                    {% elif field.name == 'relocation_preference' %}
+                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
+                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Préférences</h2>
+                        <p class="tta-muted text-sm">Indiquez votre mobilité et votre préférence télétravail.</p>
+                    </div>
+                    {% endif %}
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                         <div class="md:col-span-1">
-                            <label for="{{ field.id_for_label }}" class="block text-sm font-bold text-gray-900">
+                            <label for="{{ field.id_for_label }}" class="tta-label font-bold">
                                 {{ field.label }}
                             </label>
                             {% if field.help_text %}
-                                <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                                <p class="mt-1 text-xs tta-muted">{{ field.help_text }}</p>
                             {% endif %}
                         </div>
                         <div class="md:col-span-2">
@@ -116,23 +138,22 @@
                 {% endfor %}
             </div>
 
-            <!-- Apply Tailwind classes to Django form inputs -->
             <script>
                 document.addEventListener("DOMContentLoaded", function() {
-                    const textInputs = document.querySelectorAll('form input[type="text"], form input[type="url"], form input[type="email"], form input[type="tel"]');
+                    const textInputs = document.querySelectorAll('form input[type="text"], form input[type="url"], form input[type="email"], form input[type="tel"], form input[type="number"]');
                     textInputs.forEach(input => {
-                        input.classList.add('input-field');
+                        input.classList.add('tta-input');
                     });
                     
                     const textareas = document.querySelectorAll('form textarea');
                     textareas.forEach(ta => {
-                        ta.classList.add('input-field');
+                        ta.classList.add('tta-input');
                         ta.setAttribute('rows', '4');
                     });
 
                     const selects = document.querySelectorAll('form select');
                     selects.forEach(select => {
-                        select.classList.add('input-field', 'py-2', 'pl-3', 'pr-10');
+                        select.classList.add('tta-select');
                     });
 
                     const checkboxes = document.querySelectorAll('form input[type="checkbox"]');
@@ -143,16 +164,12 @@
                 });
             </script>
 
-            <div class="px-6 py-4 bg-gray-50 flex items-center justify-end rounded-b-xl gap-4">
-                <a href="{% url 'dashboard:home' %}" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                    Annuler
-                </a>
-                <button type="submit" class="btn-primary" onclick="this.disabled=true; this.innerHTML='Enregistrement...'; this.form.submit();">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <div class="tta-sticky-save-bar">
+                <button type="submit" class="tta-btn tta-btn-primary w-full justify-center md:w-auto">
                     Enregistrer le profil
                 </button>
             </div>
         </form>
-    </div>
+    </section>
 </div>
 {% endblock %}

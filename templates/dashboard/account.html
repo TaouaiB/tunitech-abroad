@@ -3,96 +3,104 @@
 {% block title %}Sécurité & Compte - TuniTech Abroad{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8">
-        <a href="{% url 'dashboard:home' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Retour au tableau de bord
-        </a>
-        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Sécurité & Compte</h1>
-        <p class="mt-2 text-lg text-gray-600">Gérez les paramètres de sécurité de votre compte.</p>
-    </div>
+<div class="tta-app-grid" style="margin-top: 2rem; margin-bottom: 3rem;">
+    {% include 'dashboard/sidebar.html' %}
+    <section>
+        <div class="tta-section-head">
+            <div>
+                <a href="{% url 'dashboard:home' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Retour au tableau de bord
+                </a>
+                <span class="tta-eyebrow">Compte</span>
+                <h1 class="tta-page-title" style="margin-top:12px">Compte et sécurité</h1>
+                <p class="tta-muted">Gérez les paramètres de sécurité de votre compte.</p>
+            </div>
+        </div>
 
-    <div class="space-y-6">
-        <div class="card p-6 md:p-8 bg-white border border-gray-200">
-            <div class="flex items-center gap-4">
-                {% if user.candidate_profile.avatar_url %}
-                    <img src="{{ user.candidate_profile.avatar_url }}" alt="" class="w-16 h-16 rounded-full object-cover border border-gray-200">
-                {% else %}
-                    <div class="w-16 h-16 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xl">
-                        {{ user.email|make_list|first|upper }}
+        <div class="space-y-6">
+            <div class="tta-card tta-card-body">
+                <div class="flex items-center gap-4">
+                    {% if user.candidate_profile.avatar_url %}
+                        <img src="{{ user.candidate_profile.avatar_url }}" alt="" class="w-16 h-16 rounded-full object-cover border border-gray-200">
+                    {% else %}
+                        <div class="w-16 h-16 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xl">
+                            {{ user.email|make_list|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div class="min-w-0">
+                        <h2 class="text-xl font-bold text-gray-900 truncate">{{ user.candidate_profile.full_name|default:user.email }}</h2>
+                        <p class="text-sm text-gray-500 truncate">{{ user.email }}</p>
                     </div>
-                {% endif %}
-                <div class="min-w-0">
-                    <h2 class="text-xl font-bold text-gray-900 truncate">{{ user.candidate_profile.full_name|default:user.email }}</h2>
-                    <p class="text-sm text-gray-500 truncate">{{ user.email }}</p>
                 </div>
             </div>
-        </div>
 
-        <!-- Settings Section -->
-        <div class="card p-6 md:p-8 bg-white border border-gray-200">
-            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
-                <div class="w-12 h-12 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <!-- Settings Section -->
+            <div class="tta-card tta-card-body">
+                <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+                    <div class="w-12 h-12 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Mot de passe</h2>
+                        <p class="text-sm text-gray-500">Mettez à jour votre mot de passe régulièrement pour plus de sécurité.</p>
+                    </div>
                 </div>
+
                 <div>
-                    <h2 class="text-xl font-bold text-gray-900">Mot de passe</h2>
-                    <p class="text-sm text-gray-500">Mettez à jour votre mot de passe régulièrement pour plus de sécurité.</p>
+                    {% if has_usable_password %}
+                        <a href="{% url 'account_change_password' %}" class="tta-btn tta-btn-secondary">
+                            Changer mon mot de passe
+                        </a>
+                    {% else %}
+                        <a href="{% url 'account_set_password' %}" class="tta-btn tta-btn-primary">
+                            Ajouter un mot de passe
+                        </a>
+                    {% endif %}
                 </div>
             </div>
-            
-            <div>
-                {% if has_usable_password %}
-                    <a href="{% url 'account_change_password' %}" class="btn-secondary">
-                        Changer mon mot de passe
-                    </a>
-                {% else %}
-                    <a href="{% url 'account_set_password' %}" class="btn-primary">
-                        Ajouter un mot de passe
-                    </a>
-                {% endif %}
-            </div>
-        </div>
 
-        <!-- Linked Accounts Section -->
-        <div class="card p-6 md:p-8 bg-white border border-gray-200">
-            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
-                <div class="w-12 h-12 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+            <!-- Linked Accounts Section -->
+            <div class="tta-card tta-card-body">
+                <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+                    <div class="w-12 h-12 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Comptes liés</h2>
+                        <p class="text-sm text-gray-500">Connectez vos comptes Google ou GitHub pour faciliter votre connexion.</p>
+                    </div>
                 </div>
+
                 <div>
-                    <h2 class="text-xl font-bold text-gray-900">Comptes liés</h2>
-                    <p class="text-sm text-gray-500">Connectez vos comptes Google ou GitHub pour faciliter votre connexion.</p>
+                    <a href="{% url 'dashboard:connections' %}" class="tta-btn tta-btn-secondary">
+                        Gérer mes comptes liés
+                    </a>
                 </div>
             </div>
 
-            <div>
-                <a href="{% url 'dashboard:connections' %}" class="btn-secondary">
-                    Gérer mes comptes liés
+            <!-- Danger Zone -->
+            <div class="tta-card tta-card-body border-red-200">
+                <div class="flex items-center gap-4 mb-6 pb-6 border-b border-red-100">
+                    <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-red-900">Zone Dangereuse</h2>
+                        <p class="text-sm text-red-700">Suppression définitive de votre compte et de vos données.</p>
+                    </div>
+                </div>
+
+                <div class="tta-alert tta-alert-danger" style="margin-bottom: 18px">
+                    <strong class="block mb-1">Suppression du compte</strong>
+                    <p class="text-sm">Une fois votre compte supprimé, toutes vos données (CV, profil, offres sauvegardées) seront effacées de nos serveurs. Cette action est irréversible et immédiate.</p>
+                </div>
+
+                <a href="{% url 'dashboard:delete_account' %}" class="tta-btn text-white bg-red-600 hover:bg-red-700 font-bold inline-flex w-auto justify-center rounded-xl px-4 py-3">
+                    Supprimer mon compte
                 </a>
             </div>
         </div>
-
-        <!-- Danger Zone -->
-        <div class="card p-6 md:p-8 bg-red-50/30 border border-red-200">
-            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-red-100">
-                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </div>
-                <div>
-                    <h2 class="text-xl font-bold text-red-900">Zone Dangereuse</h2>
-                    <p class="text-sm text-red-700">Suppression définitive de votre compte et de vos données.</p>
-                </div>
-            </div>
-
-            <p class="text-gray-700 mb-6 text-sm">
-                Une fois votre compte supprimé, toutes vos données (CV, profil, offres sauvegardées) seront effacées de nos serveurs. Cette action est irréversible et immédiate.
-            </p>
-            <a href="{% url 'dashboard:delete_account' %}" class="btn-danger inline-flex">
-                Supprimer mon compte
-            </a>
-        </div>
-    </div>
+    </section>
 </div>
 {% endblock %}
