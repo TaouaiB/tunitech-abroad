@@ -1,90 +1,75 @@
-<div class="card p-6">
-    <div class="flex items-center gap-2 mb-6 pb-4 border-b border-gray-100">
-        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-        <h2 class="text-lg font-bold text-gray-900">Filtres de recherche</h2>
+<form method="get" action="{% url 'jobs:list' %}" class="space-y-4">
+    <!-- Search Query -->
+    <div class="tta-field">
+        <label for="q" class="tta-label">Mots-clés</label>
+        <input type="text" name="q" id="q" value="{{ filters.q|default:'' }}" class="tta-input" placeholder="ex: Python, Django, React">
     </div>
-    
-    <form method="get" action="{% url 'jobs:list' %}" class="space-y-5">
-        <!-- Search Query -->
-        <div>
-            <label for="q" class="label-text">Mots-clés</label>
-            <div class="relative rounded-md shadow-sm">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <input type="text" name="q" id="q" value="{{ filters.q|default:'' }}" class="input-field pl-10" placeholder="ex: Python, Django, React">
-            </div>
-        </div>
 
-        <!-- Location -->
-        <div>
-            <label for="location" class="label-text">Lieu (France)</label>
-            <div class="relative rounded-md shadow-sm">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                </div>
-                <input type="text" name="location" id="location" value="{{ filters.location|default:'' }}" class="input-field pl-10" placeholder="ex: Paris, Lyon">
-            </div>
-        </div>
+    <!-- Location -->
+    <div class="tta-field">
+        <label for="location" class="tta-label">Lieu (France)</label>
+        <input type="text" name="location" id="location" value="{{ filters.location|default:'' }}" class="tta-input" placeholder="ex: Paris, Lyon">
+    </div>
 
-        <!-- Contract Type -->
-        <div>
-            <label for="contract_type" class="label-text">Type de contrat</label>
-            <input type="text" name="contract_type" id="contract_type" value="{{ filters.contract_type|default:'' }}" class="input-field" placeholder="ex: CDI, CDD">
-        </div>
+    <!-- Contract Type -->
+    <div class="tta-field">
+        <label for="contract_type" class="tta-label">Type de contrat</label>
+        <input type="text" name="contract_type" id="contract_type" value="{{ filters.contract_type|default:'' }}" class="tta-input" placeholder="ex: CDI, CDD">
+    </div>
 
-        <!-- Remote Type -->
-        <div>
-            <label for="remote_type" class="label-text">Télétravail</label>
-            <select id="remote_type" name="remote_type" class="input-field">
-                <option value="" {% if not filters.remote_type %}selected{% endif %}>Tous</option>
-                <option value="remote" {% if filters.remote_type == "remote" %}selected{% endif %}>100% Télétravail</option>
-                <option value="hybrid" {% if filters.remote_type == "hybrid" %}selected{% endif %}>Hybride</option>
-                <option value="on_site" {% if filters.remote_type == "on_site" %}selected{% endif %}>Sur site</option>
-            </select>
-        </div>
+    <!-- Remote Type -->
+    <div class="tta-field">
+        <label for="remote_type" class="tta-label">Télétravail</label>
+        <select id="remote_type" name="remote_type" class="tta-select">
+            <option value="" {% if not filters.remote_type %}selected{% endif %}>Tous</option>
+            <option value="remote" {% if filters.remote_type == "remote" %}selected{% endif %}>100% Télétravail</option>
+            <option value="hybrid" {% if filters.remote_type == "hybrid" %}selected{% endif %}>Hybride</option>
+            <option value="on_site" {% if filters.remote_type == "on_site" %}selected{% endif %}>Sur site</option>
+        </select>
+    </div>
 
-        <!-- Job Type -->
-        <div>
-            <label for="job_type" class="label-text">Type d'emploi</label>
-            <select id="job_type" name="job_type" class="input-field">
-                <option value="" {% if not filters.job_type %}selected{% endif %}>Tous</option>
-                <option value="full_time_job" {% if filters.job_type == "full_time_job" %}selected{% endif %}>Temps plein</option>
-                <option value="internship" {% if filters.job_type == "internship" %}selected{% endif %}>Stage (PFE)</option>
-                <option value="apprenticeship" {% if filters.job_type == "apprenticeship" %}selected{% endif %}>Alternance</option>
-                <option value="contract" {% if filters.job_type == "contract" %}selected{% endif %}>Freelance / Contrat</option>
-            </select>
-        </div>
+    <!-- Job Type -->
+    <div class="tta-field">
+        <label for="job_type" class="tta-label">Type d'emploi</label>
+        <select id="job_type" name="job_type" class="tta-select">
+            <option value="" {% if not filters.job_type %}selected{% endif %}>Tous</option>
+            <option value="full_time_job" {% if filters.job_type == "full_time_job" %}selected{% endif %}>Temps plein</option>
+            <option value="internship" {% if filters.job_type == "internship" %}selected{% endif %}>Stage (PFE)</option>
+            <option value="apprenticeship" {% if filters.job_type == "apprenticeship" %}selected{% endif %}>Alternance</option>
+            <option value="contract" {% if filters.job_type == "contract" %}selected{% endif %}>Freelance / Contrat</option>
+        </select>
+    </div>
 
-        <!-- Experience Level -->
-        <div>
-            <label for="experience_level" class="label-text">Niveau d'expérience</label>
-            <select id="experience_level" name="experience_level" class="input-field">
-                <option value="" {% if not filters.experience_level %}selected{% endif %}>Tous</option>
-                <option value="internship" {% if filters.experience_level == "internship" %}selected{% endif %}>Stage</option>
-                <option value="junior" {% if filters.experience_level == "junior" %}selected{% endif %}>Junior (0-2 ans)</option>
-                <option value="mid_level" {% if filters.experience_level == "mid_level" %}selected{% endif %}>Confirmé (2-5 ans)</option>
-                <option value="senior" {% if filters.experience_level == "senior" %}selected{% endif %}>Senior (5+ ans)</option>
-            </select>
-        </div>
+    <!-- Experience Level -->
+    <div class="tta-field">
+        <label for="experience_level" class="tta-label">Niveau d'expérience</label>
+        <select id="experience_level" name="experience_level" class="tta-select">
+            <option value="" {% if not filters.experience_level %}selected{% endif %}>Tous</option>
+            <option value="internship" {% if filters.experience_level == "internship" %}selected{% endif %}>Stage</option>
+            <option value="junior" {% if filters.experience_level == "junior" %}selected{% endif %}>Junior (0-2 ans)</option>
+            <option value="mid_level" {% if filters.experience_level == "mid_level" %}selected{% endif %}>Confirmé (2-5 ans)</option>
+            <option value="senior" {% if filters.experience_level == "senior" %}selected{% endif %}>Senior (5+ ans)</option>
+        </select>
+    </div>
 
-        <!-- Sort (Hidden on mobile, handled differently) -->
-        <div class="hidden lg:block">
-            <label for="sort" class="label-text">Trier par</label>
-            <select id="sort" name="sort" class="input-field">
-                <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Pertinence</option>
-                <option value="newest" {% if sort == "newest" %}selected{% endif %}>Plus récentes</option>
-                <option value="company" {% if sort == "company" %}selected{% endif %}>Entreprise</option>
-            </select>
-        </div>
+    <!-- Skill -->
+    <div class="tta-field">
+        <label for="skill" class="tta-label">Compétence</label>
+        <input type="text" name="skill" id="skill" value="{{ filters.skill|default:'' }}" class="tta-input" placeholder="ex: Docker, SQL">
+    </div>
 
-        <div class="pt-6 flex flex-col gap-3 border-t border-gray-100">
-            <button type="submit" class="btn-primary w-full">
-                Appliquer les filtres
-            </button>
-            <a href="{% url 'jobs:list' %}" class="btn-secondary w-full">
-                Réinitialiser
-            </a>
-        </div>
-    </form>
-</div>
+    <!-- Sort -->
+    <div class="tta-field">
+        <label for="sort" class="tta-label">Trier par</label>
+        <select id="sort" name="sort" class="tta-select">
+            <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Plus pertinentes</option>
+            <option value="newest" {% if sort == "newest" %}selected{% endif %}>Plus récentes</option>
+            <option value="company" {% if sort == "company" %}selected{% endif %}>Entreprise</option>
+        </select>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+        <button type="submit" class="tta-btn tta-btn-primary" style="width:100%">Appliquer les filtres</button>
+        <a href="{% url 'jobs:list' %}" class="tta-btn tta-btn-secondary" style="width:100%;text-align:center;">Réinitialiser</a>
+    </div>
+</form>

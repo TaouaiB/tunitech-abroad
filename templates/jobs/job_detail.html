@@ -1,196 +1,107 @@
 {% extends "base.html" %}
 
-{% block title %}{{ job.title }} chez {{ job.company_name }} - TuniTech Abroad{% endblock %}
+{% block title %}{{ job.title|default:"Offre IT sans titre" }} chez {{ job.company_name|default:"Entreprise non précisée" }} - TuniTech Abroad{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex flex-col lg:flex-row gap-8">
-        
-        <!-- Main Content -->
-        <div class="lg:w-2/3">
-            <div class="card p-8 mb-8 relative overflow-hidden">
-                <!-- Decorative background blob -->
-                <div class="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-brand-50 rounded-full opacity-50 blur-3xl -z-10"></div>
-                
-                <!-- Header -->
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h1 class="text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">{{ job.title }}</h1>
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-600 font-bold">
-                                {{ job.company_name|make_list|first|upper }}
-                            </div>
-                            <p class="text-xl text-brand-600 font-bold">{{ job.company_name }}</p>
-                        </div>
-                    </div>
-                </div>
+<div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
+    <section>
+        <div class="tta-card tta-card-body">
+            <div class="tta-chip-row" style="margin-top:0">
+                {% if job.contract_type %}
+                    <span class="tta-badge tta-badge-brand">{{ job.contract_type }}</span>
+                {% endif %}
+                {% if job.remote_type %}
+                    <span class="tta-badge">{{ job.get_remote_type_display }}</span>
+                {% endif %}
+                {% if job.experience_level %}
+                    <span class="tta-badge">{{ job.get_experience_level_display }}</span>
+                {% endif %}
+                {% if job.status == 'expired' %}
+                    <span class="tta-badge" style="background:#fee2e2;color:#991b1b">Expiré</span>
+                {% elif job.status != 'active' %}
+                    <span class="tta-badge">{{ job.get_status_display }}</span>
+                {% endif %}
+                <span class="tta-badge" style="background:transparent;border:1px solid var(--border)">Publiée le {{ job.published_at|date:"d M Y" }}</span>
+            </div>
 
-                <!-- Badges -->
-                <div class="flex flex-wrap gap-2 mb-8">
-                    {% if job.status == 'active' %}
-                        <span class="badge badge-green px-3 py-1 text-sm border border-green-200">Offre active</span>
-                    {% elif job.status == 'expired' %}
-                        <span class="badge badge-red px-3 py-1 text-sm border border-red-200">Offre expirée</span>
+            <h1 class="tta-page-title" style="margin-top:18px">{{ job.title|default:"Offre IT sans titre" }}</h1>
+            <p class="tta-subtitle">{{ job.company_name|default:"Entreprise non précisée" }} · {{ job.location|default:job.city|default:"Lieu non précisé" }} · {{ job.source.name|default:"Source non précisée" }}</p>
+
+            <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+                {% if job.status != 'expired' and job.source_url %}
+                    {% if "francetravail" in job.source.name|lower or "france travail" in job.source.name|lower %}
+                        <a class="tta-btn tta-btn-primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">Postuler sur France Travail</a>
                     {% else %}
-                        <span class="badge badge-gray px-3 py-1 text-sm">{{ job.get_status_display }}</span>
+                        <a class="tta-btn tta-btn-primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">Postuler sur la source</a>
                     {% endif %}
-                    <span class="badge badge-gray px-3 py-1 text-sm bg-gray-50 border border-gray-200 text-gray-600 flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Publiée le {{ job.published_at|date:"d M Y" }}
-                    </span>
-                    <span class="badge badge-brand px-3 py-1 text-sm border border-brand-200 bg-brand-50 text-brand-700 flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        {{ job.location|default:job.city|default:"France" }}
-                    </span>
-                </div>
-
-                <!-- Meta Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 border-y border-gray-100 bg-gray-50/50 rounded-xl px-6 mb-8">
-                    <div>
-                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Contrat</h3>
-                        <p class="font-medium text-gray-900">{{ job.contract_type|default:"Non précisé" }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Type</h3>
-                        <p class="font-medium text-gray-900">{{ job.get_job_type_display }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Télétravail</h3>
-                        <p class="font-medium text-gray-900">{{ job.get_remote_type_display }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Expérience</h3>
-                        <p class="font-medium text-gray-900">{{ job.get_experience_level_display }}</p>
-                    </div>
-                </div>
-
-                <!-- Skills -->
-                {% if job.required_skills_json or job.optional_skills_json %}
-                <div class="mb-10">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                        Stack technique
-                    </h2>
-                    
-                    {% if job.required_skills_json %}
-                        <div class="mb-4">
-                            <h3 class="text-sm font-semibold text-gray-700 mb-2">Compétences requises</h3>
-                            <div class="flex flex-wrap gap-2">
-                                {% for skill in job.required_skills_json %}
-                                    <span class="badge badge-brand bg-brand-50 border border-brand-200 px-3 py-1 text-sm font-semibold text-brand-800">
-                                        {{ skill }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-
-                    {% if job.optional_skills_json %}
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-700 mb-2 mt-4">Un plus (Nice to have)</h3>
-                            <div class="flex flex-wrap gap-2">
-                                {% for skill in job.optional_skills_json %}
-                                    <span class="badge badge-gray bg-gray-50 border border-gray-200 px-3 py-1 text-sm text-gray-700">
-                                        {{ skill }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
                 {% endif %}
 
-                <!-- Description -->
-                <div class="mb-8 relative">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
-                        Description du poste
-                    </h2>
-                    <div class="prose prose-brand max-w-none text-gray-600 prose-p:leading-relaxed prose-a:text-brand-600 whitespace-pre-wrap font-light">
-                        {{ job.description|safe }}
-                    </div>
-                </div>
-
-                <!-- Language Requirements -->
-                {% if valid_languages %}
-                <div class="mt-8 pt-8 border-t border-gray-100">
-                    <h2 class="text-lg font-bold text-gray-900 mb-4">Langues exigées</h2>
-                    <div class="flex flex-col gap-2">
-                        {% for lang, code in valid_languages.items %}
-                            <div class="flex items-center gap-2 text-gray-700">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
-                                <span class="font-medium">{{ lang }}</span>: <span class="text-gray-500">{{ code }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
+                {% if user.is_authenticated and job.status != 'expired' %}
+                    {% include "jobs/partials/save_button.html" with job=job is_saved=is_saved %}
                 {% endif %}
             </div>
         </div>
 
-        <!-- Sidebar -->
-        <div class="lg:w-1/3">
-            <div class="sticky top-20 space-y-6">
-                
-                <!-- Action Card -->
-                <div class="card p-6 border-t-4 border-t-brand-500">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">Intéressé(e) ?</h3>
-                    
-                    {% if job.status == 'expired' %}
-                        <div class="bg-red-50 text-red-800 p-4 rounded-lg mb-4 text-sm font-medium border border-red-200">
-                            Cette offre a expiré et n'accepte plus de candidatures.
-                        </div>
-                    {% else %}
-                        <div class="flex flex-col gap-3 mb-6">
-                            {% if job.source_url %}
-                            <a href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer" class="btn-primary w-full shadow-md text-base py-3">
-                                Postuler sur {{ job.source.name|default:"le site source" }}
-                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                            </a>
-                            {% endif %}
-                            
-                            {% if user.is_authenticated %}
-                                {% include "jobs/partials/save_button.html" with job=job is_saved=is_saved %}
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                    
-                    <div class="pt-6 border-t border-gray-100">
-                        <h4 class="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">Compatibilité Profil</h4>
-                        {% if user.is_authenticated %}
-                            <form action="{% url 'matching:create' public_id=job.public_id %}" method="post">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-secondary w-full justify-center">
-                                    <svg class="w-4 h-4 mr-2 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
-                                    Lancer l'analyse détaillée
-                                </button>
-                            </form>
-                        {% else %}
-                            <p class="text-sm text-gray-500 mb-4">Découvrez si vos compétences correspondent à cette offre (anonyme).</p>
-                            <button onclick="document.getElementById('quick-match-container').classList.remove('hidden')" class="btn-secondary w-full justify-center border-brand-200 text-brand-700 bg-brand-50 hover:bg-brand-100">
-                                Analyse Rapide (Quick Match)
-                            </button>
-                        {% endif %}
-                    </div>
-                </div>
+        <div class="tta-card tta-card-body" style="margin-top:18px">
+            <h2>Description de l’offre</h2>
+            <div class="tta-muted" style="white-space:pre-wrap;margin-bottom:24px;">{{ job.description|safe|default:"Description non disponible" }}</div>
 
-                <!-- Quick Match Container (Hidden by default, for unauthenticated) -->
-                {% if not user.is_authenticated %}
-                <div id="quick-match-container" class="hidden card p-6 border-t-4 border-t-purple-500 transition-all">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold text-gray-900">Analyse Rapide</h3>
-                        <button onclick="document.getElementById('quick-match-container').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
-                    </div>
-                    <p class="text-sm text-gray-600 mb-5">Sans inscription, testez la compatibilité de vos compétences avec cette offre.</p>
+            <h3 style="margin-top:0;">Compétences requises</h3>
+            {% if job.required_skills_json %}
+                <div class="tta-chip-row" style="margin-bottom:18px;">
+                    {% for skill in job.required_skills_json %}
+                        <span class="tta-chip">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="tta-muted">Aucune compétence spécifique extraite.</p>
+            {% endif %}
+
+            {% if job.optional_skills_json %}
+                <h3>Compétences optionnelles à renforcer</h3>
+                <div class="tta-chip-row" style="margin-bottom:18px;">
+                    {% for skill in job.optional_skills_json %}
+                        <span class="tta-chip" style="background:transparent; border:1px solid var(--border);">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if valid_languages %}
+                <h3>Langues exigées</h3>
+                <ul class="tta-muted" style="margin:0;padding-left:20px;">
+                    {% for lang, code in valid_languages.items %}
+                        <li>{{ lang }} ({{ code }})</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </section>
+
+    <aside class="tta-card tta-card-body lg:sticky lg:top-24">
+        <span class="tta-eyebrow">Compatibilité</span>
+
+        {% if job.status == 'expired' %}
+            <h2 style="margin-bottom:8px;color:#991b1b;">Offre expirée</h2>
+            <p class="tta-muted">Les tests de compatibilité ne sont plus disponibles pour cette offre car elle n'accepte plus de candidatures.</p>
+        {% else %}
+            {% if user.is_authenticated %}
+                <h2 style="margin-bottom:8px">Test complet</h2>
+                <p class="tta-muted" style="margin-bottom:18px;">Lancez une analyse détaillée avec votre profil.</p>
+                <form action="{% url 'matching:create' public_id=job.public_id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="tta-btn tta-btn-primary" style="width:100%">Lancer l'analyse détaillée</button>
+                </form>
+            {% else %}
+                <h2 style="margin-bottom:8px">Test rapide</h2>
+                <p class="tta-muted" style="margin-bottom:18px;">Sans compte, entrez vos compétences pour un test rapide.</p>
+                <div id="quick-match-container">
                     {% include "matching/partials/quick_match_form.html" with job=job %}
                 </div>
-                {% endif %}
-                
-            </div>
-        </div>
 
-    </div>
+                <hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+                <a class="tta-btn tta-btn-secondary" style="width:100%" href="{% url 'account_signup' %}">Créer un compte</a>
+            {% endif %}
+        {% endif %}
+    </aside>
 </div>
 {% endblock %}

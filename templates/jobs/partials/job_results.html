@@ -1,5 +1,5 @@
 {% if page_obj.object_list %}
-<div class="space-y-4">
+<div style="display:grid;gap:14px">
     {% for job in page_obj %}
         {% include "jobs/partials/job_card.html" %}
     {% endfor %}
@@ -7,92 +7,34 @@
 
 <!-- Pagination -->
 {% if page_obj.has_other_pages %}
-<div class="mt-8 flex justify-between items-center bg-white px-4 py-3 border border-gray-200 sm:px-6 shadow-sm rounded-xl">
-    <div class="flex-1 flex justify-between sm:hidden">
-        {% if page_obj.has_previous %}
-            <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="btn-secondary"> Précédent </a>
-        {% else %}
-            <button disabled class="btn-secondary opacity-50 cursor-not-allowed"> Précédent </button>
-        {% endif %}
-        {% if page_obj.has_next %}
-            <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="btn-secondary"> Suivant </a>
-        {% else %}
-            <button disabled class="btn-secondary opacity-50 cursor-not-allowed"> Suivant </button>
-        {% endif %}
-    </div>
-    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-        <div>
-            <p class="text-sm text-gray-700">
-                Affichage
-                <span class="font-medium">{{ page_obj.start_index }}</span>
-                à
-                <span class="font-medium">{{ page_obj.end_index }}</span>
-                sur
-                <span class="font-medium">{{ total_count }}</span>
-                résultats
-            </p>
-        </div>
-        <div>
-            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                {% if page_obj.has_previous %}
-                    <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
-                        <span class="sr-only">Précédent</span>
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
-                {% else %}
-                    <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
-                        <span class="sr-only">Précédent</span>
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </span>
-                {% endif %}
+<nav class="tta-pagination" style="margin-top:22px;" aria-label="Pagination">
+    {% if page_obj.has_previous %}
+        <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="tta-page" aria-label="Page précédente">&lsaquo;</a>
+    {% endif %}
 
-                {% for i in paginator.page_range %}
-                    {% if page_obj.number == i %}
-                        <span aria-current="page" class="z-10 bg-brand-50 border-brand-500 text-brand-600 relative inline-flex items-center px-4 py-2 border text-sm font-bold"> {{ i }} </span>
-                    {% elif i > page_obj.number|add:"-3" and i < page_obj.number|add:"3" %}
-                        <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ i }}" class="bg-white border-gray-300 text-gray-600 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors"> {{ i }} </a>
-                    {% endif %}
-                {% endfor %}
+    {% for i in paginator.page_range %}
+        {% if page_obj.number == i %}
+            <span class="tta-page active" aria-current="page">{{ i }}</span>
+        {% elif i > page_obj.number|add:"-3" and i < page_obj.number|add:"3" %}
+            <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ i }}" class="tta-page">{{ i }}</a>
+        {% endif %}
+    {% endfor %}
 
-                {% if page_obj.has_next %}
-                    <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
-                        <span class="sr-only">Suivant</span>
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
-                {% else %}
-                    <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-400 cursor-not-allowed">
-                        <span class="sr-only">Suivant</span>
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </span>
-                {% endif %}
-            </nav>
-        </div>
-    </div>
-</div>
+    {% if page_obj.has_next %}
+        <a href="?{% for key, value in filters.items %}{% if key != 'page' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="tta-page" aria-label="Page suivante">&rsaquo;</a>
+    {% endif %}
+</nav>
 {% endif %}
 
 {% else %}
-<div class="text-center py-16 card bg-white">
-    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-        <svg class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+<div class="tta-empty" style="padding:48px 24px; text-align:center;">
+    <div class="tta-empty-icon" style="margin-bottom:16px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:auto; opacity:0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
     </div>
-    <h3 class="mt-2 text-xl font-bold text-gray-900">Aucune offre trouvée</h3>
-    <p class="mt-2 text-gray-500 max-w-sm mx-auto">Essayez de modifier votre recherche ou vos filtres pour trouver ce que vous cherchez.</p>
-    <div class="mt-8">
-        <a href="{% url 'jobs:list' %}" class="btn-primary">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            Réinitialiser les filtres
-        </a>
+    <h3 class="tta-empty-title" style="margin-bottom:8px; font-weight:600;">Aucune offre trouvée</h3>
+    <p class="tta-empty-text tta-muted" style="margin-bottom:24px;">Essayez d'élargir vos filtres ou de chercher une autre technologie.</p>
+    <div class="tta-empty-actions">
+        <a href="{% url 'jobs:list' %}" class="tta-btn tta-btn-secondary">Réinitialiser les filtres</a>
     </div>
 </div>
 {% endif %}
