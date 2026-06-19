@@ -6,15 +6,17 @@
 <div class="tta-app-grid" style="margin-top: 2rem; margin-bottom: 3rem;">
     {% include 'dashboard/sidebar.html' %}
     <section>
-        <div class="tta-section-head">
+        <div class="tta-page-header">
             <div>
-                <a href="{% url 'dashboard:home' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
+                <a href="{% url 'dashboard:home' %}" class="tta-back-link">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     Retour au tableau de bord
                 </a>
-                <span class="tta-eyebrow">Compte</span>
-                <h1 class="tta-page-title" style="margin-top:12px">Compte et sécurité</h1>
-                <p class="tta-muted">Gérez les paramètres de sécurité de votre compte.</p>
+            </div>
+            <div>
+                <span class="tta-page-kicker">Compte</span>
+                <h1 class="tta-page-title" style="margin-top:8px">Compte et sécurité</h1>
+                <p class="tta-muted" style="margin-top:6px">Gérez les paramètres de sécurité de votre compte.</p>
             </div>
         </div>
 
@@ -79,25 +81,25 @@
                 </div>
             </div>
 
-            <!-- Danger Zone -->
+            <!-- Account deletion -->
             <div class="tta-card tta-card-body border-red-200">
                 <div class="flex items-center gap-4 mb-6 pb-6 border-b border-red-100">
                     <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </div>
                     <div>
-                        <h2 class="text-xl font-bold text-red-900">Zone Dangereuse</h2>
-                        <p class="text-sm text-red-700">Suppression définitive de votre compte et de vos données.</p>
+                        <h2 class="text-xl font-bold text-red-900">Suppression du compte</h2>
+                        <p class="text-sm text-red-700">Action irréversible</p>
                     </div>
                 </div>
 
                 <div class="tta-alert tta-alert-danger" style="margin-bottom: 18px">
                     <strong class="block mb-1">Suppression du compte</strong>
-                    <p class="text-sm">Une fois votre compte supprimé, toutes vos données (CV, profil, offres sauvegardées) seront effacées de nos serveurs. Cette action est irréversible et immédiate.</p>
+                    <p class="text-sm">Cette action supprimera définitivement votre compte, votre profil, vos CV et vos offres sauvegardées. Elle ne peut pas être annulée après confirmation.</p>
                 </div>
 
                 <a href="{% url 'dashboard:delete_account' %}" class="tta-btn text-white bg-red-600 hover:bg-red-700 font-bold inline-flex w-auto justify-center rounded-xl px-4 py-3">
-                    Supprimer mon compte
+                    Supprimer définitivement mon compte
                 </a>
             </div>
         </div>

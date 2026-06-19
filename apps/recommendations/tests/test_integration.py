@@ -9,7 +9,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from apps.jobs.models import NormalizedJob, JobSource, RawJobRecord
 from apps.recommendations.models import JobRecommendation, SavedJob
 from apps.profiles.models import CandidateProfile
-from apps.cvs.models import CVUpload
+from apps.cvs.models import CVParsedData, CVUpload
+from apps.matching.models import MatchResult
 from apps.cvs.services.upload import CVUploadService
 from apps.cvs.services.deletion import CVDeletionService
 from apps.cvs.services.parsing import CVParsingService
@@ -83,6 +84,223 @@ class DashboardIntegrationTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["saved_jobs"]), 0)
+
+    def test_recommendation_card_hides_placeholder_badges_and_links_existing_match(self):
+        self.client.force_login(self.user)
+        profile = CandidateProfile.objects.create(
+            user=self.user,
+            full_name="Amina Ben Ali",
+            phone="+216 20 000 000",
+            location="Tunis",
+            current_level="junior",
+            years_experience=2,
+            target_roles=["Backend Developer"],
+            target_job_types=["full_time_job"],
+            target_type="job",
+            french_level="intermediate",
+            english_level="fluent",
+            relocation_preference="yes",
+            remote_preference="hybrid",
+        )
+        cv = CVUpload.objects.create(
+            user=self.user,
+            file="cvs/test.pdf",
+            original_filename="amina.pdf",
+            file_hash=str(uuid.uuid4()),
+            file_size=1234,
+            is_active=True,
+            parse_status="parsed",
+        )
+        CVParsedData.objects.create(cv_upload=cv, raw_text="")
+        self.job.contract_type = "Unknown"
+        self.job.remote_type = "unknown"
+        self.job.job_type = "unknown"
+        self.job.experience_level = "unknown"
+        self.job.published_at = None
+        self.job.save(update_fields=["contract_type", "remote_type", "job_type", "experience_level", "published_at"])
+        recommendation = JobRecommendation.objects.create(
+            user=self.user,
+            profile=profile,
+            cv_upload=cv,
+            job=self.job,
+            fit_score=82,
+            ranking_score=82,
+            rank=1,
+            strong_skills_json=["Python", {"name": "Django"}],
+            missing_skills_json=["PostgreSQL"],
+            computed_at=timezone.now(),
+            status="active",
+        )
+        match = MatchResult.objects.create(
+            user=self.user,
+            profile=profile,
+            cv_upload=cv,
+            job=self.job,
+            profile_snapshot_json={},
+            job_snapshot_json={"title": self.job.title, "company_name": self.job.company_name},
+            fit_score=recommendation.fit_score,
+            technical_skills_score=80,
+            experience_score=80,
+            role_title_score=80,
+            language_score=80,
+            location_score=80,
+            strong_skills_json=["Python"],
+            missing_required_skills_json=["PostgreSQL"],
+        )
+
+        response = self.client.get(reverse("dashboard:recommendations"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Unknown")
+        self.assertNotContains(response, "unknown")
+        self.assertContains(response, "82%")
+        self.assertContains(response, "tta-score-ring-prominent")
+        self.assertContains(response, "tta-skill-chip-success")
+        self.assertContains(response, reverse("matching:detail", kwargs={"public_id": match.public_id}))
+        self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
+        self.assertContains(response, "Vu le")
+
+    def test_recommendation_card_hides_match_cta_when_no_match_exists(self):
+        self.client.force_login(self.user)
+        profile = CandidateProfile.objects.create(
+            user=self.user,
+            full_name="Amina Ben Ali",
+            phone="+216 20 000 000",
+            location="Tunis",
+            current_level="junior",
+            years_experience=2,
+            target_roles=["Backend Developer"],
+            target_job_types=["full_time_job"],
+            target_type="job",
+            french_level="intermediate",
+            english_level="fluent",
+            relocation_preference="yes",
+            remote_preference="hybrid",
+        )
+        cv = CVUpload.objects.create(
+            user=self.user,
+            file="cvs/test.pdf",
+            original_filename="amina.pdf",
+            file_hash=str(uuid.uuid4()),
+            file_size=1234,
+            is_active=True,
+            parse_status="parsed",
+        )
+        CVParsedData.objects.create(cv_upload=cv, raw_text="")
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=profile,
+            cv_upload=cv,
+            job=self.job,
+            fit_score=70,
+            ranking_score=70,
+            rank=1,
+            computed_at=timezone.now(),
+            status="active",
+        )
+
+        response = self.client.get(reverse("dashboard:recommendations"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Voir la compatibilité")
+        self.assertContains(response, "Voir l'offre")
+
+    def test_recommendations_page_defaults_to_strongest_first_when_ranks_are_tied(self):
+        self.client.force_login(self.user)
+        profile = CandidateProfile.objects.create(
+            user=self.user,
+            full_name="Amina Ben Ali",
+            phone="+216 20 000 000",
+            location="Tunis",
+            current_level="junior",
+            years_experience=2,
+            target_roles=["Backend Developer"],
+            target_job_types=["full_time_job"],
+            target_type="job",
+            french_level="intermediate",
+            english_level="fluent",
+            relocation_preference="yes",
+            remote_preference="hybrid",
+        )
+        cv = CVUpload.objects.create(
+            user=self.user,
+            file="cvs/test.pdf",
+            original_filename="amina.pdf",
+            file_hash=str(uuid.uuid4()),
+            file_size=1234,
+            is_active=True,
+            parse_status="parsed",
+        )
+        CVParsedData.objects.create(cv_upload=cv, raw_text="")
+        weaker_job = create_job(status="active")
+        weaker_job.title = "Junior Backend Role"
+        weaker_job.save(update_fields=["title"])
+        stronger_job = create_job(status="active")
+        stronger_job.title = "Senior Django Role"
+        stronger_job.save(update_fields=["title"])
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=profile,
+            cv_upload=cv,
+            job=weaker_job,
+            fit_score=61,
+            ranking_score=61,
+            rank=1,
+            computed_at=timezone.now(),
+            status="active",
+        )
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=profile,
+            cv_upload=cv,
+            job=stronger_job,
+            fit_score=93,
+            ranking_score=93,
+            rank=1,
+            computed_at=timezone.now(),
+            status="active",
+        )
+
+        response = self.client.get(reverse("dashboard:recommendations"))
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertLess(content.index("Senior Django Role"), content.index("Junior Backend Role"))
+
+    def test_saved_jobs_card_hides_placeholder_and_garbage_metadata(self):
+        self.client.force_login(self.user)
+        self.job.contract_type = "Unknown"
+        self.job.remote_type = "unknown"
+        self.job.job_type = "t"
+        self.job.experience_level = "unknown"
+        self.job.company_name = "t"
+        self.job.location = "Unknown"
+        self.job.city = "t"
+        self.job.description = "t"
+        self.job.published_at = None
+        self.job.save(
+            update_fields=[
+                "contract_type",
+                "remote_type",
+                "job_type",
+                "experience_level",
+                "company_name",
+                "location",
+                "city",
+                "description",
+                "published_at",
+            ]
+        )
+        SavedJob.objects.create(user=self.user, job=self.job)
+
+        response = self.client.get(reverse("dashboard:saved_jobs"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Unknown")
+        self.assertNotContains(response, "unknown")
+        self.assertNotContains(response, ">t<", html=False)
+        self.assertContains(response, "Vu le")
+        self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
 
 
 class JobDetailSaveIntegrationTests(TestCase):

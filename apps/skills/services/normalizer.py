@@ -22,6 +22,35 @@ def normalize_skill_text(text: str | None) -> str:
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
+def candidate_normalized_skill_texts(text: str | None) -> list[str]:
+    normalized = normalize_skill_text(text)
+    if not normalized:
+        return []
+
+    candidates = [normalized]
+    suffix_patterns = [
+        r"\s+(?:basics?|fundamentals?|notions?)$",
+        r"\s+(?:design|development|developpement)$",
+    ]
+    for pattern in suffix_patterns:
+        stripped = re.sub(pattern, "", normalized).strip()
+        if stripped and stripped not in candidates:
+            candidates.append(stripped)
+
+    replacements = {
+        "rest apis": "rest api",
+        "rest api design": "rest api",
+        "linux fedora": "linux",
+        "manual qa": "quality assurance",
+        "api smoke tests": "api testing",
+        "vs code": "visual studio code",
+    }
+    replacement = replacements.get(normalized)
+    if replacement and replacement not in candidates:
+        candidates.append(replacement)
+
+    return candidates
+
 class SkillNormalizerService:
     @classmethod
     def normalize_many(
@@ -40,13 +69,16 @@ class SkillNormalizerService:
         unmatched_candidates_list: List[UnmatchedSkillCandidate] = []
         
         normalized_to_raw: Dict[str, str] = {}
+        lookup_to_primary_normalized: Dict[str, str] = {}
         for raw in unique_raw_skills:
-            normalized = normalize_skill_text(raw)
-            if normalized:
-                if normalized not in normalized_to_raw:
-                    normalized_to_raw[normalized] = raw
+            candidates = candidate_normalized_skill_texts(raw)
+            if candidates:
+                primary = candidates[0]
+                normalized_to_raw.setdefault(primary, raw)
+                for candidate in candidates:
+                    lookup_to_primary_normalized.setdefault(candidate, primary)
                     
-        normalized_texts = list(normalized_to_raw.keys())
+        normalized_texts = list(lookup_to_primary_normalized.keys())
         
         # Look up aliases
         aliases = SkillAlias.objects.filter(
@@ -57,8 +89,14 @@ class SkillNormalizerService:
         
         with transaction.atomic():
             for normalized, raw in normalized_to_raw.items():
-                if normalized in alias_map:
-                    canonical_skills_set.add(alias_map[normalized])
+                matched_skill = None
+                for candidate, primary_normalized in lookup_to_primary_normalized.items():
+                    if primary_normalized == normalized and candidate in alias_map:
+                        matched_skill = alias_map[candidate]
+                        break
+
+                if matched_skill:
+                    canonical_skills_set.add(matched_skill)
                 else:
                     candidate, created = UnmatchedSkillCandidate.objects.get_or_create(
                         normalized_text=normalized,

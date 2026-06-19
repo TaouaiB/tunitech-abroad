@@ -596,6 +596,70 @@ class RecommendationQueryServiceTests(TestCase):
             status="active",
         )
 
+    def test_get_dashboard_recommendations_uses_score_order_when_ranks_are_not_meaningful(self):
+        weaker_job = make_job(self.source, "q-weaker", title="Weaker Recommendation", status=JobStatus.ACTIVE)
+        stronger_job = make_job(self.source, "q-stronger", title="Stronger Recommendation", status=JobStatus.ACTIVE)
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=weaker_job,
+            fit_score=62,
+            ranking_score=Decimal("62.00"),
+            rank=1,
+            computed_at=timezone.now(),
+            status="active",
+        )
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=stronger_job,
+            fit_score=91,
+            ranking_score=Decimal("91.00"),
+            rank=1,
+            computed_at=timezone.now(),
+            status="active",
+        )
+
+        with patch(
+            "apps.recommendations.services.query.RecommendationQueryService._enqueue_refresh"
+        ):
+            result = RecommendationQueryService.get_dashboard_recommendations(self.user)
+
+        self.assertEqual(result.recommendations[0].job_id, stronger_job.pk)
+        self.assertEqual(result.recommendations[1].job_id, weaker_job.pk)
+
+    def test_get_dashboard_recommendations_prefers_meaningful_rank_order(self):
+        top_ranked_job = make_job(self.source, "q-rank-1", title="Rank One Recommendation", status=JobStatus.ACTIVE)
+        lower_ranked_job = make_job(self.source, "q-rank-2", title="Rank Two Recommendation", status=JobStatus.ACTIVE)
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=lower_ranked_job,
+            fit_score=95,
+            ranking_score=Decimal("95.00"),
+            rank=2,
+            computed_at=timezone.now(),
+            status="active",
+        )
+        JobRecommendation.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=top_ranked_job,
+            fit_score=80,
+            ranking_score=Decimal("80.00"),
+            rank=1,
+            computed_at=timezone.now(),
+            status="active",
+        )
+
+        with patch(
+            "apps.recommendations.services.query.RecommendationQueryService._enqueue_refresh"
+        ):
+            result = RecommendationQueryService.get_dashboard_recommendations(self.user)
+
+        self.assertEqual(result.recommendations[0].job_id, top_ranked_job.pk)
+        self.assertEqual(result.recommendations[1].job_id, lower_ranked_job.pk)
+
     def test_get_dashboard_recommendations_returns_only_requesting_users_rows(self):
         self._make_active_rec(self.user, self.profile, self.job)
         self._make_active_rec(self.other_user, self.other_profile, self.other_job)

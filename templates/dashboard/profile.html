@@ -6,15 +6,17 @@
 <div class="tta-app-grid" style="margin-top: 2rem; margin-bottom: 3rem;">
     {% include 'dashboard/sidebar.html' %}
     <section>
-        <div class="tta-section-head">
+        <div class="tta-page-header">
             <div>
-                <a href="{% url 'dashboard:home' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
+                <a href="{% url 'dashboard:home' %}" class="tta-back-link">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     Retour au tableau de bord
                 </a>
-                <span class="tta-eyebrow">Profil</span>
-                <h1 class="tta-page-title" style="margin-top:12px">Mon profil candidat</h1>
-                <p class="tta-muted">Complétez votre profil pour améliorer la pertinence de vos recommandations.</p>
+            </div>
+            <div>
+                <span class="tta-page-kicker">Profil</span>
+                <h1 class="tta-page-title" style="margin-top:8px">Mon profil candidat</h1>
+                <p class="tta-muted" style="margin-top:6px">Complétez votre profil pour améliorer la pertinence de vos recommandations.</p>
             </div>
         </div>
 
@@ -136,6 +138,29 @@
                         {{ field }}
                     {% endif %}
                 {% endfor %}
+
+                <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
+                    <h2 class="text-lg font-bold text-slate-950 dark:text-white">Compétences</h2>
+                    <p class="tta-muted text-sm">Compétences confirmées et détectées depuis votre CV, utilisées par le matching.</p>
+                </div>
+                {% if profile_skills %}
+                    <div class="tta-chip-row">
+                        {% for skill in profile_skills %}
+                            <span class="tta-skill-chip {% if skill.is_confirmed %}tta-skill-chip-required{% endif %}">
+                                {{ skill.raw_name|default:skill.normalized_name }}
+                                {% if skill.is_confirmed %}
+                                    <span class="tta-badge tta-badge-success">Confirmée</span>
+                                {% elif skill.source %}
+                                    <span class="tta-badge tta-badge-info">CV{% if skill.confidence %} {{ skill.confidence }}%{% endif %}</span>
+                                {% endif %}
+                            </span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
+                        Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section.
+                    </div>
+                {% endif %}
             </div>
 
             <script>
@@ -164,7 +189,7 @@
                 });
             </script>
 
-            <div class="tta-sticky-save-bar">
+            <div class="tta-sticky-save-bar flex justify-end">
                 <button type="submit" class="tta-btn tta-btn-primary w-full justify-center md:w-auto">
                     Enregistrer le profil
                 </button>

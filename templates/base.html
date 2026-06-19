@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TuniTech Abroad{% endblock %}</title>
 
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem("tta-theme") === "dark") {
+                    document.documentElement.classList.add("dark");
+                } else {
+                    document.documentElement.classList.remove("dark");
+                }
+            } catch (error) {
+                document.documentElement.classList.remove("dark");
+            }
+        })();
+    </script>
+
     <!-- Tailwind CSS (Phase 14K-1 tokens) -->
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
 
@@ -16,7 +30,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 </head>
 <body data-project-layout="tunitech-abroad" class="tta-shell bg-gray-50 text-gray-900 font-sans antialiased selection:bg-brand-200 selection:text-brand-900">
-    <header class="tta-nav" x-data="{ mobileMenuOpen: false }">
+    <header class="tta-nav" x-data="{ mobileMenuOpen: false, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light', toggleTheme() { this.theme = this.theme === 'dark' ? 'light' : 'dark'; document.documentElement.classList.toggle('dark', this.theme === 'dark'); try { localStorage.setItem('tta-theme', this.theme); } catch (error) {} } }">
         <div class="tta-container tta-nav-row flex justify-between items-center h-16">
             <a class="tta-brand flex items-center gap-2" href="{% url 'core:home' %}">
                 <span class="tta-logo">
@@ -49,13 +63,12 @@
                         </button>
 
                         <div x-show="open" x-cloak x-transition.opacity.duration.200ms class="tta-dropdown-menu" role="menu">
-                            <div class="px-4 py-2 text-xs text-gray-500 border-b border-gray-100 truncate">{{ user.email }}</div>
+                            <div class="px-4 py-2 text-xs text-slate-500 border-b border-slate-100 truncate dark:border-slate-700 dark:text-slate-400">{{ user.email }}</div>
                             <a href="{% url 'dashboard:home' %}" class="tta-dropdown-item" role="menuitem">Tableau de bord</a>
                             <a href="{% url 'dashboard:cv' %}" class="tta-dropdown-item" role="menuitem">Mon CV</a>
                             <a href="{% url 'dashboard:profile' %}" class="tta-dropdown-item" role="menuitem">Profil</a>
                             <a href="{% url 'dashboard:recommendations' %}" class="tta-dropdown-item" role="menuitem">Recommandations</a>
                             <a href="{% url 'dashboard:saved_jobs' %}" class="tta-dropdown-item" role="menuitem">Favoris</a>
-                            <a href="{% url 'matching:history' %}" class="tta-dropdown-item" role="menuitem">Compatibilités</a>
                             <a href="{% url 'dashboard:email_preferences' %}" class="tta-dropdown-item" role="menuitem">Préférences emails</a>
                             <a href="{% url 'dashboard:account' %}" class="tta-dropdown-item" role="menuitem">Sécurité & compte</a>
                             <form method="post" action="{% url 'account_logout' %}" class="block">
@@ -70,10 +83,28 @@
                     <a class="tta-nav-link" href="{% url 'account_login' %}">Connexion</a>
                     <a class="tta-btn tta-btn-primary" href="{% url 'account_signup' %}">Créer un compte</a>
                 {% endif %}
+                <button type="button" class="tta-theme-toggle" @click="toggleTheme()" :aria-label="theme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'" :title="theme === 'dark' ? 'Mode clair' : 'Mode sombre'">
+                    <svg x-show="theme !== 'dark'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364-1.414 1.414M7.05 16.95l-1.414 1.414m12.728 0-1.414-1.414M7.05 7.05 5.636 5.636M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>
+                    </svg>
+                    <svg x-show="theme === 'dark'" x-cloak class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+                    </svg>
+                    <span x-text="theme === 'dark' ? 'Sombre' : 'Clair'"></span>
+                </button>
             </nav>
 
             <!-- Mobile menu button -->
-            <div class="md:hidden flex items-center">
+            <div class="md:hidden flex items-center gap-2">
+                <button type="button" class="tta-theme-toggle" @click="toggleTheme()" :aria-label="theme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'">
+                    <svg x-show="theme !== 'dark'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364-1.414 1.414M7.05 16.95l-1.414 1.414m12.728 0-1.414-1.414M7.05 7.05 5.636 5.636M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>
+                    </svg>
+                    <svg x-show="theme === 'dark'" x-cloak class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+                    </svg>
+                    <span class="sr-only" x-text="theme === 'dark' ? 'Sombre' : 'Clair'"></span>
+                </button>
                 <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800" :aria-expanded="mobileMenuOpen.toString()" aria-controls="mobile-menu">
                     <span class="sr-only">Ouvrir le menu</span>
                     <svg x-show="!mobileMenuOpen" class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -115,7 +146,7 @@
                             {% endif %}
                         </div>
                         <div class="ml-3">
-                            <div class="text-base font-medium text-gray-800 truncate">{{ user.email }}</div>
+                            <div class="text-base font-medium text-slate-800 truncate dark:text-slate-100">{{ user.email }}</div>
                         </div>
                     </div>
                     <div class="mt-3 space-y-1">
@@ -123,7 +154,6 @@
                         <a href="{% url 'dashboard:profile' %}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Profil</a>
                         <a href="{% url 'dashboard:recommendations' %}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Recommandations</a>
                         <a href="{% url 'dashboard:saved_jobs' %}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Favoris</a>
-                        <a href="{% url 'matching:history' %}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Compatibilités</a>
                         <a href="{% url 'dashboard:email_preferences' %}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Préférences emails</a>
                         <a href="{% url 'dashboard:account' %}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Sécurité & compte</a>
                         <form method="post" action="{% url 'account_logout' %}" class="block">
@@ -176,20 +206,20 @@
     <footer class="tta-footer border-t border-gray-200 mt-auto">
         <div class="tta-container flex justify-between gap-4 flex-wrap items-center">
             <div>
-                <strong class="text-gray-900 block">TuniTech Abroad</strong>
-                <div class="tta-small text-gray-500">Job intelligence France pour profils IT tunisiens.</div>
+                <strong class="block text-slate-950 dark:text-white">TuniTech Abroad</strong>
+                <div class="tta-small text-slate-600 dark:text-slate-400">Job intelligence France pour profils IT tunisiens.</div>
             </div>
             <div class="flex gap-4 flex-wrap">
-                <a href="{% url 'jobs:list' %}" class="text-gray-500 hover:text-gray-900">Offres</a>
+                <a href="{% url 'jobs:list' %}" class="text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white">Offres</a>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'dashboard:cv' %}" class="text-gray-500 hover:text-gray-900">Analyse CV</a>
+                    <a href="{% url 'dashboard:cv' %}" class="text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white">Analyse CV</a>
                 {% else %}
-                    <a href="{% url 'account_signup' %}" class="text-gray-500 hover:text-gray-900">Analyse CV</a>
+                    <a href="{% url 'account_signup' %}" class="text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white">Analyse CV</a>
                 {% endif %}
-                <a href="{% url 'privacy:privacy_policy' %}" class="text-gray-500 hover:text-gray-900">Confidentialité</a>
-                <a href="{% url 'privacy:terms' %}" class="text-gray-500 hover:text-gray-900">CGU</a>
+                <a href="{% url 'privacy:privacy_policy' %}" class="text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white">Confidentialité</a>
+                <a href="{% url 'privacy:terms' %}" class="text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white">CGU</a>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'dashboard:home' %}" class="text-gray-500 hover:text-gray-900">Tableau de bord</a>
+                    <a href="{% url 'dashboard:home' %}" class="text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white">Tableau de bord</a>
                 {% endif %}
             </div>
         </div>

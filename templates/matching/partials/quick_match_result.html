@@ -1,13 +1,13 @@
-<div class="mt-6 border-t border-gray-100 pt-6 animate-fade-in-up">
+<div class="mt-6 border-t border-slate-200 pt-6 animate-fade-in-up dark:border-slate-800">
     {% if error %}
-        <div class="bg-red-50 text-red-800 p-4 rounded-lg flex items-start gap-3 border border-red-200">
+        <div class="bg-red-50 text-red-800 p-4 rounded-lg flex items-start gap-3 border border-red-200 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
             <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <p class="font-medium text-sm">{{ error }}</p>
         </div>
     {% else %}
-        <div class="bg-gradient-to-br from-white to-gray-50 p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div class="flex items-center justify-between mb-6 pb-6 border-b border-gray-100">
-                <h3 class="text-xl font-bold text-gray-900">Score de Compatibilité Estimé</h3>
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div class="flex items-center justify-between mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="text-xl font-bold text-slate-950 dark:text-white">Score de Compatibilité Estimé</h3>
                 <div class="relative w-20 h-20 flex items-center justify-center rounded-full {% if session.estimated_fit_score >= 70 %}bg-green-100 text-green-700 border-green-200{% elif session.estimated_fit_score >= 40 %}bg-yellow-100 text-yellow-700 border-yellow-200{% else %}bg-red-100 text-red-700 border-red-200{% endif %} border-4">
                     <span class="text-2xl font-black">{{ session.estimated_fit_score }}<span class="text-lg">%</span></span>
                 </div>
@@ -15,8 +15,8 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Matched Skills -->
-                <div class="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-950/40">
+                    <h4 class="font-bold text-slate-900 mb-3 flex items-center gap-2 dark:text-slate-100">
                         <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         Compétences Validées
                     </h4>
@@ -29,13 +29,13 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-sm text-gray-500 italic bg-gray-50 p-3 rounded">Aucune compétence trouvée en commun.</p>
+                        <p class="text-sm text-slate-600 italic bg-slate-50 p-3 rounded dark:bg-slate-800 dark:text-slate-300">Aucune compétence trouvée en commun.</p>
                     {% endif %}
                 </div>
                 
                 <!-- Missing Skills -->
-                <div class="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm dark:border-slate-800 dark:bg-slate-950/40">
+                    <h4 class="font-bold text-slate-900 mb-3 flex items-center gap-2 dark:text-slate-100">
                         <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                         Compétences Manquantes
                     </h4>
@@ -51,14 +51,14 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-sm text-gray-500 italic bg-gray-50 p-3 rounded">Aucune compétence manquante détectée !</p>
+                        <p class="text-sm text-slate-600 italic bg-slate-50 p-3 rounded dark:bg-slate-800 dark:text-slate-300">Aucune compétence manquante détectée !</p>
                     {% endif %}
                 </div>
             </div>
             
             {% if not user.is_authenticated %}
-            <div class="mt-8 p-6 bg-brand-50 rounded-xl border border-brand-100 text-center">
-                <p class="text-brand-800 font-medium mb-4">Pour une analyse complète avec votre vrai CV, des recommandations personnalisées et l'explication de l'IA.</p>
+            <div class="mt-8 p-6 bg-brand-50 rounded-xl border border-brand-100 text-center dark:border-brand-900/50 dark:bg-brand-950/30">
+                <p class="text-brand-800 font-medium mb-4 dark:text-brand-200">Pour une analyse complète avec votre vrai CV, des recommandations personnalisées et l'explication de l'IA.</p>
                 <a href="{% url 'account_signup' %}" class="btn-primary inline-flex">
                     Créer mon compte gratuit
                     <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>

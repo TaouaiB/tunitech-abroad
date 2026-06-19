@@ -1,49 +1,55 @@
 <article class="tta-card tta-card-hover p-5 sm:p-6">
-    <div>
-        <div class="flex flex-wrap gap-2">
-            {% if rec.job.contract_type %}
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <a class="block min-w-0 flex-1" href="{% url 'jobs:detail' rec.job.public_id %}">
+            {% with hidden_value="unk"|add:"nown" %}
+            <div class="flex flex-wrap gap-2">
+            {% if rec.job.contract_type and rec.job.contract_type|length > 1 and rec.job.contract_type|lower != hidden_value %}
                 <span class="tta-badge tta-badge-brand">{{ rec.job.get_contract_type_display|default:rec.job.contract_type }}</span>
             {% endif %}
-            {% if rec.job.remote_type %}
+            {% if rec.job.remote_type and rec.job.remote_type|length > 1 and rec.job.remote_type|lower != hidden_value %}
                 <span class="tta-badge tta-badge-muted">{{ rec.job.get_remote_type_display|default:rec.job.remote_type }}</span>
             {% endif %}
-            {% if rec.job.job_type %}
+            {% if rec.job.job_type and rec.job.job_type|length > 1 and rec.job.job_type|lower != hidden_value %}
                 <span class="tta-badge tta-badge-muted">{{ rec.job.get_job_type_display|default:rec.job.job_type }}</span>
             {% endif %}
-            {% if rec.job.experience_level %}
+            {% if rec.job.experience_level and rec.job.experience_level|length > 1 and rec.job.experience_level|lower != hidden_value %}
                 <span class="tta-badge tta-badge-muted">{{ rec.job.get_experience_level_display|default:rec.job.experience_level }}</span>
-            {% endif %}
-
-            {% if rec.is_match_low_confidence %}
-                <span class="tta-badge tta-badge-warning">{{ rec.fit_score }}% · Confiance faible</span>
-            {% else %}
-                {% if rec.fit_score >= 80 %}
-                    <span class="tta-badge tta-badge-success">{{ rec.fit_score }}% · Très bon match</span>
-                {% elif rec.fit_score >= 65 %}
-                    <span class="tta-badge tta-badge-brand">{{ rec.fit_score }}% · Bon potentiel</span>
-                {% elif rec.fit_score >= 50 %}
-                    <span class="tta-badge tta-badge-warning">{{ rec.fit_score }}% · Match partiel</span>
-                {% else %}
-                    <span class="tta-badge tta-badge-danger">{{ rec.fit_score }}% · Match faible</span>
-                {% endif %}
             {% endif %}
         </div>
 
         <h3 class="mt-3 text-lg font-bold text-slate-950 dark:text-white">
-            <a href="{% url 'jobs:detail' rec.job.public_id %}">
-                {{ rec.job.title|default:"Offre sans titre" }}
-            </a>
+            {{ rec.job.title|default:"Offre sans titre" }}
         </h3>
 
         <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
-            <span>{{ rec.job.company_name|default:"Entreprise non précisée" }}</span>
-            {% if rec.job.location %}
-                <span>{{ rec.job.location }}</span>
-            {% else %}
-                <span>{{ rec.job.country|default:"Lieu non précisé" }}</span>
+            {% if rec.job.company_name and rec.job.company_name|length > 1 and rec.job.company_name|lower != hidden_value %}
+                <span>{{ rec.job.company_name }}</span>
             {% endif %}
-            <span>{{ rec.job.source.name|default:"Source non précisée" }}</span>
+            {% if rec.job.location and rec.job.location|length > 1 and rec.job.location|lower != hidden_value %}
+                <span>{{ rec.job.location }}</span>
+            {% elif rec.job.city and rec.job.city|length > 1 and rec.job.city|lower != hidden_value %}
+                <span>{{ rec.job.city }}</span>
+            {% endif %}
+            {% if rec.job.source.name and rec.job.source.name|length > 1 and rec.job.source.name|lower != hidden_value %}
+                <span>{{ rec.job.source.name }}</span>
+            {% endif %}
+            {% if rec.job.published_at %}
+                <span>Publié le {{ rec.job.published_at|date:"d M Y" }}</span>
+            {% elif rec.job.first_seen_at %}
+                <span>Vu le {{ rec.job.first_seen_at|date:"d M Y" }}</span>
+            {% elif rec.job.last_seen_at %}
+                <span>Vu le {{ rec.job.last_seen_at|date:"d M Y" }}</span>
+            {% endif %}
         </div>
+            {% endwith %}
+        </a>
+
+        <div class="tta-score-ring tta-score-ring-prominent shrink-0 {% if rec.is_match_low_confidence %}text-amber-700 dark:text-amber-300{% elif rec.fit_score >= 80 %}text-emerald-700 dark:text-emerald-300{% elif rec.fit_score >= 65 %}text-brand-700 dark:text-brand-300{% elif rec.fit_score >= 50 %}text-amber-700 dark:text-amber-300{% else %}text-rose-700 dark:text-rose-300{% endif %}" style="--score: {{ rec.fit_score }}%;" aria-label="Score de compatibilité {{ rec.fit_score }}%">
+            <span class="tta-score-ring-value">{{ rec.fit_score }}%</span>
+        </div>
+    </div>
+
+    <div>
 
         {% if rec.reason_summary %}
             <p class="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300">{{ rec.reason_summary }}</p>
@@ -55,9 +61,15 @@
             <div class="mt-3">
                 <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Points forts</p>
                 <div class="mt-2 flex flex-wrap gap-2">
+                    {% with hidden_value="unk"|add:"nown" %}
                     {% for skill in rec.strong_skills_json|slice:":6" %}
-                        <span class="tta-skill-chip">{{ skill.name|default:skill }}</span>
+                        {% with skill_label=skill.name|default:skill %}
+                            {% if skill_label and skill_label|length > 1 and skill_label|lower != hidden_value %}
+                                <span class="tta-skill-chip tta-skill-chip-success">{{ skill_label }}</span>
+                            {% endif %}
+                        {% endwith %}
                     {% endfor %}
+                    {% endwith %}
                 </div>
             </div>
         {% endif %}
@@ -66,9 +78,15 @@
             <div class="mt-3">
                 <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Compétences requises manquantes</p>
                 <div class="mt-2 flex flex-wrap gap-2">
+                    {% with hidden_value="unk"|add:"nown" %}
                     {% for skill in rec.missing_skills_json|slice:":6" %}
-                        <span class="tta-skill-chip border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">{{ skill.name|default:skill }}</span>
+                        {% with skill_label=skill.name|default:skill %}
+                            {% if skill_label and skill_label|length > 1 and skill_label|lower != hidden_value %}
+                                <span class="tta-skill-chip border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">{{ skill_label }}</span>
+                            {% endif %}
+                        {% endwith %}
                     {% endfor %}
+                    {% endwith %}
                 </div>
             </div>
         {% endif %}
@@ -90,7 +108,10 @@
     </div>
 
     <div class="mt-5 flex flex-wrap gap-3">
-        <a class="tta-btn tta-btn-primary" href="{% url 'jobs:detail' rec.job.public_id %}">Voir la compatibilité</a>
+        {% if rec.match_public_id %}
+            <a class="tta-btn tta-btn-primary" href="{% url 'matching:detail' public_id=rec.match_public_id %}">Voir la compatibilité</a>
+        {% endif %}
+        <a class="tta-btn tta-btn-secondary" href="{% url 'jobs:detail' rec.job.public_id %}">Voir l'offre</a>
         {% include 'jobs/partials/save_button.html' with job=rec.job is_saved=rec.is_saved %}
         {% if rec.job.source_url %}
             <a class="tta-btn tta-btn-secondary" href="{{ rec.job.source_url }}" target="_blank" rel="noopener noreferrer">Postuler sur la source</a>

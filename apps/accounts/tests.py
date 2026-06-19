@@ -128,13 +128,28 @@ class SocialAccountAdapterTests(TestCase):
     def test_new_google_verified_email_creates_provisioned_account_without_confirmation(self):
         login = self._social_login(provider="google", email="new-google@gmail.test", verified=True)
 
-        TuniTechSocialAccountAdapter().save_user(self._request(), login)
+        with patch("allauth.account.adapter.DefaultAccountAdapter.send_confirmation_mail") as send_confirmation_mail:
+            TuniTechSocialAccountAdapter().save_user(self._request(), login)
 
         user = User.objects.get(email="new-google@gmail.test")
         self.assertFalse(user.has_usable_password())
         self.assertTrue(hasattr(user, "candidate_profile"))
         self.assertTrue(hasattr(user, "email_preferences"))
         self.assertTrue(EmailAddress.objects.filter(user=user, email=user.email, verified=True).exists())
+        self.assertEqual(send_confirmation_mail.call_count, 0)
+
+    def test_new_github_verified_email_creates_verified_account_without_confirmation(self):
+        login = self._social_login(provider="github", email="new-github@example.test", verified=True)
+
+        with patch("allauth.account.adapter.DefaultAccountAdapter.send_confirmation_mail") as send_confirmation_mail:
+            TuniTechSocialAccountAdapter().save_user(self._request(), login)
+
+        user = User.objects.get(email="new-github@example.test")
+        self.assertFalse(user.has_usable_password())
+        self.assertTrue(hasattr(user, "candidate_profile"))
+        self.assertTrue(hasattr(user, "email_preferences"))
+        self.assertTrue(EmailAddress.objects.filter(user=user, email=user.email, verified=True).exists())
+        self.assertEqual(send_confirmation_mail.call_count, 0)
 
     def test_social_adapter_does_not_send_duplicate_signup_warning_for_existing_google_email(self):
         create_test_user(username="existingwarning", email="warning@gmail.test")
@@ -224,7 +239,8 @@ class AuthViewsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/confirm-email/", response["Location"])
         user = User.objects.get(email="normal-signup@example.test")
-        self.assertTrue(EmailAddress.objects.filter(user=user, email=user.email, verified=False).exists())
+        email_address = EmailAddress.objects.get(user=user, email=user.email)
+        self.assertFalse(email_address.verified)
 
     def test_confirm_email_route_uses_project_layout(self):
         response = self.client.get("/accounts/confirm-email/")

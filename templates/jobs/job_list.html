@@ -15,7 +15,7 @@
 
     <div class="tta-filter-drawer" data-filter-drawer style="display:none;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-            <h3 style="margin:0;">Filtres</h3>
+            <h3 class="text-lg font-bold text-slate-950 dark:text-white" style="margin:0;">Filtres</h3>
             <button class="tta-btn tta-btn-ghost" data-drawer-close onclick="document.querySelector('[data-filter-drawer]').style.display='none'; document.querySelector('[data-drawer-backdrop]').style.display='none';">Fermer</button>
         </div>
         {% include "jobs/partials/job_filter_panel.html" %}
@@ -25,14 +25,14 @@
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
     <!-- Filter Panel Desktop -->
     <aside class="tta-card tta-card-body desktop-only">
-        <h3 style="margin-top:0">Filtres</h3>
+        <h3 class="text-lg font-bold text-slate-950 dark:text-white" style="margin-top:0">Filtres</h3>
         {% include "jobs/partials/job_filter_panel.html" %}
     </aside>
 
     <!-- Results Section -->
     <section>
         <div class="tta-card tta-card-body" style="margin-bottom:14px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
-            <strong>
+            <strong class="text-slate-950 dark:text-white">
                 {% if filters.q %}
                     Résultats pour {{ filters.q }}
                 {% else %}

@@ -67,6 +67,37 @@ class JobViewTests(TestCase):
         self.assertContains(response, reverse("jobs:detail", args=[self.job.public_id]))
         self.assertNotContains(response, f'href="/jobs/{self.job.id}/"')
 
+    def test_job_card_hides_placeholder_badges_and_shows_date(self):
+        self.job.contract_type = "Unknown"
+        self.job.remote_type = "unknown"
+        self.job.job_type = "t"
+        self.job.experience_level = "unknown"
+        self.job.company_name = "t"
+        self.job.location = "Unknown"
+        self.job.city = "t"
+        self.job.published_at = None
+        self.job.save(
+            update_fields=[
+                "contract_type",
+                "remote_type",
+                "job_type",
+                "experience_level",
+                "company_name",
+                "location",
+                "city",
+                "published_at",
+            ]
+        )
+
+        response = self.client.get(reverse("jobs:list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Unknown")
+        self.assertNotContains(response, "unknown")
+        self.assertNotContains(response, ">t<", html=False)
+        self.assertContains(response, "Vu le")
+        self.assertContains(response, reverse("jobs:detail", args=[self.job.public_id]))
+
     def test_public_pages_survive_analytics_failure(self):
         with patch("apps.jobs.views.UserEventService.record_event", side_effect=Exception("analytics down")):
             list_response = self.client.get(reverse("jobs:list"))

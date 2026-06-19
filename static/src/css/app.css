@@ -4,6 +4,58 @@
 
 [x-cloak] { display: none !important; }
 
+@layer base {
+    :root {
+        --border: #cbd5e1;
+        --muted: #475569;
+        --text-muted: #64748b;
+        --surface-sunken: #f1f5f9;
+        --brand-50: #eff6ff;
+        --brand-100: #dbeafe;
+        --brand-200: #bfdbfe;
+        --brand-500: #3b82f6;
+        --brand-600: #2563eb;
+        --brand-700: #1d4ed8;
+        --brand-900: #1e3a8a;
+        --warning-50: #fffbeb;
+        --warning-100: #fef3c7;
+        --warning-200: #fde68a;
+        --warning-700: #b45309;
+        --danger-50: #fff1f2;
+        --danger-100: #ffe4e6;
+        --danger-200: #fecdd3;
+        --danger-600: #e11d48;
+        --danger-700: #be123c;
+        --danger-900: #881337;
+        --red-600: #dc2626;
+    }
+
+    .dark {
+        --border: #334155;
+        --muted: #cbd5e1;
+        --text-muted: #94a3b8;
+        --surface-sunken: #1e293b;
+        --brand-50: #172554;
+        --brand-100: #1e3a8a;
+        --brand-200: #1d4ed8;
+        --brand-500: #60a5fa;
+        --brand-600: #3b82f6;
+        --brand-700: #93c5fd;
+        --brand-900: #dbeafe;
+        --warning-50: #451a03;
+        --warning-100: #78350f;
+        --warning-200: #92400e;
+        --warning-700: #fde68a;
+        --danger-50: #4c0519;
+        --danger-100: #881337;
+        --danger-200: #9f1239;
+        --danger-600: #fda4af;
+        --danger-700: #fecdd3;
+        --danger-900: #ffe4e6;
+        --red-600: #f87171;
+    }
+}
+
 @layer components {
     /* Legacy MVP Classes (Preserved) */
     .btn-primary {
@@ -28,16 +80,16 @@
         @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
     }
     .badge-brand {
-        @apply bg-brand-100 text-brand-800;
+        @apply bg-brand-100 text-brand-800 dark:bg-brand-950/40 dark:text-brand-300;
     }
     .badge-gray {
-        @apply bg-gray-100 text-gray-800;
+        @apply bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-slate-300;
     }
     .badge-green {
-        @apply bg-green-100 text-green-800;
+        @apply bg-green-100 text-green-800 dark:bg-emerald-950/30 dark:text-emerald-300;
     }
     .badge-red {
-        @apply bg-red-100 text-red-800;
+        @apply bg-red-100 text-red-800 dark:bg-rose-950/30 dark:text-rose-300;
     }
 
     /* Phase 14K-1: Design System Foundation */
@@ -45,7 +97,7 @@
     /* 5.1 Layout */
     .tta-page { @apply min-h-screen bg-slate-50 text-slate-950 antialiased dark:bg-slate-950 dark:text-slate-50; }
     .tta-shell { @apply flex min-h-screen flex-col bg-slate-50 text-slate-950 antialiased dark:bg-slate-950 dark:text-slate-50; }
-    .tta-main { @apply flex-1 py-6 md:py-8; }
+    .tta-main { @apply flex-1 py-4 md:py-6; }
     .tta-section { @apply py-10 md:py-14; }
     .tta-container { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
     .tta-container-narrow { @apply mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8; }
@@ -62,23 +114,27 @@
     .tta-app-grid { @apply grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)]; }
     .tta-bento { @apply grid grid-cols-1 gap-4 md:grid-cols-2; }
     .tta-bento-row { @apply grid grid-cols-1 gap-4 md:grid-cols-3; }
-    .tta-hero { @apply min-h-[68vh] md:min-h-[72vh]; }
+    .tta-hero { @apply min-h-0; }
     .tta-hero-grid { @apply items-center; }
     .tta-grid-3 { @apply grid grid-cols-1 gap-4 md:grid-cols-3; }
     .desktop-only { @apply hidden lg:block; }
     .mobile-only { @apply inline-flex lg:hidden; }
 
     /* 5.1.1 Navigation and footer */
-    .tta-nav { @apply border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90; }
+    .tta-nav { @apply relative z-50 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90; }
     .tta-nav-row { @apply flex min-h-16 items-center justify-between; }
     .tta-brand { @apply text-sm font-black tracking-tight text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:text-white dark:focus-visible:ring-offset-slate-950 sm:text-base; }
     .tta-logo { @apply inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm dark:bg-brand-500; }
     .tta-nav-links { @apply items-center gap-2; }
     .tta-nav-link { @apply inline-flex min-h-10 items-center rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-offset-slate-950; }
+    .tta-theme-toggle { @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-brand-300 hover:bg-brand-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-brand-700 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-offset-slate-950; }
     .tta-footer { @apply border-t border-slate-200 bg-white py-6 text-sm dark:border-slate-800 dark:bg-slate-950; }
 
     /* 5.1.2 Text helpers */
     .tta-section-head { @apply mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between; }
+    .tta-page-header { @apply mb-6 flex flex-col gap-2; }
+    .tta-page-kicker { @apply block text-xs font-semibold tracking-wide text-brand-600 dark:text-brand-400; }
+    .tta-back-link { @apply inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200; }
     .tta-eyebrow { @apply text-xs font-bold uppercase tracking-wide text-brand-600 dark:text-brand-400; }
     .tta-title { @apply text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl; }
     .tta-page-title { @apply text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl; }
@@ -101,13 +157,20 @@
 
     /* 5.3 Cards */
     .tta-job-card { @apply tta-card p-5 sm:p-6 flex flex-col gap-4; }
+    .tta-job-title { @apply text-lg font-bold leading-snug text-slate-950 dark:text-white; }
+    .tta-job-title a { @apply text-slate-950 hover:text-brand-700 dark:text-white dark:hover:text-brand-300; }
+    .tta-job-meta { @apply mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-slate-600 dark:text-slate-300; }
+    .tta-job-desc { @apply mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300; }
+    .tta-job-actions { @apply mt-auto flex flex-wrap gap-3 pt-1; }
+    .tta-card :where(h2, h3) { @apply text-slate-950 dark:text-white; }
+    .tta-card :where(strong) { @apply text-slate-950 dark:text-slate-100; }
     .tta-recommendation-card { @apply tta-card p-5 sm:p-6 border-l-4 border-l-brand-500; }
     .tta-dashboard-card { @apply tta-card p-5 sm:p-6; }
     .tta-auth-card { @apply w-full max-w-md mx-auto tta-card p-8; }
     .tta-stat-card { @apply tta-card p-5 flex items-center justify-between; }
 
     /* 5.4 Badges */
-    .tta-badge { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium; }
+    .tta-badge { @apply inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700; }
     .tta-badge-brand { @apply tta-badge bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200 dark:bg-brand-950/40 dark:text-brand-300 dark:ring-brand-900; }
     .tta-badge-success { @apply tta-badge bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-900; }
     .tta-badge-warning { @apply tta-badge bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900; }
@@ -118,6 +181,7 @@
     .tta-skill-chip { @apply inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 hover:border-brand-300 hover:bg-brand-50 dark:hover:border-brand-700 dark:hover:bg-brand-950/40 transition-colors; }
     .tta-skill-chip-required { @apply tta-skill-chip border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-800 dark:bg-brand-950/50 dark:text-brand-300; }
     .tta-skill-chip-optional { @apply tta-skill-chip border-dashed; }
+    .tta-skill-chip-success { @apply border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40; }
 
     .tta-score-strong { @apply text-emerald-600 dark:text-emerald-400 font-bold; }
     .tta-score-good { @apply text-brand-600 dark:text-brand-400 font-semibold; }
@@ -136,7 +200,7 @@
     .tta-field-error { @apply border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 dark:border-rose-500 dark:focus:border-rose-500; }
     .tta-form-section { @apply py-5 border-t border-slate-200 dark:border-slate-800 first:border-0 first:pt-0; }
     .tta-form-grid { @apply grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6; }
-    .tta-sticky-save-bar { @apply sticky bottom-0 z-30 -mx-4 border-t border-slate-200 bg-white/85 p-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/85 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-0 mt-6; }
+    .tta-sticky-save-bar { @apply sticky bottom-0 z-30 border-t border-slate-200 bg-white/95 p-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 md:static md:rounded-b-2xl md:bg-slate-50 md:px-6 md:py-4 md:backdrop-blur-0 md:dark:bg-slate-900; }
 
     /* 5.6 Drawer and dropdown */
     .tta-drawer-backdrop { @apply fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity dark:bg-slate-900/80; }
@@ -144,7 +208,7 @@
     .tta-filter-drawer { @apply fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto bg-white p-5 shadow-2xl dark:bg-slate-900; }
     .tta-avatar-button { @apply inline-flex items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950; }
     .tta-avatar { @apply inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700 dark:bg-brand-950 dark:text-brand-300; }
-    .tta-dropdown-menu { @apply absolute z-50 mt-2 w-56 origin-top-right rounded-xl bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-slate-800 dark:ring-white/10; }
+    .tta-dropdown-menu { @apply absolute right-0 z-[100] mt-2 w-56 origin-top-right rounded-xl bg-white py-1 shadow-xl ring-1 ring-black/5 focus:outline-none dark:bg-slate-800 dark:ring-white/10; }
     .tta-dropdown-item { @apply block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white transition-colors; }
 
     /* 5.7 Progress */
@@ -153,6 +217,11 @@
     .tta-score-ring { @apply relative flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 h-16 w-16; }
     .tta-score-ring-sm { @apply h-12 w-12; }
     .tta-score-ring-md { @apply h-24 w-24; }
+    .tta-score-ring-prominent { @apply h-24 w-24 shadow-sm; background: conic-gradient(currentColor var(--score), theme('colors.slate.200') 0); }
+    .dark .tta-score-ring-prominent { background: conic-gradient(currentColor var(--score), theme('colors.slate.700') 0); }
+    .tta-score-ring-prominent::after { content: ""; position: absolute; inset: 0.5rem; border-radius: 9999px; background: theme('colors.white'); }
+    .dark .tta-score-ring-prominent::after { background: theme('colors.slate.900'); }
+    .tta-score-ring-value { @apply relative z-10 text-xl font-black text-slate-950 dark:text-white; }
     .tta-score-label { @apply font-bold text-slate-900 dark:text-white; }
     .tta-score-caption { @apply text-xs text-slate-500 dark:text-slate-400 mt-1 text-center; }
 
@@ -172,7 +241,7 @@
     .tta-skeleton-card { @apply tta-card p-5 animate-pulse; }
 
     /* 5.10 CV dropzone */
-    .tta-dropzone { @apply rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 sm:p-12 text-center transition-colors duration-200 dark:border-slate-700 dark:bg-slate-800/40 cursor-pointer; }
+    .tta-dropzone { @apply rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-5 sm:p-7 text-center transition-colors duration-200 dark:border-slate-700 dark:bg-slate-800/40 cursor-pointer; }
     .tta-dropzone:hover, .tta-dropzone-active { @apply border-brand-500 bg-brand-50/60 dark:border-brand-400 dark:bg-brand-950/30; }
     .tta-dropzone-error { @apply border-rose-500 bg-rose-50 dark:border-rose-500 dark:bg-rose-950/30; }
 

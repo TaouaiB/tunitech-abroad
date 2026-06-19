@@ -9,7 +9,7 @@
         <div class="tta-section-head">
             <div>
                 <span class="tta-eyebrow">Espace candidat</span>
-                <h1 class="tta-page-title" style="margin-top:12px">Bonjour, {{ user.email }} !</h1>
+                <h1 class="tta-page-title" style="margin-top:12px">Bonjour, {{ dashboard_display_name }} !</h1>
                 <p class="tta-muted">Bienvenue sur votre espace candidat TuniTech Abroad.</p>
             </div>
             <div>
@@ -19,14 +19,14 @@
 
         <div class="tta-bento" style="margin-top:18px">
             <div class="tta-card tta-card-body">
-                <h2>Mon profil</h2>
+                <h2 class="text-lg font-bold text-slate-950 dark:text-white">Mon profil</h2>
                 <p class="tta-muted">Mettez à jour vos informations et objectifs pour un meilleur matching.</p>
                 <div style="margin-top:16px">
                     <a class="tta-btn tta-btn-primary" href="{% url 'dashboard:profile' %}">Gérer mon profil</a>
                 </div>
             </div>
             <div class="tta-card tta-card-body">
-                <h2>Mon CV</h2>
+                <h2 class="text-lg font-bold text-slate-950 dark:text-white">Mon CV</h2>
                 <p class="tta-muted">Gérez votre CV pour un matching précis avec les offres.</p>
                 <div style="margin-top:16px">
                     <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:cv' %}">Gérer mon CV</a>
@@ -36,17 +36,17 @@
 
         <div class="tta-bento-row" style="margin-top:18px">
             <div class="tta-card tta-card-body">
-                <h3>Recommandations</h3>
+                <h3 class="font-bold text-slate-950 dark:text-white">Recommandations</h3>
                 <p class="tta-muted" style="margin-bottom: 12px;">Offres ciblant votre profil technique.</p>
                 <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:recommendations' %}">Voir</a>
             </div>
             <div class="tta-card tta-card-body">
-                <h3>Favoris</h3>
+                <h3 class="font-bold text-slate-950 dark:text-white">Favoris</h3>
                 <p class="tta-muted" style="margin-bottom: 12px;">Retrouvez vos annonces sauvegardées.</p>
                 <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:saved_jobs' %}">Voir</a>
             </div>
             <div class="tta-card tta-card-body">
-                <h3>Sécurité &amp; compte</h3>
+                <h3 class="font-bold text-slate-950 dark:text-white">Sécurité &amp; compte</h3>
                 <p class="tta-muted" style="margin-bottom: 12px;">Gérez vos préférences et la sécurité.</p>
                 <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:account' %}">Gérer</a>
             </div>

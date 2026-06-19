@@ -12,7 +12,7 @@ class TuniTechSocialAccountAdapter(DefaultSocialAccountAdapter):
 
     def is_email_verified(self, provider, email) -> bool:
         provider_id = getattr(provider, "id", "")
-        if provider_id == "google":
+        if provider_id in self.TRUSTED_EMAIL_AUTH_PROVIDERS:
             return True
         return super().is_email_verified(provider, email)
 

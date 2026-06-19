@@ -9,6 +9,7 @@ from apps.cvs.services.upload import CVUploadService
 from apps.cvs.services.deletion import CVDeletionService
 from apps.cvs.models import CVUpload
 from apps.profiles.services.profile_update import ProfileUpdateService
+from apps.profiles.models import ProfileSkill
 from apps.recommendations.services.query import RecommendationQueryService
 from apps.recommendations.services.saved_jobs import SavedJobService
 from apps.privacy.services.account_deletion import AccountDeletionService
@@ -28,7 +29,16 @@ def dashboard_saved_jobs(request):
 
 @login_required
 def dashboard_home(request):
-    return render(request, "dashboard/home.html")
+    profile = getattr(request.user, "candidate_profile", None)
+    user_full_name = request.user.get_full_name().strip()
+    display_name = (
+        profile.full_name.strip()
+        if profile and profile.full_name.strip()
+        else user_full_name
+        if user_full_name
+        else request.user.email
+    )
+    return render(request, "dashboard/home.html", {"dashboard_display_name": display_name})
 
 @login_required
 def dashboard_profile(request):
@@ -48,6 +58,14 @@ def dashboard_profile(request):
             'portfolio_url': pd.extracted_portfolio_url,
             'years_experience': pd.estimated_years_experience,
         }
+        merged = pd.merged_json if isinstance(pd.merged_json, dict) else {}
+        cv_data.update({
+            'current_level': merged.get('current_level', ''),
+            'target_roles': merged.get('target_roles', []),
+            'target_type': merged.get('target_type', ''),
+            'french_level': merged.get('french_level', ''),
+            'english_level': merged.get('english_level', ''),
+        })
 
     initial_data = {}
     for key, val in cv_data.items():
@@ -78,10 +96,14 @@ def dashboard_profile(request):
         completeness_report = ProfileCompletenessService.get_report(profile)
         is_complete_enough = completeness_report["score"] >= 50
         missing_fields = completeness_report["missing"] + completeness_report["invalid"]
+        profile_skills = ProfileSkill.objects.filter(profile=profile).order_by("-is_confirmed", "normalized_name")
+    else:
+        profile_skills = ProfileSkill.objects.none()
 
     return render(request, "dashboard/profile.html", {
         "form": form,
         "profile": profile,
+        "profile_skills": profile_skills,
         "suggestions": suggestions,
         "missing_fields": missing_fields,
         "is_complete_enough": is_complete_enough

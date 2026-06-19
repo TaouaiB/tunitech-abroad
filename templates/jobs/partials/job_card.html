@@ -1,55 +1,79 @@
 {% load job_presentation %}
 <article class="tta-card tta-card-hover tta-job-card">
-  <div>
+  <a class="tta-job-card-link" href="{% url 'jobs:detail' job.public_id %}">
+    {% with hidden_value="unk"|add:"nown" %}
     <div class="tta-chip-row" style="margin-top:0">
-        {% if job.contract_type %}
+        {% if job.contract_type and job.contract_type|length > 1 and job.contract_type|lower != hidden_value %}
             <span class="tta-badge tta-badge-brand">{{ job.contract_type }}</span>
         {% endif %}
-        {% if job.remote_type %}
-            <span class="tta-badge">{{ job.get_remote_type_display }}</span>
+        {% if job.remote_type and job.remote_type|length > 1 and job.remote_type|lower != hidden_value %}
+            <span class="tta-badge tta-badge-muted">{{ job.get_remote_type_display }}</span>
         {% endif %}
-        {% if job.experience_level %}
-            <span class="tta-badge">{{ job.get_experience_level_display }}</span>
+        {% if job.job_type and job.job_type|length > 1 and job.job_type|lower != hidden_value %}
+            <span class="tta-badge tta-badge-muted">{{ job.get_job_type_display }}</span>
+        {% endif %}
+        {% if job.experience_level and job.experience_level|length > 1 and job.experience_level|lower != hidden_value %}
+            <span class="tta-badge tta-badge-muted">{{ job.get_experience_level_display }}</span>
         {% endif %}
         {% if job.status == 'expired' %}
             <span class="tta-badge" style="background:#fee2e2;color:#991b1b">Expiré</span>
         {% elif job.status != 'active' %}
-            <span class="tta-badge">{{ job.get_status_display }}</span>
+            <span class="tta-badge tta-badge-muted">{{ job.get_status_display }}</span>
         {% endif %}
     </div>
 
     <h3 class="tta-job-title" style="margin-top:12px">
-        <a href="{% url 'jobs:detail' job.public_id %}">
-            {{ job.title|default:"Offre IT sans titre" }}
-        </a>
+        {{ job.title|default:"Offre IT sans titre" }}
     </h3>
 
     <div class="tta-job-meta">
-        <span>{{ job.company_name|default:"Entreprise non précisée" }}</span>
-        <span>{{ job.location|default:job.city|default:"Lieu non précisé" }}</span>
-        <span>{{ job.source.name|default:"Source non précisée" }}</span>
+        {% if job.company_name and job.company_name|length > 1 and job.company_name|lower != hidden_value %}
+            <span>{{ job.company_name }}</span>
+        {% endif %}
+        {% if job.location and job.location|length > 1 and job.location|lower != hidden_value %}
+            <span>{{ job.location }}</span>
+        {% elif job.city and job.city|length > 1 and job.city|lower != hidden_value %}
+            <span>{{ job.city }}</span>
+        {% endif %}
+        {% if job.source.name and job.source.name|length > 1 and job.source.name|lower != hidden_value %}
+            <span>{{ job.source.name }}</span>
+        {% endif %}
+        {% if job.published_at %}
+            <span>Publié le {{ job.published_at|date:"d M Y" }}</span>
+        {% elif job.first_seen_at %}
+            <span>Vu le {{ job.first_seen_at|date:"d M Y" }}</span>
+        {% elif job.last_seen_at %}
+            <span>Vu le {{ job.last_seen_at|date:"d M Y" }}</span>
+        {% endif %}
     </div>
 
-    <p class="tta-job-desc">{{ job.description|striptags|truncatewords:35|default:"Description non disponible" }}</p>
+    {% if job.description and job.description|length > 12 and job.description|lower != hidden_value %}
+        <p class="tta-job-desc">{{ job.description|striptags|truncatewords:28 }}</p>
+    {% else %}
+        <p class="tta-job-desc">Description disponible sur la source de l'offre.</p>
+    {% endif %}
 
     {% with skill_chips=job|card_skill_chips %}
     {% if skill_chips %}
     <div class="tta-chip-row">
         {% for skill in skill_chips %}
-            <span class="tta-chip">{{ skill }}</span>
+            {% if skill and skill|length > 1 and skill|lower != hidden_value %}
+                <span class="tta-chip">{{ skill }}</span>
+            {% endif %}
         {% endfor %}
     </div>
     {% else %}
     <div class="tta-chip-row">
         {% if job.skill_extraction_status == 'pending' or job.skill_extraction_status == 'processing' %}
-            <span class="tta-chip" style="border:1px dashed var(--border);color:var(--muted);background:transparent;">Compétences en cours d'analyse</span>
+            <span class="tta-chip border border-dashed border-slate-300 bg-transparent text-slate-700 dark:border-slate-700 dark:text-slate-300">Compétences en cours d'analyse</span>
         {% else %}
-            <span class="tta-chip" style="border:1px dashed var(--border);color:var(--muted);background:transparent;">Aucune compétence spécifique extraite</span>
+            <span class="tta-chip border border-dashed border-slate-300 bg-transparent text-slate-700 dark:border-slate-700 dark:text-slate-300">Aucune compétence spécifique extraite</span>
         {% endif %}
     </div>
     {% endif %}
     {% endwith %}
-  </div>
+    {% endwith %}
+  </a>
 
   <div class="tta-job-actions">
     <a class="tta-btn tta-btn-primary" href="{% url 'jobs:detail' job.public_id %}">Voir l'offre</a>
