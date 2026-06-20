@@ -8,15 +8,9 @@
     <section>
         <div class="tta-card tta-card-body">
             <div class="tta-chip-row" style="margin-top:0">
-                {% if job.contract_type|is_valid_badge %}
-                    <span class="tta-badge tta-badge-brand">{{ job.contract_type }}</span>
-                {% endif %}
-                {% if job.remote_type|is_valid_badge %}
-                    <span class="tta-badge tta-badge-muted">{{ job.get_remote_type_display }}</span>
-                {% endif %}
-                {% if job.experience_level|is_valid_badge %}
-                    <span class="tta-badge tta-badge-muted">{{ job.get_experience_level_display }}</span>
-                {% endif %}
+                {% for badge in job|job_badges %}
+                    <span class="tta-badge {{ badge.css_class }}">{{ badge.text }}</span>
+                {% endfor %}
                 {% if job.status == 'expired' %}
                     <span class="tta-badge" style="background:#fee2e2;color:#991b1b">Expiré</span>
                 {% elif job.status != 'active' %}
@@ -84,6 +78,9 @@
         {% if job.status == 'expired' %}
             <h2 style="margin-bottom:8px;color:#991b1b;">Offre expirée</h2>
             <p class="tta-muted">Les tests de compatibilité ne sont plus disponibles pour cette offre car elle n'accepte plus de candidatures.</p>
+        {% elif not job|is_matchable %}
+            <h2 style="margin-bottom:8px;color:#991b1b;">Analyse indisponible</h2>
+            <p class="tta-muted">Cette offre ne peut pas être testée (données insuffisantes ou non éligible).</p>
         {% else %}
             {% if user.is_authenticated %}
                 <h2 class="text-xl font-bold text-slate-950 dark:text-white" style="margin-bottom:8px">Test complet</h2>

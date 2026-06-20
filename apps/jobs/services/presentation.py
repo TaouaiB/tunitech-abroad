@@ -31,6 +31,26 @@ class JobPresentationService:
 
 
     @staticmethod
+    def get_deduplicated_badges(job):
+        badges = []
+        seen = set()
+
+        def add_badge(text, css_class):
+            if not JobPresentationService.is_valid_badge_value(text):
+                return
+            val_lower = str(text).strip().lower()
+            if val_lower not in seen:
+                seen.add(val_lower)
+                badges.append({"text": text, "css_class": css_class})
+
+        add_badge(job.contract_type, "tta-badge-brand")
+        add_badge(getattr(job, 'get_remote_type_display', lambda: job.remote_type)(), "tta-badge-muted")
+        add_badge(getattr(job, 'get_job_type_display', lambda: job.job_type)(), "tta-badge-muted")
+        add_badge(getattr(job, 'get_experience_level_display', lambda: job.experience_level)(), "tta-badge-muted")
+
+        return badges
+
+    @staticmethod
     def get_card_skill_chips(job, limit=5):
         canonical_skills = [
             job_skill.skill.canonical_name

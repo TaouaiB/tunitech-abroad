@@ -3,18 +3,9 @@
   <div class="tta-job-main">
     <a class="tta-job-card-link" href="{% url 'jobs:detail' job.public_id %}">
         <div class="tta-chip-row">
-            {% if job.contract_type|is_valid_badge %}
-                <span class="tta-badge tta-badge-brand">{{ job.contract_type }}</span>
-            {% endif %}
-            {% if job.remote_type|is_valid_badge %}
-                <span class="tta-badge tta-badge-muted">{{ job.get_remote_type_display }}</span>
-            {% endif %}
-            {% if job.job_type|is_valid_badge %}
-                <span class="tta-badge tta-badge-muted">{{ job.get_job_type_display }}</span>
-            {% endif %}
-            {% if job.experience_level|is_valid_badge %}
-                <span class="tta-badge tta-badge-muted">{{ job.get_experience_level_display }}</span>
-            {% endif %}
+            {% for badge in job|job_badges %}
+                <span class="tta-badge {{ badge.css_class }}">{{ badge.text }}</span>
+            {% endfor %}
             {% if job.status == 'expired' %}
                 <span class="tta-badge tta-badge-danger">Expiré</span>
             {% elif job.status == 'stale' %}
@@ -67,8 +58,10 @@
                         {% endif %}
                     {% endif %}
                 {% endfor %}
-            {% else %}
+            {% elif job|is_pending_analysis %}
                 <span class="tta-chip tta-chip-empty">Compétences en cours d'analyse</span>
+            {% else %}
+                <span class="tta-chip tta-chip-empty">Compétences techniques non spécifiées</span>
             {% endif %}
         </div>
         {% endwith %}

@@ -6,6 +6,7 @@ from django.utils import timezone
 from apps.profiles.models import CandidateProfile
 from apps.cvs.models import CVUpload
 from apps.jobs.models import NormalizedJob, JobStatus
+from apps.jobs.services.eligibility import JobEligibilityService
 from apps.matching.services.scoring import MatchScoringService
 from apps.recommendations.models import JobRecommendation, RecommendationRun
 
@@ -61,12 +62,11 @@ class RecommendationService:
             # Job prefilter: active, local France-first jobs, not expired
             now = timezone.now()
             candidate_jobs = (
-                NormalizedJob.objects.filter(
-                    Q(country__iexact="FR") | Q(country__iexact="France"),
-                    status=JobStatus.ACTIVE,
-                    source__is_active=True,
+                JobEligibilityService.filter_matchable(
+                    NormalizedJob.objects.filter(
+                        Q(country__iexact="FR") | Q(country__iexact="France")
+                    )
                 )
-                .filter(Q(expires_at__isnull=True) | Q(expires_at__gte=now))
                 .select_related("source")
                 .prefetch_related("job_skills__skill")
                 .order_by("-published_at", "title", "public_id")

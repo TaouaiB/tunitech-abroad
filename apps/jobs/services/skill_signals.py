@@ -13,15 +13,22 @@ STRONG_SKILL_TERMS = (
     "react",
     "node.js",
     "nodejs",
+    "angular",
+    "c#",
+    ".net",
     "devops",
     "sre",
     "data engineer",
+    "tech lead",
     "cybersécurité",
     "cybersecurite",
     "cybersecurity",
     "réseau",
     "reseau",
     "cloud",
+    "aws",
+    "gcp",
+    "azure",
     "linux",
     "postgresql",
     "postgres",
@@ -39,6 +46,10 @@ STRONG_SKILL_TERMS = (
     "administrateur systeme",
     "ingénieur logiciel",
     "ingenieur logiciel",
+    "algorithme",
+    "algorithmes",
+    "algorithmique",
+    "optimisation logicielle",
 )
 
 IT_ROLE_TERMS = (
@@ -50,6 +61,7 @@ IT_ROLE_TERMS = (
     "ingénieur logiciel",
     "ingenieur logiciel",
     "data engineer",
+    "tech lead",
     "devops",
     "sre",
     "administrateur systèmes",
@@ -59,6 +71,8 @@ IT_ROLE_TERMS = (
     "cybersécurité",
     "cybersecurite",
     "cybersecurity",
+    "ingénieur en optimisation",
+    "ingenieur en optimisation",
 )
 
 

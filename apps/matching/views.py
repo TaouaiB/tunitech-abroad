@@ -11,12 +11,23 @@ from apps.matching.models import MatchResult
 class CreateMatchView(LoginRequiredMixin, View):
     def post(self, request, public_id):
         job = JobQueryService.get_public_job(public_id)
+        from apps.jobs.services.eligibility import JobEligibilityService
+        if not JobEligibilityService.is_matchable(job):
+            from django.contrib import messages
+            messages.error(request, "This job is not currently eligible for matching.")
+            return redirect("jobs:detail", public_id=public_id)
         match_result = MatchResultService.create_match_result(user=request.user, job=job)
         return redirect("matching:detail", public_id=match_result.public_id)
 
 class QuickMatchView(View):
     def post(self, request, public_id):
         job = JobQueryService.get_public_job(public_id)
+        from apps.jobs.services.eligibility import JobEligibilityService
+        if not JobEligibilityService.is_matchable(job):
+            return render(request, "matching/partials/quick_match_result.html", {
+                "error": "This job is not currently eligible for matching.",
+                "job": job
+            })
         form = QuickMatchForm(request.POST)
         
         if form.is_valid():

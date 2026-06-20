@@ -91,6 +91,7 @@ def make_job(
     published_at=None,
     classification_json=None,
     skill_signal_quality="strong",
+    with_job_skill=True,
 ) -> NormalizedJob:
     now = timezone.now()
     raw = RawJobRecord.objects.create(
@@ -102,7 +103,7 @@ def make_job(
         last_seen_at=now,
         last_fetched_at=now,
     )
-    return NormalizedJob.objects.create(
+    job = NormalizedJob.objects.create(
         source=source,
         raw_record=raw,
         source_job_id=source_job_id,
@@ -128,6 +129,23 @@ def make_job(
         last_fetched_at=now,
         published_at=published_at or now,
     )
+    if with_job_skill and status == JobStatus.ACTIVE and skill_signal_quality in ("strong", "partial"):
+        skill, _ = Skill.objects.get_or_create(
+            slug=f"job-skill-{source.slug}-{source_job_id}",
+            defaults={
+                "canonical_name": f"Job Skill {source_job_id}",
+                "category": SkillCategory.PROGRAMMING_LANGUAGE,
+                "is_active": True,
+            },
+        )
+        NormalizedJobSkill.objects.create(
+            job=job,
+            skill=skill,
+            requirement_type=RequirementType.REQUIRED,
+            source=SkillSource.RULE,
+            confidence=1,
+        )
+    return job
 
 
 def make_profile(
@@ -411,6 +429,7 @@ class RecommendationServiceTests(TestCase):
             classification_json={"family": "data_ai_bi", "is_it": True, "confidence": "high"},
             skill_signal_quality="partial",
             published_at=timezone.now(),
+            with_job_skill=False,
         )
         self._clear_job_skill_json(low_confidence_job)
         self._job_skill(low_confidence_job, python, RequirementType.OPTIONAL)

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import logging
 from apps.recommendations.models import JobRecommendation, RecommendationRun, SavedJob
 from apps.matching.models import MatchResult
+from apps.jobs.services.eligibility import JobEligibilityService
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ class RecommendationQueryService:
             JobRecommendation.objects.filter(
                 user=user,
                 status=status,
+                job__in=JobEligibilityService.filter_publicly_visible(),
             )
             .select_related("job", "job__source")
             .order_by("-fit_score", "-ranking_score", "-job__published_at", "-job__first_seen_at", "-job__last_seen_at")[

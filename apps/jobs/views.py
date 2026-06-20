@@ -54,6 +54,11 @@ def job_list(request):
 
 def job_detail(request, public_id):
     job = JobQueryService.get_public_job(public_id)
+    from apps.jobs.services.eligibility import JobEligibilityService
+    if not request.user.is_staff and not JobEligibilityService.is_publicly_visible(job):
+        from django.http import Http404
+        raise Http404("Job is not publicly visible")
+
     try:
         job = JobRevalidationService.revalidate_if_needed(job)
     except Exception as exc:

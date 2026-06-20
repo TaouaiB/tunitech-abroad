@@ -18,24 +18,22 @@
         <div style="display:grid;gap:14px">
             {% for saved_job in saved_jobs %}
                 <article class="tta-card tta-card-hover tta-job-card">
+                  {% if saved_job.job|is_publicly_visible %}
                   <a class="tta-job-card-link" href="{% url 'jobs:detail' saved_job.job.public_id %}">
+                  {% else %}
+                  <div class="tta-job-card-link">
+                  {% endif %}
                     <div class="tta-chip-row" style="margin-top:0">
-                        {% if saved_job.job.contract_type|is_valid_badge %}
-                            <span class="tta-badge tta-badge-brand">{{ saved_job.job.get_contract_type_display|default:saved_job.job.contract_type }}</span>
-                        {% endif %}
-                        {% if saved_job.job.remote_type|is_valid_badge %}
-                            <span class="tta-badge tta-badge-muted">{{ saved_job.job.get_remote_type_display|default:saved_job.job.remote_type }}</span>
-                        {% endif %}
-                        {% if saved_job.job.job_type|is_valid_badge %}
-                            <span class="tta-badge tta-badge-muted">{{ saved_job.job.get_job_type_display|default:saved_job.job.job_type }}</span>
-                        {% endif %}
-                        {% if saved_job.job.experience_level|is_valid_badge %}
-                            <span class="tta-badge tta-badge-muted">{{ saved_job.job.get_experience_level_display|default:saved_job.job.experience_level }}</span>
-                        {% endif %}
+                        {% for badge in saved_job.job|job_badges %}
+                            <span class="tta-badge {{ badge.css_class }}">{{ badge.text }}</span>
+                        {% endfor %}
                         {% if saved_job.job.status == 'expired' %}
                             <span class="tta-badge tta-badge-danger">Expirée</span>
                         {% elif saved_job.job.status != 'active' %}
                             <span class="tta-badge tta-badge-warning">{{ saved_job.job.get_status_display }}</span>
+                        {% endif %}
+                        {% if not saved_job.job|is_publicly_visible %}
+                            <span class="tta-badge tta-badge-warning">Non publiée</span>
                         {% endif %}
                     </div>
 
@@ -81,10 +79,17 @@
                         </div>
                     {% endif %}
                     {% endwith %}
+                  {% if saved_job.job|is_publicly_visible %}
                   </a>
+                  {% else %}
+                    <p class="tta-muted">{{ saved_job.job|public_eligibility_reason }}</p>
+                  </div>
+                  {% endif %}
 
                   <div class="tta-job-actions">
-                    <a class="tta-btn tta-btn-primary" href="{% url 'jobs:detail' saved_job.job.public_id %}">Voir l’offre</a>
+                    {% if saved_job.job|is_publicly_visible %}
+                        <a class="tta-btn tta-btn-primary" href="{% url 'jobs:detail' saved_job.job.public_id %}">Voir l’offre</a>
+                    {% endif %}
                     {% include 'jobs/partials/save_button.html' with job=saved_job.job is_saved=True %}
                   </div>
                 </article>
