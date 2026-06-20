@@ -707,6 +707,17 @@ Respond with a JSON object strictly matching this shape:
 
     enrichment.completed_at = timezone.now()
     enrichment.save()
+
+    if enrichment.status == JobEnrichment.Status.SUCCESS:
+        try:
+            from apps.jobs.services.skill_materialization import JobSkillMaterializationService
+            JobSkillMaterializationService.materialize_for_job(job, source="llm", enrichment=enrichment)
+        except Exception as e:
+            logger.error(f"Error materializing skills from enrichment for job {job.id}: {e}")
+            from apps.jobs.models import SkillExtractionStatus
+            job.skill_extraction_status = SkillExtractionStatus.FAILED
+            job.save(update_fields=["skill_extraction_status"])
+
     return enrichment
 
 def validate_enrichment_schema(data: Any, original_text: str) -> tuple[dict[str, Any] | None, list[str]]:

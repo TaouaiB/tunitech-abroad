@@ -5,7 +5,6 @@ from apps.jobs.models import NormalizedJob, RequirementType
 from apps.cvs.models import CVUpload
 from apps.skills.services.normalizer import normalize_skill_text
 from apps.jobs.services.relevance import TECH_CATEGORIES
-from django.conf import settings
 from django.utils import timezone
 
 MISSING_FRENCH_LEVELS = {"", "none", "no", "a0"}
@@ -44,8 +43,6 @@ class MatchScoringService:
         classification_json = job.classification_json or {}
         it_confidence = classification_json.get("confidence", "unknown")
         skill_signal_quality = job.skill_signal_quality
-        enriched_data = MatchScoringService._get_successful_enrichment(job)
-
         job_skills = list(job.job_skills.select_related("skill").all())
         tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
         req_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.REQUIRED]
@@ -53,11 +50,6 @@ class MatchScoringService:
         match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
         if it_confidence == "excluded" or skill_signal_quality == "excluded_non_it":
             match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
-        elif enriched_data:
-            if enriched_data.get("required_skills") or enriched_data.get("optional_skills"):
-                match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
-            else:
-                match_confidence = MatchScoringService.CONFIDENCE_LOW
         elif it_confidence in ["high", "medium"]:
             if skill_signal_quality == "strong":
                 match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
@@ -184,17 +176,6 @@ class MatchScoringService:
         return any(term in description for term in strong_description_terms)
 
     @staticmethod
-    def _get_successful_enrichment(job: NormalizedJob) -> dict:
-        if not getattr(settings, "JOB_RECOMMENDATIONS_USE_ENRICHED_DATA", False):
-            return {}
-        if not hasattr(job, "enrichment") or job.enrichment.status != "success":
-            return {}
-        enriched_data = job.enrichment.validated_output_json or {}
-        if not isinstance(enriched_data, dict):
-            return {}
-        return enriched_data
-
-    @staticmethod
     def _calc_technical_score(profile, job, profile_signals, risk_flags, recommended_actions):
         # Profile skills
         profile_skills_normalized = set()
@@ -204,55 +185,10 @@ class MatchScoringService:
             if normalized_skill_name:
                 profile_skills_normalized.add(normalized_skill_name)
 
-        enriched_data = MatchScoringService._get_successful_enrichment(job)
-        use_enriched = bool(enriched_data)
-
         strong_skills = []
         missing_req = []
         missing_opt = []
 
-        if use_enriched:
-            en_req = enriched_data.get("required_skills", [])
-            en_opt = enriched_data.get("optional_skills", [])
-            
-            if not en_req and (en_req or en_opt):
-                profile_signals.add("low_confidence_job_skills")
-                risk_flags.add("no_required_skills_extracted")
-            elif not en_req:
-                risk_flags.add("no_required_skills_extracted")
-                risk_flags.add("insufficient_job_technical_signal")
-                
-            req_matched = 0
-            for skill_dict in en_req:
-                skill_name = skill_dict.get("name", "")
-                normalized_skill_name = normalize_skill_text(skill_name)
-                if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
-                    req_matched += 1
-                    strong_skills.append({"name": skill_name, "type": "required"})
-                else:
-                    missing_req.append({"name": skill_name, "requirement_type": "required"})
-
-            opt_matched = 0
-            for skill_dict in en_opt:
-                skill_name = skill_dict.get("name", "")
-                normalized_skill_name = normalize_skill_text(skill_name)
-                if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
-                    opt_matched += 1
-                    strong_skills.append({"name": skill_name, "type": "optional"})
-                else:
-                    missing_opt.append({"name": skill_name, "requirement_type": "optional"})
-            
-            if missing_req:
-                risk_flags.add("missing_required_skills")
-                recommended_actions.add("Add missing required skills to your learning plan.")
-                
-            req_score = (req_matched / len(en_req) * 100) if en_req else 0
-            opt_score = (opt_matched / len(en_opt) * 100) if en_opt else 50
-            tech_score = (req_score * 0.8) + (opt_score * 0.2)
-            
-            return max(0, min(100, round(tech_score))), strong_skills, missing_req, missing_opt
-
-        # Fallback to deterministic skills
         job_skills = list(job.job_skills.select_related("skill").all())
         tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
         req_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.REQUIRED]

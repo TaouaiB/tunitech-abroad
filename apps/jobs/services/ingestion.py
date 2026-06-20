@@ -352,6 +352,13 @@ class JobIngestionService:
                 norm_job = JobNormalizationService.normalize(raw_job)
                 if norm_job:
                     run_log.normalized_count += 1
+
+                    try:
+                        from apps.jobs.services.skill_extraction import JobSkillExtractionService
+                        JobSkillExtractionService.extract_for_job(norm_job)
+                    except Exception as extraction_err:
+                        run_log.error_summary += f"Skill extraction error for {job_id}: {cls._safe_error(extraction_err)}\n"
+
                     if enrichment_enabled and enrich_every_fetched_it_job:
                         cls._queue_enrichment(norm_job, run_log, sync_enrichment, config)
                     elif enrichment_enabled:

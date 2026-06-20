@@ -80,6 +80,11 @@ class Command(BaseCommand):
                     norm_job = JobNormalizationService.normalize(raw_job)
                     if norm_job:
                         normalized_count += 1
+                        try:
+                            from apps.jobs.services.skill_extraction import JobSkillExtractionService
+                            JobSkillExtractionService.extract_for_job(norm_job)
+                        except Exception as extraction_e:
+                            self.stdout.write(self.style.ERROR(f"Skill extraction error for {job_id}: {extraction_e}"))
                     else:
                         normalization_failures += 1
                         self.stdout.write(self.style.ERROR(f"Normalization failed for {job_id} (returned None)"))
