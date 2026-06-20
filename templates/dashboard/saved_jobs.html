@@ -19,18 +19,17 @@
             {% for saved_job in saved_jobs %}
                 <article class="tta-card tta-card-hover tta-job-card">
                   <a class="tta-job-card-link" href="{% url 'jobs:detail' saved_job.job.public_id %}">
-                    {% with hidden_value="unk"|add:"nown" %}
                     <div class="tta-chip-row" style="margin-top:0">
-                        {% if saved_job.job.contract_type and saved_job.job.contract_type|length > 1 and saved_job.job.contract_type|lower != hidden_value %}
+                        {% if saved_job.job.contract_type|is_valid_badge %}
                             <span class="tta-badge tta-badge-brand">{{ saved_job.job.get_contract_type_display|default:saved_job.job.contract_type }}</span>
                         {% endif %}
-                        {% if saved_job.job.remote_type and saved_job.job.remote_type|length > 1 and saved_job.job.remote_type|lower != hidden_value %}
+                        {% if saved_job.job.remote_type|is_valid_badge %}
                             <span class="tta-badge tta-badge-muted">{{ saved_job.job.get_remote_type_display|default:saved_job.job.remote_type }}</span>
                         {% endif %}
-                        {% if saved_job.job.job_type and saved_job.job.job_type|length > 1 and saved_job.job.job_type|lower != hidden_value %}
+                        {% if saved_job.job.job_type|is_valid_badge %}
                             <span class="tta-badge tta-badge-muted">{{ saved_job.job.get_job_type_display|default:saved_job.job.job_type }}</span>
                         {% endif %}
-                        {% if saved_job.job.experience_level and saved_job.job.experience_level|length > 1 and saved_job.job.experience_level|lower != hidden_value %}
+                        {% if saved_job.job.experience_level|is_valid_badge %}
                             <span class="tta-badge tta-badge-muted">{{ saved_job.job.get_experience_level_display|default:saved_job.job.experience_level }}</span>
                         {% endif %}
                         {% if saved_job.job.status == 'expired' %}
@@ -45,15 +44,15 @@
                     </h3>
 
                     <div class="tta-card-meta">
-                        {% if saved_job.job.company_name and saved_job.job.company_name|length > 1 and saved_job.job.company_name|lower != hidden_value %}
+                        {% if saved_job.job.company_name|is_valid_badge %}
                             <span>{{ saved_job.job.company_name }}</span>
                         {% endif %}
-                        {% if saved_job.job.location and saved_job.job.location|length > 1 and saved_job.job.location|lower != hidden_value %}
+                        {% if saved_job.job.location|is_valid_badge %}
                             <span>{{ saved_job.job.location }}</span>
-                        {% elif saved_job.job.city and saved_job.job.city|length > 1 and saved_job.job.city|lower != hidden_value %}
+                        {% elif saved_job.job.city|is_valid_badge %}
                             <span>{{ saved_job.job.city }}</span>
                         {% endif %}
-                        {% if saved_job.job.source.name and saved_job.job.source.name|length > 1 and saved_job.job.source.name|lower != hidden_value %}
+                        {% if saved_job.job.source.name|is_valid_badge %}
                             <span>{{ saved_job.job.source.name }}</span>
                         {% endif %}
                         {% if saved_job.job.published_at %}
@@ -65,7 +64,7 @@
                         {% endif %}
                     </div>
 
-                    {% if saved_job.job.description and saved_job.job.description|length > 12 and saved_job.job.description|lower != hidden_value %}
+                    {% if saved_job.job.description|is_valid_badge and saved_job.job.description|length > 12 %}
                         <p class="tta-job-desc">{{ saved_job.job.description|striptags|truncatewords:28 }}</p>
                     {% else %}
                         <p class="tta-job-desc">Description disponible sur la source de l'offre.</p>
@@ -75,13 +74,12 @@
                     {% if skill_chips %}
                         <div class="tta-chip-row">
                             {% for skill in skill_chips %}
-                                {% if skill and skill|length > 1 and skill|lower != hidden_value %}
+                                {% if skill|is_valid_badge %}
                                     <span class="tta-chip">{{ skill }}</span>
                                 {% endif %}
                             {% endfor %}
                         </div>
                     {% endif %}
-                    {% endwith %}
                     {% endwith %}
                   </a>
 

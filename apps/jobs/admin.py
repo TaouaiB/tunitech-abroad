@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib import messages
+from django.db.models import Count
 from apps.jobs.models import (
     JobSource,
     IngestionRun,
@@ -129,13 +130,130 @@ def queue_selected_eligible_job_enrichments(modeladmin, request, queryset):
     else:
         modeladmin.message_user(request, "No selected jobs were eligible for enrichment queueing.", messages.WARNING)
 
+@admin.action(description="Re-run deterministic skill extraction")
+def re_extract_skills_action(modeladmin, request, queryset):
+    from apps.jobs.services.admin_operations import JobAdminOperationsService
+
+    count = JobAdminOperationsService.re_extract_skills(queryset.values_list("id", flat=True))
+    modeladmin.message_user(request, f"Re-extracted skills for {count} jobs.", messages.SUCCESS)
+
+@admin.action(description="Rematerialize skills from existing enrichment")
+def rematerialize_skills_action(modeladmin, request, queryset):
+    from apps.jobs.services.admin_operations import JobAdminOperationsService
+
+    count = JobAdminOperationsService.rematerialize_from_enrichment(queryset.values_list("id", flat=True))
+    modeladmin.message_user(request, f"Rematerialized skills for {count} jobs.", messages.SUCCESS)
+
+class NormalizedJobSkillInline(admin.TabularInline):
+    model = NormalizedJobSkill
+    extra = 1
+    fields = ('skill', 'requirement_type', 'source', 'confidence')
+    autocomplete_fields = ('skill',)
+
+class NoSkillsFilter(admin.SimpleListFilter):
+    title = "Has materialized skills"
+    parameter_name = "has_skills"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Yes"),
+            ("no", "No (zero skills)"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.annotate(_skill_count=Count("job_skills")).filter(_skill_count__gt=0)
+        if self.value() == "no":
+            return queryset.annotate(_skill_count=Count("job_skills")).filter(_skill_count=0)
+        return queryset
+
+
+class ActiveJobFilter(admin.SimpleListFilter):
+    title = "Active review jobs"
+    parameter_name = "active_review"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("active", "Active only"),
+            ("inactive", "Inactive only"),
+        )
+
+    def queryset(self, request, queryset):
+        from apps.jobs.models import JobStatus
+
+        if self.value() == "active":
+            return queryset.filter(status=JobStatus.ACTIVE)
+        if self.value() == "inactive":
+            return queryset.exclude(status=JobStatus.ACTIVE)
+        return queryset
+
+
+class SkillSignalQualityFilter(admin.SimpleListFilter):
+    title = "Skill signal quality"
+    parameter_name = "skill_signal_quality_review"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("strong_partial", "Strong or partial"),
+            ("strong", "Strong"),
+            ("partial", "Partial"),
+            ("weak", "Generic/missing/unknown"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "strong_partial":
+            return queryset.filter(skill_signal_quality__in=["strong", "partial"])
+        if self.value() == "strong":
+            return queryset.filter(skill_signal_quality="strong")
+        if self.value() == "partial":
+            return queryset.filter(skill_signal_quality="partial")
+        if self.value() == "weak":
+            return queryset.filter(skill_signal_quality__in=["generic_only", "missing", "unknown", ""])
+        return queryset
+
 @admin.register(NormalizedJob)
 class NormalizedJobAdmin(admin.ModelAdmin):
-    list_display = ("title", "company_name", "job_type", "remote_type", "experience_level", "country", "city", "status", "source_job_id")
-    list_filter = ("status", "job_type", "remote_type", "experience_level", "source", "country")
-    search_fields = ("title", "company_name", "source_job_id", "public_id")
+    list_display = (
+        "title",
+        "company_name",
+        "location",
+        "status",
+        "source",
+        "skill_signal_quality",
+        "skill_extraction_status",
+        "enrichment_status",
+        "job_skill_count",
+        "last_seen_at",
+        "created_at",
+    )
+    list_filter = (
+        NoSkillsFilter,
+        ActiveJobFilter,
+        SkillSignalQualityFilter,
+        "status",
+        "skill_extraction_status",
+        "source",
+        "job_type",
+        "remote_type",
+        "experience_level",
+    )
+    search_fields = ("title", "company_name", "source_job_id", "public_id", "source__name", "source__slug")
     readonly_fields = ("public_id", "created_at", "updated_at", "first_seen_at", "last_seen_at", "last_fetched_at")
-    actions = [mark_jobs_stale, mark_jobs_expired, queue_selected_eligible_job_enrichments]
+    actions = [mark_jobs_stale, mark_jobs_expired, queue_selected_eligible_job_enrichments, re_extract_skills_action, rematerialize_skills_action]
+    inlines = [NormalizedJobSkillInline]
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.select_related("source", "enrichment").annotate(job_skill_count_value=Count("job_skills"))
+
+    @admin.display(ordering="job_skill_count_value", description="Job skill count")
+    def job_skill_count(self, obj):
+        return obj.job_skill_count_value
+
+    @admin.display(ordering="enrichment__status", description="Enrichment status")
+    def enrichment_status(self, obj):
+        enrichment = getattr(obj, "enrichment", None)
+        return enrichment.status if enrichment else "-"
 
 
 @admin.register(NormalizedJobSkill)

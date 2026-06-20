@@ -6,6 +6,7 @@ class JobPresentationService:
         "na",
         "none",
         "null",
+        "t",
         "unknown",
         "inconnu",
         "inconnue",
@@ -15,6 +16,19 @@ class JobPresentationService:
         "not specified",
         "unspecified",
     }
+
+    @staticmethod
+    def is_valid_badge_value(value) -> bool:
+        """
+        Returns False if the value is empty, None, or a known placeholder like "unknown".
+        """
+        if not value:
+            return False
+        val_str = str(value).strip().lower()
+        if not val_str:
+            return False
+        return val_str not in JobPresentationService.UNKNOWN_LANGUAGE_VALUES
+
 
     @staticmethod
     def get_card_skill_chips(job, limit=5):

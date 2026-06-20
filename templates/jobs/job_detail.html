@@ -3,17 +3,18 @@
 {% block title %}{{ job.title|default:"Offre IT sans titre" }} chez {{ job.company_name|default:"Entreprise non précisée" }} - TuniTech Abroad{% endblock %}
 
 {% block content %}
+{% load job_presentation %}
 <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
     <section>
         <div class="tta-card tta-card-body">
             <div class="tta-chip-row" style="margin-top:0">
-                {% if job.contract_type %}
+                {% if job.contract_type|is_valid_badge %}
                     <span class="tta-badge tta-badge-brand">{{ job.contract_type }}</span>
                 {% endif %}
-                {% if job.remote_type %}
+                {% if job.remote_type|is_valid_badge %}
                     <span class="tta-badge tta-badge-muted">{{ job.get_remote_type_display }}</span>
                 {% endif %}
-                {% if job.experience_level %}
+                {% if job.experience_level|is_valid_badge %}
                     <span class="tta-badge tta-badge-muted">{{ job.get_experience_level_display }}</span>
                 {% endif %}
                 {% if job.status == 'expired' %}
