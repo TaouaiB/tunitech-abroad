@@ -20,7 +20,7 @@ class SeedServiceTests(TestCase):
         skills_count = Skill.objects.count()
         aliases_count = SkillAlias.objects.count()
         self.assertGreaterEqual(skills_count, 200)
-        self.assertLessEqual(skills_count, 500)
+        self.assertLessEqual(skills_count, 550)
         self.assertGreaterEqual(aliases_count, 500)
         self.assertEqual(SkillAlias.objects.values("normalized_alias").distinct().count(), aliases_count)
 
@@ -96,3 +96,34 @@ class SeedServiceTests(TestCase):
             },
             result["alias_conflicts"],
         )
+
+    def test_phase_15d_curated_seed_is_idempotent_without_duplicate_aliases(self):
+        SkillSeedService.seed_initial_taxonomy()
+
+        first_skill_count = Skill.objects.count()
+        first_alias_count = SkillAlias.objects.count()
+
+        result = SkillSeedService.seed_initial_taxonomy()
+
+        self.assertEqual(result["skills_created"], 0)
+        self.assertEqual(result["aliases_created"], 0)
+        self.assertEqual(Skill.objects.count(), first_skill_count)
+        self.assertEqual(SkillAlias.objects.count(), first_alias_count)
+        self.assertEqual(Skill.objects.values("canonical_name").distinct().count(), first_skill_count)
+        self.assertEqual(SkillAlias.objects.values("normalized_alias").distinct().count(), first_alias_count)
+
+        self.assertTrue(Skill.objects.filter(canonical_name="Frontend Development").exists())
+        self.assertEqual(
+            SkillAlias.objects.get(normalized_alias="front end development").skill.canonical_name,
+            "Frontend Development",
+        )
+        self.assertEqual(
+            SkillAlias.objects.get(normalized_alias="agile methodologies").skill.canonical_name,
+            "Agile",
+        )
+
+    def test_phase_15d_already_resolved_rows_do_not_create_duplicate_aliases(self):
+        SkillSeedService.seed_initial_taxonomy()
+
+        self.assertEqual(SkillAlias.objects.filter(normalized_alias="windows").count(), 1)
+        self.assertEqual(SkillAlias.objects.get(normalized_alias="windows").skill.canonical_name, "Windows")

@@ -126,7 +126,13 @@ class JobSkillMaterializationService:
 
                 signal_result = compute_deterministic_skill_signal_quality(job)
                 current_quality = (job.skill_signal_quality or "").strip()
-                job.skill_extraction_status = SkillExtractionStatus.NOT_ENOUGH_TEXT
+
+                combined_len = len(job.description or "") + len(job.title or "")
+                if combined_len < 150:
+                    job.skill_extraction_status = SkillExtractionStatus.NOT_ENOUGH_TEXT
+                else:
+                    job.skill_extraction_status = SkillExtractionStatus.SUCCESS
+
                 if not current_quality or current_quality == "unknown":
                     job.skill_signal_quality = signal_result.quality
                 job.save(update_fields=["skill_extraction_status", "skill_signal_quality"])

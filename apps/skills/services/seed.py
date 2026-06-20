@@ -3,6 +3,7 @@ from django.utils.text import slugify
 from apps.skills.models import Skill, SkillAlias, SkillCategory
 from typing import TypedDict, List, Tuple
 from apps.skills.services.normalizer import normalize_skill_text
+from apps.skills.services.phase_15d_decisions import approved_taxonomy_decisions
 
 class SkillSeedItem(TypedDict):
     canonical: str
@@ -540,6 +541,21 @@ class SkillSeedService:
             phase_15b_grouped[canonical]["aliases"].add(alias)
 
         for canonical, data in phase_15b_grouped.items():
+            seed_data.append(SkillSeedItem(
+                canonical=canonical,
+                category=data["category"],
+                aliases=sorted(data["aliases"])
+            ))
+
+        phase_15d_grouped = {}
+        for decision in approved_taxonomy_decisions():
+            canonical = decision.target_canonical_skill
+            category = decision.target_category or SkillCategory.OTHER.value
+            if canonical not in phase_15d_grouped:
+                phase_15d_grouped[canonical] = {"category": category, "aliases": set()}
+            phase_15d_grouped[canonical]["aliases"].add(decision.raw_skill_text)
+
+        for canonical, data in phase_15d_grouped.items():
             seed_data.append(SkillSeedItem(
                 canonical=canonical,
                 category=data["category"],

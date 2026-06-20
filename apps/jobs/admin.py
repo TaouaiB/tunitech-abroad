@@ -144,6 +144,16 @@ def rematerialize_skills_action(modeladmin, request, queryset):
     count = JobAdminOperationsService.rematerialize_from_enrichment(queryset.values_list("id", flat=True))
     modeladmin.message_user(request, f"Rematerialized skills for {count} jobs.", messages.SUCCESS)
 
+@admin.action(description="Recover zero-skill jobs (Rule-based)")
+def recover_zero_skill_jobs_action(modeladmin, request, queryset):
+    from apps.jobs.services.zero_skill_recovery import ZeroSkillJobRecoveryService
+    result = ZeroSkillJobRecoveryService.recover_queryset(queryset)
+    modeladmin.message_user(
+        request,
+        f"Inspected: {result['jobs_inspected']}, Recovered: {result['recovered_jobs']} jobs ({result['skills_created']} skills created), Skipped: {result['skipped_excluded']}, Still zero-skill: {result['still_zero_skill']}.",
+        messages.SUCCESS
+    )
+
 class NormalizedJobSkillInline(admin.TabularInline):
     model = NormalizedJobSkill
     extra = 1
@@ -239,7 +249,7 @@ class NormalizedJobAdmin(admin.ModelAdmin):
     )
     search_fields = ("title", "company_name", "source_job_id", "public_id", "source__name", "source__slug")
     readonly_fields = ("public_id", "created_at", "updated_at", "first_seen_at", "last_seen_at", "last_fetched_at")
-    actions = [mark_jobs_stale, mark_jobs_expired, queue_selected_eligible_job_enrichments, re_extract_skills_action, rematerialize_skills_action]
+    actions = [mark_jobs_stale, mark_jobs_expired, queue_selected_eligible_job_enrichments, re_extract_skills_action, rematerialize_skills_action, recover_zero_skill_jobs_action]
     inlines = [NormalizedJobSkillInline]
 
     def get_queryset(self, request):

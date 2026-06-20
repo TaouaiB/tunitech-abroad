@@ -3,6 +3,7 @@ from typing import List, Optional, Set, Dict
 from django.db import transaction
 from django.db.models import F
 from apps.skills.models import Skill, SkillAlias, UnmatchedSkillCandidate
+from apps.skills.services.ignored import IgnoredSkillService
 import re
 import unicodedata
 
@@ -98,6 +99,7 @@ class SkillNormalizerService:
                 if matched_skill:
                     canonical_skills_set.add(matched_skill)
                 else:
+                    status = 'ignored' if IgnoredSkillService.is_ignored(normalized) else 'pending'
                     candidate, created = UnmatchedSkillCandidate.objects.get_or_create(
                         normalized_text=normalized,
                         source_type=source_type,
@@ -106,13 +108,15 @@ class SkillNormalizerService:
                             'source_model': None,
                             'source_object_id': source_id,
                             'occurrence_count': 1,
+                            'status': status,
                         }
                     )
                     if not created:
-                        UnmatchedSkillCandidate.objects.filter(pk=candidate.pk).update(
-                            occurrence_count=F('occurrence_count') + 1
-                        )
-                        candidate.refresh_from_db(fields=['occurrence_count'])
+                        update_fields = {'occurrence_count': F('occurrence_count') + 1}
+                        if status == 'ignored' and candidate.status != 'ignored':
+                            update_fields['status'] = 'ignored'
+                        UnmatchedSkillCandidate.objects.filter(pk=candidate.pk).update(**update_fields)
+                        candidate.refresh_from_db(fields=['occurrence_count', 'status'])
                     
                     unmatched_candidates_list.append(candidate)
         
