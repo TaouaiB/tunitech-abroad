@@ -6,6 +6,7 @@ from apps.skills.models import Skill, SkillAlias, UnmatchedSkillCandidate
 from apps.llm.models import JobEnrichment
 from apps.jobs.services.skill_materialization import JobSkillMaterializationService
 from apps.llm.services.job_enrichment import enrich_job
+from apps.skills.services.seed import SkillSeedService
 from unittest.mock import patch, MagicMock
 
 class SkillMaterializationTests(TestCase):
@@ -116,6 +117,31 @@ class SkillMaterializationTests(TestCase):
             requirement_type=RequirementType.OPTIONAL.value,
             source=SkillSource.LLM.value,
         ).exists())
+
+    def test_phase_15b_aliases_create_normalized_job_skills(self):
+        SkillSeedService.seed_initial_taxonomy()
+
+        self.job.required_skills_json = ["API REST", "Cybersécurité", "Assistance technique"]
+        self.job.optional_skills_json = ["Cloud", "Microsoft 365"]
+        self.job.save()
+
+        result = JobSkillMaterializationService.materialize_for_job(self.job, source="rule")
+
+        self.assertEqual(result.status, "success")
+        self.assertEqual(result.unmatched_count, 0)
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.skill_extraction_status, SkillExtractionStatus.SUCCESS)
+
+        materialized = {
+            row.skill.canonical_name: row.requirement_type
+            for row in NormalizedJobSkill.objects.filter(job=self.job).select_related("skill")
+        }
+        self.assertEqual(materialized["REST API"], RequirementType.REQUIRED.value)
+        self.assertEqual(materialized["Cybersecurity"], RequirementType.REQUIRED.value)
+        self.assertEqual(materialized["IT Support"], RequirementType.REQUIRED.value)
+        self.assertEqual(materialized["Cloud"], RequirementType.OPTIONAL.value)
+        self.assertEqual(materialized["Microsoft 365"], RequirementType.OPTIONAL.value)
+        self.assertEqual(NormalizedJobSkill.objects.filter(job=self.job).count(), 5)
 
     def test_empty_materialization_does_not_remain_pending(self):
         result = JobSkillMaterializationService.materialize_for_job(self.job, source="rule")
