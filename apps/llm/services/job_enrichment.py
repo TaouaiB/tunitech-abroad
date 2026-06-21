@@ -31,24 +31,42 @@ __all__ = [
     "validate_enrichment_schema",
 ]
 
-AUTO_RETRY_FAILURE_REASONS = {"rate_limited", "provider_error"}
+class EnrichmentReason:
+    SUCCESS = "success"
+    INVALID_JSON = "invalid_json"
+    INVALID_JSON_RETRY_SUCCESS = "invalid_json_retry_success"
+    INVALID_JSON_RETRY_FAILED = "invalid_json_retry_failed"
+    VALIDATION_ERROR = "validation_error"
+    PROVIDER_CIRCUIT_OPEN = "provider_circuit_open"
+    PROVIDER_ERROR = "provider_error"
+    RATE_LIMITED = "rate_limited"
+    INSUFFICIENT_CREDITS = "insufficient_credits"
+    KEY_DAILY_LIMIT_EXCEEDED = "key_daily_limit_exceeded"
+    FORBIDDEN_PROVIDER_BLOCKED = "forbidden/provider_blocked"
+    PROVIDER_BLOCKED = "provider_blocked"
+    FORBIDDEN = "forbidden"
+    MISSING_API_KEY = "missing_api_key"
+    INVALID_MODEL = "invalid_model"
+
+AUTO_RETRY_FAILURE_REASONS = {EnrichmentReason.RATE_LIMITED, EnrichmentReason.PROVIDER_ERROR}
 PROVIDER_CIRCUIT_FAILURE_REASONS = {
-    "provider_blocked",
-    "forbidden/provider_blocked",
-    "key_daily_limit_exceeded",
-    "rate_limited",
-    "provider_error",
-    "insufficient_credits",
+    EnrichmentReason.PROVIDER_BLOCKED,
+    EnrichmentReason.FORBIDDEN_PROVIDER_BLOCKED,
+    EnrichmentReason.KEY_DAILY_LIMIT_EXCEEDED,
+    EnrichmentReason.RATE_LIMITED,
+    EnrichmentReason.PROVIDER_ERROR,
+    EnrichmentReason.INSUFFICIENT_CREDITS,
 }
 PERMANENT_FAILURE_REASONS = {
-    "missing_api_key",
-    "forbidden",
-    "forbidden/provider_blocked",
-    "provider_blocked",
-    "key_daily_limit_exceeded",
-    "insufficient_credits",
-    "validation_error",
-    "invalid_model",
+    EnrichmentReason.MISSING_API_KEY,
+    EnrichmentReason.FORBIDDEN,
+    EnrichmentReason.FORBIDDEN_PROVIDER_BLOCKED,
+    EnrichmentReason.PROVIDER_BLOCKED,
+    EnrichmentReason.KEY_DAILY_LIMIT_EXCEEDED,
+    EnrichmentReason.INSUFFICIENT_CREDITS,
+    EnrichmentReason.VALIDATION_ERROR,
+    EnrichmentReason.INVALID_MODEL,
+    EnrichmentReason.INVALID_JSON_RETRY_FAILED,
 }
 LOW_RELEVANCE_REASON_MARKERS = (
     "does not meet minimum relevance",
@@ -193,16 +211,18 @@ def classify_enrichment_error(enrichment: JobEnrichment) -> str:
 
 def sanitize_enrichment_error(enrichment: JobEnrichment) -> str:
     classification = classify_enrichment_error(enrichment)
-    if classification == "key_daily_limit_exceeded":
-        return "key_daily_limit_exceeded"
-    if classification == "forbidden/provider_blocked":
-        return "forbidden/provider_blocked"
-    if classification == "insufficient_credits":
-        return "insufficient_credits"
-    if classification == "rate_limited":
-        return "rate_limited"
-    if classification == "validation_error":
-        return "validation_error"
+    if classification == EnrichmentReason.KEY_DAILY_LIMIT_EXCEEDED:
+        return EnrichmentReason.KEY_DAILY_LIMIT_EXCEEDED
+    if classification == EnrichmentReason.FORBIDDEN_PROVIDER_BLOCKED:
+        return EnrichmentReason.FORBIDDEN_PROVIDER_BLOCKED
+    if classification == EnrichmentReason.INSUFFICIENT_CREDITS:
+        return EnrichmentReason.INSUFFICIENT_CREDITS
+    if classification == EnrichmentReason.RATE_LIMITED:
+        return EnrichmentReason.RATE_LIMITED
+    if classification == EnrichmentReason.VALIDATION_ERROR:
+        return EnrichmentReason.VALIDATION_ERROR
+    if classification == EnrichmentReason.INVALID_JSON_RETRY_FAILED:
+        return EnrichmentReason.INVALID_JSON_RETRY_FAILED
     return (enrichment.last_error or enrichment.status_reason or "")[:200]
 
 
@@ -267,9 +287,29 @@ def _mark_provider_circuit_open(job, payload_hash: str) -> JobEnrichment:
     )
     enrichment.payload_hash = payload_hash
     enrichment.status = JobEnrichment.Status.SKIPPED
-    enrichment.status_reason = "provider_circuit_open"
+    enrichment.status_reason = EnrichmentReason.PROVIDER_CIRCUIT_OPEN
     enrichment.last_error = ""
-    enrichment.save(update_fields=["payload_hash", "status", "status_reason", "last_error", "updated_at"])
+    enrichment.prompt_tokens = 0
+    enrichment.completion_tokens = 0
+    enrichment.total_tokens = 0
+    enrichment.estimated_cost_usd = Decimal("0")
+    enrichment.raw_response_text = ""
+    enrichment.raw_response_json = {}
+    enrichment.save(
+        update_fields=[
+            "payload_hash",
+            "status",
+            "status_reason",
+            "last_error",
+            "prompt_tokens",
+            "completion_tokens",
+            "total_tokens",
+            "estimated_cost_usd",
+            "raw_response_text",
+            "raw_response_json",
+            "updated_at",
+        ]
+    )
     return enrichment
 
 
@@ -517,22 +557,41 @@ def _classify_http_error(error: urllib.error.HTTPError) -> str:
     body = _safe_read_http_error_body(error)
     lower_body = body.lower()
     if error.code == 403 and "key limit exceeded" in lower_body and "daily limit" in lower_body:
-        return "key_daily_limit_exceeded"
+        return EnrichmentReason.KEY_DAILY_LIMIT_EXCEEDED
     if "insufficient" in lower_body and "credit" in lower_body:
-        return "insufficient_credits"
+        return EnrichmentReason.INSUFFICIENT_CREDITS
     if error.code in (401, 403):
-        return "forbidden/provider_blocked"
+        return EnrichmentReason.FORBIDDEN_PROVIDER_BLOCKED
     if error.code == 429:
-        return "rate_limited"
+        return EnrichmentReason.RATE_LIMITED
     if error.code in (400, 404):
-        return "invalid_model"
-    return "provider_error"
+        return EnrichmentReason.INVALID_MODEL
+    return EnrichmentReason.PROVIDER_ERROR
 
-def enrich_job(job, force: bool = False):
+def _extract_json(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    text = text.strip()
+    if not text.startswith("{"):
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            text = text[start : end + 1]
+    return text
+
+def enrich_job(job, force: bool = False, force_provider_call: bool = False):
     """
     Enriches a job using the LLM and validates the output.
     Updates or creates the JobEnrichment record.
     """
+    if force_provider_call and not settings.DEBUG:
+        raise ValueError("force_provider_call is only allowed in DEBUG mode")
+
     payload_hash = _compute_payload_hash(job)
 
     enrichment, _ = JobEnrichment.objects.get_or_create(
@@ -540,7 +599,7 @@ def enrich_job(job, force: bool = False):
         defaults={"payload_hash": payload_hash}
     )
 
-    if not force:
+    if not force and not force_provider_call:
         if enrichment.status == JobEnrichment.Status.SUCCESS and enrichment.payload_hash == payload_hash:
             return enrichment
 
@@ -548,7 +607,7 @@ def enrich_job(job, force: bool = False):
             enrichment.status_reason = "Enrichment already processing"
             return enrichment
 
-    if not force and not job_qualifies_for_enrichment(
+    if not force and not force_provider_call and not job_qualifies_for_enrichment(
         job,
         ignore_pending_reservation=True,
         exclude_enrichment_id=enrichment.id,
@@ -558,14 +617,27 @@ def enrich_job(job, force: bool = False):
         enrichment.save(update_fields=["status", "status_reason"])
         return enrichment
 
-    if get_openrouter_circuit_status()["is_open"]:
+    if not force_provider_call and get_openrouter_circuit_status()["is_open"]:
         return _mark_provider_circuit_open(job, payload_hash)
 
     enrichment.status = JobEnrichment.Status.PROCESSING
     enrichment.payload_hash = payload_hash
     enrichment.started_at = timezone.now()
     enrichment.attempt_count += 1
-    enrichment.save(update_fields=["status", "payload_hash", "started_at", "attempt_count"])
+    enrichment.status_reason = ""
+    enrichment.last_error = ""
+    enrichment.validation_errors_json = []
+    enrichment.save(
+        update_fields=[
+            "status",
+            "payload_hash",
+            "started_at",
+            "attempt_count",
+            "status_reason",
+            "last_error",
+            "validation_errors_json",
+        ]
+    )
 
     system_prompt = """You are an expert IT job analyzer for a job matching platform in France.
 Your goal is to extract structured intelligence from a job description.
@@ -617,6 +689,7 @@ Respond with a JSON object strictly matching this shape:
     max_retries = settings.JOB_ENRICHMENT_MAX_RETRIES
     retries = 0
     success = False
+    invalid_json_retry_used = False
 
     while retries <= max_retries and not success:
         try:
@@ -626,32 +699,54 @@ Respond with a JSON object strictly matching this shape:
             if not isinstance(usage, dict):
                 usage = {}
 
-            enrichment.prompt_tokens = usage.get("prompt_tokens", 0)
-            enrichment.completion_tokens = usage.get("completion_tokens", 0)
-            enrichment.total_tokens = usage.get("total_tokens", 0)
+            enrichment.raw_response_text = content
+
+            enrichment.prompt_tokens += usage.get("prompt_tokens", 0)
+            enrichment.completion_tokens += usage.get("completion_tokens", 0)
+            enrichment.total_tokens += usage.get("total_tokens", 0)
             if enrichment.total_tokens:
                 enrichment.estimated_cost_usd = (Decimal(enrichment.total_tokens) / Decimal(1_000_000)) * Decimal("0.10")
             else:
                 enrichment.estimated_cost_usd = Decimal("0")
-                enrichment.status_reason = "OpenRouter usage metadata unavailable; cost stored as zero."
+                if not enrichment.status_reason:
+                    enrichment.status_reason = "OpenRouter usage metadata unavailable; cost stored as zero."
 
             try:
-                parsed_json = json.loads(content)
+                extracted_content = _extract_json(content)
+                if not extracted_content:
+                    raise json.JSONDecodeError("Empty or non-object output", content, 0)
+                parsed_json = json.loads(extracted_content)
+                if invalid_json_retry_used:
+                    enrichment.status_reason = EnrichmentReason.INVALID_JSON_RETRY_SUCCESS
             except json.JSONDecodeError as e:
-                raise ValueError("LLM response is not valid JSON")
+                if not invalid_json_retry_used:
+                    invalid_json_retry_used = True
+                    enrichment.last_error = f"Invalid JSON on first try: {str(e)}"
+                    messages.append({"role": "assistant", "content": content})
+                    messages.append({"role": "user", "content": "Your previous response was not valid JSON. Please provide ONLY a valid JSON object matching the exact schema requested, without any markdown formatting or explanation."})
+                    continue
+                else:
+                    enrichment.status = JobEnrichment.Status.VALIDATION_ERROR
+                    enrichment.status_reason = EnrichmentReason.INVALID_JSON_RETRY_FAILED
+                    enrichment.last_error = f"Invalid JSON on retry: {str(e)}"
+                    enrichment.validated_output_json = {}
+                    enrichment.validation_errors_json = [str(e)]
+                    success = True
+                    continue
 
             # Validate schema
             validated_data, errors = validate_enrichment_schema(parsed_json, job_text)
 
             if errors:
                 enrichment.status = JobEnrichment.Status.VALIDATION_ERROR
-                enrichment.status_reason = "validation_error"
+                enrichment.status_reason = EnrichmentReason.VALIDATION_ERROR
                 enrichment.validation_errors_json = errors
                 enrichment.validated_output_json = {}
                 enrichment.last_error = f"Validation failed with {len(errors)} errors"
             else:
                 enrichment.status = JobEnrichment.Status.SUCCESS
-                enrichment.status_reason = ""
+                if not invalid_json_retry_used:
+                    enrichment.status_reason = EnrichmentReason.SUCCESS
                 enrichment.validated_output_json = validated_data
                 enrichment.validation_errors_json = []
                 enrichment.last_error = ""
