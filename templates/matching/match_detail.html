@@ -143,9 +143,9 @@
         {% endif %}
         {% endif %}
 
-        {% if match.risk_flags_json or match.profile_signals_json %}
+        {% if match.human_risk_flags or match.profile_signals_json %}
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2" style="margin-top:18px">
-            {% if match.risk_flags_json %}
+            {% if match.human_risk_flags %}
             <div class="tta-card p-5 sm:p-6">
                 <h2>Points de vigilance</h2>
                 {% for flag in match.human_risk_flags %}

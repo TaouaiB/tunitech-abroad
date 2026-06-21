@@ -184,14 +184,15 @@ class MatchScoringService:
 
     @staticmethod
     def _filter_noisy_skills(missing_skills, profile_skills_normalized):
-        noisy_baseline = {
-            "json", "xml", "yaml", "csv", "markdown", "http", "https", "agile", "scrum",
-            "documentation", "office tools", "microsoft office", "pack office"
+        noisy_display_terms = {
+            "json", "xml", "yaml", "csv", "markdown", "soap",
+            "jira", "confluence", "agile", "scrum", "kanban",
+            "excel", "office 365", "http", "https", "documentation",
+            "office tools", "microsoft office", "pack office",
         }
-        json_impliers = {
-            "javascript", "typescript", "node.js", "rest api", "api rest", "restful api",
-            "frontend development", "backend development", "full-stack development",
-            "django", "flask", "fastapi", "express", "spring", "asp.net"
+        preserved_advanced_terms = {
+            "json schema", "json ld", "openapi", "swagger", "graphql",
+            "rest api", "api rest", "restful api",
         }
         frontend_impliers = {
             "react", "angular", "vue.js", "frontend development", "full-stack development"
@@ -201,15 +202,12 @@ class MatchScoringService:
         for s in missing_skills:
             name_norm = normalize_skill_text(s.get("name") or "") or (s.get("name") or "").lower().strip()
 
-            # JSON rule
-            if name_norm == "json":
-                if any(imp in profile_skills_normalized for imp in json_impliers):
-                    continue
+            if name_norm in preserved_advanced_terms:
+                filtered.append(s)
+                continue
 
-            # Baseline noisy (except advanced versions)
-            if name_norm in noisy_baseline:
-                if name_norm != "json":
-                    continue
+            if name_norm in noisy_display_terms:
+                continue
 
             # HTML/CSS rule (only if optional)
             if s.get("requirement_type") == "optional" and name_norm in ["html", "css"]:

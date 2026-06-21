@@ -591,11 +591,19 @@ class Phase15GHardeningTests(TestCase):
         self.skill_js = self._skill("JavaScript", SkillCategory.PROGRAMMING_LANGUAGE)
         self.skill_json = self._skill("JSON", SkillCategory.BACKEND)
         self.skill_json_schema = self._skill("JSON Schema", SkillCategory.BACKEND)
+        self.skill_openapi = self._skill("OpenAPI", SkillCategory.BACKEND)
+        self.skill_jira = self._skill("Jira", SkillCategory.TOOLS)
+        self.skill_confluence = self._skill("Confluence", SkillCategory.TOOLS)
+        self.skill_wordpress = self._skill("WordPress", SkillCategory.BACKEND)
         self.skill_angular = self._skill("Angular", SkillCategory.FRONTEND)
 
         NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_js, requirement_type=RequirementType.OPTIONAL)
         NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_json, requirement_type=RequirementType.OPTIONAL)
         NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_json_schema, requirement_type=RequirementType.OPTIONAL)
+        NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_openapi, requirement_type=RequirementType.OPTIONAL)
+        NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_jira, requirement_type=RequirementType.OPTIONAL)
+        NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_confluence, requirement_type=RequirementType.OPTIONAL)
+        NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_wordpress, requirement_type=RequirementType.OPTIONAL)
         NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_angular, requirement_type=RequirementType.REQUIRED)
 
     def test_location_removed_from_final_score(self):
@@ -621,10 +629,52 @@ class Phase15GHardeningTests(TestCase):
 
         missing_opt = [s["name"] for s in res.missing_optional_skills]
         self.assertNotIn("JSON", missing_opt)
+        self.assertNotIn("Jira", missing_opt)
+        self.assertNotIn("Confluence", missing_opt)
         self.assertIn("JSON Schema", missing_opt)
+        self.assertIn("OpenAPI", missing_opt)
+        self.assertIn("WordPress", missing_opt)
 
         missing_req = [s["name"] for s in res.missing_required_skills]
         self.assertIn("Angular", missing_req)
+
+        self.assertEqual(Skill.objects.filter(canonical_name__in=["JSON", "Jira", "Confluence"]).count(), 3)
+        self.assertEqual(NormalizedJobSkill.objects.filter(job=self.job, skill__canonical_name__in=["JSON", "Jira", "Confluence"]).count(), 3)
+
+    def test_wordpress_is_not_suppressed_when_required(self):
+        NormalizedJobSkill.objects.filter(job=self.job, skill=self.skill_wordpress).update(
+            requirement_type=RequirementType.REQUIRED
+        )
+
+        res = MatchScoringService.calculate(self.profile, self.job)
+
+        missing_req = [s["name"] for s in res.missing_required_skills]
+        self.assertIn("Angular", missing_req)
+        self.assertIn("WordPress", missing_req)
+
+    def test_noisy_optional_skills_suppressed_but_preserved_terms_display(self):
+        noisy_skills = [
+            self._skill("XML", SkillCategory.BACKEND),
+            self._skill("YAML", SkillCategory.BACKEND),
+            self._skill("CSV", SkillCategory.DATA_AI),
+            self._skill("Markdown", SkillCategory.TOOLS),
+            self._skill("SOAP", SkillCategory.BACKEND),
+            self._skill("Agile", SkillCategory.METHODOLOGY),
+            self._skill("Scrum", SkillCategory.METHODOLOGY),
+            self._skill("Kanban", SkillCategory.METHODOLOGY),
+            self._skill("Excel", SkillCategory.TOOLS),
+            self._skill("Office 365", SkillCategory.TOOLS),
+        ]
+        for skill in noisy_skills:
+            NormalizedJobSkill.objects.create(job=self.job, skill=skill, requirement_type=RequirementType.OPTIONAL)
+
+        res = MatchScoringService.calculate(self.profile, self.job)
+
+        missing_opt = [s["name"] for s in res.missing_optional_skills]
+        for skill_name in ["JSON", "XML", "YAML", "CSV", "Markdown", "SOAP", "Jira", "Confluence", "Agile", "Scrum", "Kanban", "Excel", "Office 365"]:
+            self.assertNotIn(skill_name, missing_opt)
+        for skill_name in ["JSON Schema", "OpenAPI", "WordPress"]:
+            self.assertIn(skill_name, missing_opt)
 
     def test_actions_recommended_copy_is_french(self):
         res = MatchScoringService.calculate(self.profile, self.job)
@@ -668,8 +718,32 @@ class Phase15GHardeningTests(TestCase):
         self.assertContains(response, "Angular")
         self.assertNotContains(response, "Compétences obligatoires non détectées")
         self.assertNotContains(response, "À renforcer")
+        self.assertNotContains(response, "Points de vigilance")
         self.assertContains(response, "Actions recommandées")
         self.assertContains(response, "border-rose-200")
+
+    def test_empty_human_risk_flags_does_not_render_points_de_vigilance(self):
+        match = MatchResult.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=self.job,
+            profile_snapshot_json={},
+            job_snapshot_json={"title": self.job.title, "company_name": "Test"},
+            fit_score=72,
+            technical_skills_score=70,
+            experience_score=100,
+            role_title_score=70,
+            language_score=70,
+            location_score=0,
+            risk_flags_json=["missing_required_skills"],
+            profile_signals_json=[],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertEqual(match.human_risk_flags, [])
+        self.assertNotContains(response, "Points de vigilance")
 
 class Phase15GRecommendationsViewTests(TestCase):
     def setUp(self):
