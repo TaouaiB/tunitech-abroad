@@ -7,10 +7,18 @@
     {% include 'dashboard/sidebar.html' %}
     <section>
         <div class="mb-6 flex flex-col gap-2">
-            <div>
-                <span class="text-xs font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">Recommandations</span>
-                <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Offres recommandées</h1>
-                <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Offres sélectionnées spécialement pour votre profil technique.</p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">Recommandations</span>
+                    <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Offres recommandées</h1>
+                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Offres sélectionnées spécialement pour votre profil technique.</p>
+                </div>
+                <div>
+                    <form method="post" action="{% url 'recommendations:refresh' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="tta-btn tta-btn-secondary">Actualiser mes recommandations</button>
+                    </form>
+                </div>
             </div>
         </div>
 

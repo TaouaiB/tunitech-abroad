@@ -193,11 +193,10 @@ class MatchingTests(TestCase):
     def test_scoring_uses_formula_and_clamps_scores(self):
         result = MatchScoringService.calculate(self.profile, self.job)
         expected = round(
-            result.technical_skills_score * 0.45
+            result.technical_skills_score * 0.50
             + result.experience_score * 0.20
             + result.role_title_score * 0.15
-            + result.language_score * 0.10
-            + result.location_score * 0.10
+            + result.language_score * 0.15
         )
 
         self.assertEqual(result.fit_score, expected)
@@ -546,3 +545,170 @@ class MatchingTests(TestCase):
         self.assertNotContains(response, "Excellente nouvelle ! Vous possédez toutes les compétences techniques requises")
         self.assertContains(response, "Signal technique insuffisant")
         self.assertNotContains(response, "no_required_skills_extracted")
+
+
+class Phase15GHardeningTests(TestCase):
+    def _skill(self, name, category):
+        skill = Skill.objects.create(
+            canonical_name=name,
+            slug=name.lower().replace(" ", "-"),
+            category=category,
+            is_active=True,
+        )
+        SkillAlias.objects.create(skill=skill, alias=name, normalized_alias=name.lower())
+        return skill
+
+    def setUp(self):
+        self.user = UserModel.objects.create_user(username="test15g", email="test15g@example.com", password="password")
+        self.profile = CandidateProfile.objects.create(
+            user=self.user,
+            years_experience=3.0,
+            current_level="mid",
+            french_level="c1",
+            profile_completion_score=100
+        )
+
+        now = timezone.now()
+        source = JobSource.objects.create(name="test", slug="test", source_type="fixture")
+        raw = RawJobRecord.objects.create(source=source, source_job_id="test", payload_hash="test", first_seen_at=now, last_seen_at=now, last_fetched_at=now, raw_payload_json={})
+
+        self.job = NormalizedJob.objects.create(
+            source=source,
+            raw_record=raw,
+            source_job_id="test",
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+            public_id="00000000-0000-0000-0000-000000000000",
+            title="Fullstack JS Developer",
+            country="France",
+            remote_type="hybrid",
+            experience_level="mid",
+            status="active",
+            classification_json={"confidence": "high", "family": "frontend_backend"}
+        )
+
+        self.skill_js = self._skill("JavaScript", SkillCategory.PROGRAMMING_LANGUAGE)
+        self.skill_json = self._skill("JSON", SkillCategory.BACKEND)
+        self.skill_json_schema = self._skill("JSON Schema", SkillCategory.BACKEND)
+        self.skill_angular = self._skill("Angular", SkillCategory.FRONTEND)
+
+        NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_js, requirement_type=RequirementType.OPTIONAL)
+        NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_json, requirement_type=RequirementType.OPTIONAL)
+        NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_json_schema, requirement_type=RequirementType.OPTIONAL)
+        NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_angular, requirement_type=RequirementType.REQUIRED)
+
+    def test_location_removed_from_final_score(self):
+        # Even if profile relocation matches vs not matches, fit score stays same because location is not in calculation.
+        # However, location_score might differ.
+
+        self.profile.relocation_preference = True
+        self.profile.save()
+        res1 = MatchScoringService.calculate(self.profile, self.job)
+
+        self.profile.relocation_preference = False
+        self.profile.save()
+        res2 = MatchScoringService.calculate(self.profile, self.job)
+
+        self.assertNotEqual(res1.location_score, res2.location_score)
+        self.assertEqual(res1.fit_score, res2.fit_score)
+
+    def test_json_is_suppressed_when_implied(self):
+        # Profile has JavaScript, lacks Angular
+        ProfileSkill.objects.create(profile=self.profile, raw_name="JavaScript", normalized_name="javascript")
+
+        res = MatchScoringService.calculate(self.profile, self.job)
+
+        missing_opt = [s["name"] for s in res.missing_optional_skills]
+        self.assertNotIn("JSON", missing_opt)
+        self.assertIn("JSON Schema", missing_opt)
+
+        missing_req = [s["name"] for s in res.missing_required_skills]
+        self.assertIn("Angular", missing_req)
+
+    def test_actions_recommended_copy_is_french(self):
+        res = MatchScoringService.calculate(self.profile, self.job)
+        actions = res.recommended_actions
+        self.assertTrue(any("Priorité : ajoutez" in action for action in actions))
+
+        # Test when no required skills missing
+        ProfileSkill.objects.create(profile=self.profile, raw_name="Angular", normalized_name="angular")
+        res2 = MatchScoringService.calculate(self.profile, self.job)
+        actions2 = res2.recommended_actions
+        self.assertTrue(any("Votre profil couvre les compétences principales" in action for action in actions2))
+
+    def test_match_detail_removes_scored_location_and_redundant_required_gap_card(self):
+        match = MatchResult.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=self.job,
+            profile_snapshot_json={},
+            job_snapshot_json={"title": self.job.title, "company_name": "Test"},
+            fit_score=52,
+            technical_skills_score=40,
+            experience_score=100,
+            role_title_score=50,
+            language_score=70,
+            location_score=0,
+            missing_required_skills_json=[{"name": "Angular"}],
+            missing_optional_skills_json=[{"name": "Kubernetes"}],
+            risk_flags_json=["missing_required_skills"],
+            recommended_actions_json=[
+                "Priorité : ajoutez Angular à votre plan d'apprentissage. Mettez à jour votre CV si vous avez déjà utilisé Angular."
+            ],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertContains(response, "Mobilité / contrat")
+        self.assertContains(response, "Poste basé en France")
+        self.assertNotContains(response, "Localisation")
+        self.assertContains(response, "Compétences requises manquantes")
+        self.assertContains(response, "Angular")
+        self.assertNotContains(response, "Compétences obligatoires non détectées")
+        self.assertNotContains(response, "À renforcer")
+        self.assertContains(response, "Actions recommandées")
+        self.assertContains(response, "border-rose-200")
+
+class Phase15GRecommendationsViewTests(TestCase):
+    def setUp(self):
+        self.user = UserModel.objects.create_user(username="test15g-refresh", email="test15g-refresh@example.com", password="password")
+
+    def test_refresh_recommendations_endpoint_post_only(self):
+        self.client.force_login(self.user)
+        url = reverse("recommendations:refresh")
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 405)
+
+    def test_refresh_recommendations_requires_login(self):
+        url = reverse("recommendations:refresh")
+
+        response = self.client.post(url)
+
+        self.assertRedirects(response, f"{reverse('account_login')}?next={url}")
+
+    def test_refresh_recommendations_post_calls_service(self):
+        self.client.force_login(self.user)
+        url = reverse("recommendations:refresh")
+        result = type(
+            "RefreshResult",
+            (),
+            {"skipped_reason": None, "stored_recommendations_count": 3},
+        )()
+
+        with patch("apps.recommendations.views.RecommendationService.refresh_for_user", return_value=result) as refresh:
+            response = self.client.post(url)
+
+        self.assertRedirects(response, reverse("dashboard:recommendations"))
+        refresh.assert_called_once_with(self.user, trigger_type="manual_refresh")
+
+    def test_refresh_button_appears_with_csrf_form(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dashboard:recommendations"))
+
+        self.assertContains(response, "Actualiser mes recommandations")
+        self.assertContains(response, f'action="{reverse("recommendations:refresh")}"')
+        self.assertContains(response, "csrfmiddlewaretoken")

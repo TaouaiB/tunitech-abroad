@@ -45,6 +45,8 @@ def confidence_from_flags(flags, snapshot=None):
 def human_risk_labels(flags):
     labels = []
     for flag in flags or []:
+        if flag == "missing_required_skills":
+            continue
         label = RISK_FLAG_LABELS.get(flag, flag.replace("_", " ").capitalize())
         if label not in labels:
             labels.append(label)

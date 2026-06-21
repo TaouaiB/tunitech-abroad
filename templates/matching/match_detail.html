@@ -75,14 +75,16 @@
                     <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Langues</span><span>{{ match.language_score }}%</span></div>
                     <div class="tta-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ match.language_score }}"><div class="tta-progress-bar {% if match.language_score >= 80 %}bg-emerald-600 dark:bg-emerald-400{% elif match.language_score >= 65 %}bg-brand-600 dark:bg-brand-400{% elif match.language_score >= 50 %}bg-amber-500 dark:bg-amber-400{% else %}bg-rose-600 dark:bg-rose-400{% endif %}" style="width:{{ match.language_score }}%"></div></div>
                 </div>
-                <div>
-                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Localisation</span><span>{{ match.location_score }}%</span></div>
-                    <div class="tta-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ match.location_score }}"><div class="tta-progress-bar {% if match.location_score >= 80 %}bg-emerald-600 dark:bg-emerald-400{% elif match.location_score >= 65 %}bg-brand-600 dark:bg-brand-400{% elif match.location_score >= 50 %}bg-amber-500 dark:bg-amber-400{% else %}bg-rose-600 dark:bg-rose-400{% endif %}" style="width:{{ match.location_score }}%"></div></div>
-                </div>
+
                 <div>
                     <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Rôle/titre</span><span>{{ match.role_title_score }}%</span></div>
                     <div class="tta-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ match.role_title_score }}"><div class="tta-progress-bar {% if match.role_title_score >= 80 %}bg-emerald-600 dark:bg-emerald-400{% elif match.role_title_score >= 65 %}bg-brand-600 dark:bg-brand-400{% elif match.role_title_score >= 50 %}bg-amber-500 dark:bg-amber-400{% else %}bg-rose-600 dark:bg-rose-400{% endif %}" style="width:{{ match.role_title_score }}%"></div></div>
                 </div>
+            </div>
+
+            <div class="mt-5 pt-5 border-t border-slate-200 dark:border-slate-700/60">
+                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Mobilité / contrat</h3>
+                <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Poste basé en France. Vérifiez la mobilité, le visa, l'alternance/PFE ou les conditions de télétravail avant de postuler.</p>
             </div>
         </div>
         {% endif %}
@@ -145,7 +147,7 @@
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2" style="margin-top:18px">
             {% if match.risk_flags_json %}
             <div class="tta-card p-5 sm:p-6">
-                <h2>À renforcer</h2>
+                <h2>Points de vigilance</h2>
                 {% for flag in match.human_risk_flags %}
                 <div class="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">{{ flag }}</div>
                 {% endfor %}
@@ -164,9 +166,9 @@
         {% endif %}
 
         {% if match.recommended_actions_json %}
-        <div class="tta-card p-5 sm:p-6" style="margin-top:18px">
-            <h2>Actions recommandées</h2>
-            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700 dark:text-slate-300">
+        <div class="tta-card p-5 sm:p-6 mt-[18px] {% if match.missing_required_skills_json %}border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/30{% elif match.missing_optional_skills_json %}border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30{% else %}border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30{% endif %}">
+            <h2 class="{% if match.missing_required_skills_json %}text-rose-800 dark:text-rose-300{% elif match.missing_optional_skills_json %}text-amber-800 dark:text-amber-300{% else %}text-emerald-800 dark:text-emerald-300{% endif %}">Actions recommandées</h2>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm {% if match.missing_required_skills_json %}text-rose-900 dark:text-rose-200{% elif match.missing_optional_skills_json %}text-amber-900 dark:text-amber-200{% else %}text-emerald-900 dark:text-emerald-200{% endif %}">
                 {% for action in match.recommended_actions_json %}
                 <li>{{ action }}</li>
                 {% endfor %}
