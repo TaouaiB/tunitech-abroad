@@ -1,6 +1,9 @@
 import hashlib
+import logging
 from pathlib import Path
 from typing import Any, cast
+
+logger = logging.getLogger(__name__)
 
 from django.conf import settings
 from django.db import transaction
@@ -47,8 +50,8 @@ class CVUploadService:
                     consent_version="1.0",
                     request_meta={"source_path": "dashboard_cv_upload"},
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to record consent: {e}", exc_info=True)
                 
             try:
                 from apps.analytics.services.user_event import UserEventService
@@ -57,8 +60,8 @@ class CVUploadService:
                     user=user,
                     metadata={"cv_public_id": str(cv_upload.public_id)},
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to record cv_uploaded event: {e}", exc_info=True)
 
             # Celery task proxy exposes delay() at runtime; cast keeps Pyright clean.
             transaction.on_commit(lambda: cast(Any, parse_cv).delay(cv_upload.id))
@@ -69,6 +72,8 @@ class CVUploadService:
                     RecommendationStalenessService.mark_user_recommendations_stale(user, reason="cv_uploaded")
                 except ImportError:
                     pass
+                except Exception as e:
+                    logger.warning(f"Failed to mark recommendations stale: {e}", exc_info=True)
             transaction.on_commit(mark_stale)
         
         return cv_upload

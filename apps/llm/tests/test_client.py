@@ -1,5 +1,5 @@
 import json
-import urllib.error
+import requests
 from unittest.mock import patch, MagicMock
 from django.test import TestCase, override_settings
 from apps.llm.services.client import OpenRouterClient
@@ -19,32 +19,32 @@ class OpenRouterClientTests(TestCase):
             client = OpenRouterClient()
             client.chat([{"role": "user", "content": "Hello"}])
 
-    @override_settings(LLM_ENABLED=True, OPENROUTER_API_KEY="test_key")
-    @patch("urllib.request.urlopen")
-    def test_client_success_response(self, mock_urlopen):
+    @override_settings(LLM_ENABLED=True)
+    @patch("requests.post")
+    def test_client_success_response(self, mock_post):
         mock_response = MagicMock()
-        mock_response.read.return_value = json.dumps({
+        mock_response.json.return_value = {
             "choices": [{"message": {"content": "Hello world"}}],
             "usage": {"total_tokens": 10}
-        }).encode("utf-8")
-        mock_response.__enter__.return_value = mock_response
-        mock_urlopen.return_value = mock_response
+        }
+        mock_response.raise_for_status.return_value = None
+        mock_post.return_value = mock_response
 
-        client = OpenRouterClient()
+        client = OpenRouterClient(api_key="unit-test-key")
         content, usage = client.chat([{"role": "user", "content": "Hello"}])
         
         self.assertEqual(content, "Hello world")
         self.assertEqual(usage["total_tokens"], 10)
 
-    @override_settings(LLM_ENABLED=True, OPENROUTER_API_KEY="test_key")
-    @patch("urllib.request.urlopen")
-    def test_client_http_error(self, mock_urlopen):
+    @override_settings(LLM_ENABLED=True)
+    @patch("requests.post")
+    def test_client_http_error(self, mock_post):
         # Setup mock to raise HTTPError
-        fp = MagicMock()
-        fp.read.return_value = b'{"error": "bad request"}'
-        err = urllib.error.HTTPError(url="", code=400, msg="Bad Request", hdrs={}, fp=fp)
-        mock_urlopen.side_effect = err
+        err_response = MagicMock()
+        err_response.status_code = 400
+        err = requests.exceptions.HTTPError("Bad Request", response=err_response)
+        mock_post.side_effect = err
 
-        client = OpenRouterClient()
-        with self.assertRaises(urllib.error.HTTPError):
+        client = OpenRouterClient(api_key="unit-test-key")
+        with self.assertRaises(requests.exceptions.HTTPError):
             client.chat([{"role": "user", "content": "Hello"}])

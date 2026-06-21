@@ -17,5 +17,5 @@ def parse_cv(cv_upload_id: int) -> None:
                 cv.parse_status = 'failed'
                 cv.parse_error = "An unexpected error occurred during parsing. Please try again or upload another CV."
                 cv.save(update_fields=['parse_status', 'parse_error'])
-        except Exception:
-            pass
+        except Exception as update_err:
+            logger.warning(f"Failed to update CV status to failed: {update_err}", exc_info=True)

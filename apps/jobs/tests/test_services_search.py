@@ -92,6 +92,8 @@ class JobSearchServiceTests(TestCase):
         self.assertNotIn(self.disabled_source_job.id, job_ids)
 
     def test_search_query_uses_postgres_full_text(self):
+        from django.contrib.postgres.search import SearchVector
+        NormalizedJob.objects.filter(id=self.job1.id).update(search_vector=SearchVector("title", "description"))
         result = JobSearchService.search({"q": "Python"})
         self.assertEqual(result.total_count, 1)
         self.assertEqual(result.page_obj[0].id, self.job1.id)

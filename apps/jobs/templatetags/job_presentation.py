@@ -29,8 +29,7 @@ def is_publicly_visible(job):
 
 @register.filter
 def public_eligibility_reason(job):
-    from apps.jobs.services.eligibility import JobEligibilityService
-    return JobEligibilityService.reason(job)
+    return JobPresentationService.get_safe_public_eligibility_reason(job)
 
 @register.filter
 def is_pending_analysis(job):

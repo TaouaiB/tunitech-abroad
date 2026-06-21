@@ -27,7 +27,7 @@ def run_llm_request(user_id, purpose, messages, model: Optional[str] = None):
             raise Exception("BLOCKED: Daily LLM request limit reached.")
 
     message_str = str(messages)
-    cache_key = f"llm_cache_{hashlib.md5(message_str.encode()).hexdigest()}"
+    cache_key = f"llm_cache_{hashlib.sha256(message_str.encode()).hexdigest()}"
     cached_response = cache.get(cache_key)
     if cached_response:
         return cached_response

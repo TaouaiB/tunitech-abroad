@@ -319,11 +319,17 @@ class AdminMetricsService:
             + buckets["skipped_non_fr"]
             + buckets["skipped_existing_pending"]
             + buckets["other"]
+            + buckets["failed_enrichment"]
+            + buckets["validation_error"]
+            + buckets["skipped_enrichment"]
         )
         metrics['active_jobs_without_enrichment_skipped_low_relevance'] = buckets["skipped_low_relevance"]
         metrics['active_jobs_without_enrichment_skipped_low_confidence'] = buckets["skipped_low_confidence"]
         metrics['active_jobs_without_enrichment_skipped_non_fr'] = buckets["skipped_non_fr"]
         metrics['active_jobs_without_enrichment_skipped_existing_pending'] = buckets["skipped_existing_pending"]
+        metrics['active_jobs_without_enrichment_failed_enrichment'] = buckets["failed_enrichment"]
+        metrics['active_jobs_without_enrichment_validation_error'] = buckets["validation_error"]
+        metrics['active_jobs_without_enrichment_skipped_enrichment'] = buckets["skipped_enrichment"]
         metrics['active_jobs_without_enrichment_other'] = buckets["other"]
         metrics['active_jobs_without_enrichment_bucket_total'] = buckets["bucket_total"]
 
@@ -395,7 +401,13 @@ class AdminMetricsService:
         low_confidence = fr_qs.exclude(classification_json__confidence="high").count()
         high_confidence_qs = fr_qs.filter(classification_json__confidence="high")
 
-        eligible = high_confidence_qs.filter(skill_signal_quality__in=allowed_qualities).exclude(
+        base_eligible_qs = high_confidence_qs.filter(skill_signal_quality__in=allowed_qualities)
+
+        failed_enrichment = base_eligible_qs.filter(enrichment__status=JobEnrichment.Status.FAILED).count()
+        validation_error = base_eligible_qs.filter(enrichment__status=JobEnrichment.Status.VALIDATION_ERROR).count()
+        skipped_enrichment = base_eligible_qs.filter(enrichment__status=JobEnrichment.Status.SKIPPED).count()
+
+        eligible = base_eligible_qs.exclude(
             enrichment__status__in=[
                 JobEnrichment.Status.FAILED,
                 JobEnrichment.Status.VALIDATION_ERROR,
@@ -403,7 +415,7 @@ class AdminMetricsService:
             ],
         ).count()
         low_relevance = high_confidence_qs.exclude(skill_signal_quality__in=allowed_qualities).count()
-        bucket_total = eligible + low_relevance + low_confidence + non_fr + existing_pending
+        bucket_total = eligible + low_relevance + low_confidence + non_fr + existing_pending + failed_enrichment + validation_error + skipped_enrichment
         other = max(total - bucket_total, 0)
 
         return {
@@ -413,6 +425,9 @@ class AdminMetricsService:
             "skipped_low_confidence": low_confidence,
             "skipped_non_fr": non_fr,
             "skipped_existing_pending": existing_pending,
+            "failed_enrichment": failed_enrichment,
+            "validation_error": validation_error,
+            "skipped_enrichment": skipped_enrichment,
             "other": other,
             "bucket_total": bucket_total + other,
         }

@@ -28,10 +28,26 @@ class JobViewTests(TestCase):
         self.assertContains(response, "Test View Job")
         self.assertNotContains(response, "recherche depuis la base locale")
         self.assertContains(response, "Offres IT françaises actualisées")
-        
+
     def test_job_list_view_filters(self):
         response = self.client.get(reverse("jobs:list"), {"q": "Test", "location": "Paris"})
         self.assertEqual(response.status_code, 200)
+
+    def test_job_list_view_shows_relevance_sort_when_query_requests_it(self):
+        response = self.client.get(reverse("jobs:list"), {"q": "django", "sort": "relevance"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["sort"], "relevance")
+        self.assertEqual(response.context["filters"]["sort"], "relevance")
+        self.assertContains(response, '<option value="relevance" selected>', html=False)
+        self.assertContains(response, '>Plus pertinentes</option>', html=False)
+
+    def test_job_list_view_falls_back_to_newest_sort_without_query(self):
+        response = self.client.get(reverse("jobs:list"), {"sort": "relevance"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["sort"], "newest")
+        self.assertEqual(response.context["filters"]["sort"], "newest")
+        self.assertContains(response, '<option value="newest" selected>', html=False)
+        self.assertContains(response, '>Plus récentes</option>', html=False)
 
     def test_job_list_view_preserves_filter_params_in_pagination(self):
         for index in range(2, 23):
@@ -44,6 +60,9 @@ class JobViewTests(TestCase):
                 status=JobStatus.ACTIVE,
                 first_seen_at=timezone.now(), last_seen_at=timezone.now(), last_fetched_at=timezone.now()
             )
+
+        from django.contrib.postgres.search import SearchVector
+        NormalizedJob.objects.all().update(search_vector=SearchVector("title", "description"))
 
         response = self.client.get(reverse("jobs:list"), {"q": "Python", "page_size": "1"})
         self.assertEqual(response.status_code, 200)

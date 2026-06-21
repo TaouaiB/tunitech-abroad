@@ -4,6 +4,9 @@ from apps.recommendations.models import SavedJob
 from apps.jobs.services.query import JobQueryService
 from apps.analytics.services.user_event import UserEventService
 from apps.jobs.models import NormalizedJob
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SavedJobService:
@@ -20,8 +23,8 @@ class SavedJobService:
                     user=user,
                     metadata={"job_public_id": str(job_public_id)},
                 )
-            except Exception:
-                pass  # Failure to record must not fail save
+            except Exception as e:
+                logger.warning(f"Failed to record saved_job_created event: {e}", exc_info=True)
 
         return saved_job
 

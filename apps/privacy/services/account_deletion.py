@@ -1,9 +1,12 @@
+import logging
 from django.db import transaction
 from django.utils import timezone
 from apps.privacy.models import DeletionRequest
 from apps.cvs.models import CVUpload
 from apps.cvs.services.deletion import CVDeletionService
 from apps.analytics.services.user_event import UserEventService
+
+logger = logging.getLogger(__name__)
 
 class AccountDeletionService:
     @staticmethod
@@ -22,8 +25,8 @@ class AccountDeletionService:
                 user=user,
                 metadata={"request_public_id": str(request_obj.public_id)},
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to record account deletion requested event: {e}", exc_info=True)
 
         if created:
             AccountDeletionService.process_request(request_obj)
@@ -68,6 +71,8 @@ class AccountDeletionService:
                     summary["saved_jobs"], _ = SavedJob.objects.filter(user=user).delete()
                 except ImportError:
                     pass
+                except Exception as e:
+                    logger.warning(f"Failed to delete saved jobs: {e}", exc_info=True)
 
                 # Delete match results
                 try:
@@ -75,6 +80,8 @@ class AccountDeletionService:
                     summary["match_results"], _ = MatchResult.objects.filter(user=user).delete()
                 except ImportError:
                     pass
+                except Exception as e:
+                    logger.warning(f"Failed to delete match results: {e}", exc_info=True)
 
                 # Delete recommendations
                 try:
@@ -106,6 +113,8 @@ class AccountDeletionService:
                     )
                 except ImportError:
                     pass
+                except Exception as e:
+                    logger.warning(f"Failed to delete email preferences: {e}", exc_info=True)
 
                 # Anonymize LLM usage logs
                 try:
@@ -116,6 +125,8 @@ class AccountDeletionService:
                     )
                 except ImportError:
                     pass
+                except Exception as e:
+                    logger.warning(f"Failed to anonymize LLM usage logs: {e}", exc_info=True)
 
                 # Anonymize UserEvents
                 try:
@@ -126,6 +137,8 @@ class AccountDeletionService:
                     )
                 except ImportError:
                     pass
+                except Exception as e:
+                    logger.warning(f"Failed to anonymize user events: {e}", exc_info=True)
 
                 # Remove social accounts
                 try:
@@ -135,6 +148,8 @@ class AccountDeletionService:
                     summary["social_accounts"], _ = SocialAccount.objects.filter(user=user).delete()
                 except ImportError:
                     pass
+                except Exception as e:
+                    logger.warning(f"Failed to remove social accounts: {e}", exc_info=True)
 
                 # Anonymize User
                 user.email = f"deleted-user-{deletion_request.public_id}@deleted.local"

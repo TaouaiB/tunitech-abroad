@@ -528,7 +528,7 @@ def force_retry_provider_blocked_enrichments(*, limit: int = 1, dry_run: bool = 
 
 def compute_job_enrichment_payload_hash(job) -> str:
     text = f"{job.title}\n{job.description}"
-    return hashlib.md5(text.encode('utf-8')).hexdigest()
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 
 def _compute_payload_hash(job) -> str:

@@ -98,3 +98,34 @@ class JobPresentationService:
             valid_langs[language_name] = code
 
         return valid_langs
+
+    @staticmethod
+    def get_safe_public_eligibility_reason(job) -> str:
+        from apps.jobs.services.eligibility import JobEligibilityService, PublicJobState
+        from apps.jobs.models import JobStatus
+        from django.utils import timezone
+
+        state = JobEligibilityService.classify_public_state(job)
+        if state in (
+            PublicJobState.PUBLIC_MATCHABLE,
+            PublicJobState.PUBLIC_LIMITED_PENDING_ANALYSIS,
+        ):
+            return ""
+
+        if job.status == JobStatus.EXPIRED:
+            return "Offre expirée"
+
+        if job.status == JobStatus.STALE:
+            return "Offre ancienne"
+
+        expires_at = getattr(job, "expires_at", None)
+        if expires_at and expires_at < timezone.now():
+            return "Offre expirée"
+
+        if not getattr(job.source, "is_active", True) or job.status in (
+            JobStatus.REMOVED,
+            JobStatus.ARCHIVED,
+        ):
+            return "Offre indisponible"
+
+        return "Non publiée"

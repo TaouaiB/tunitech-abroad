@@ -177,6 +177,74 @@ class EligibilityTests(TestCase):
         self.assertFalse(JobEligibilityService.is_matchable(job))
         self.assertNotIn(job, list(JobEligibilityService.filter_matchable()))
 
+    def test_safe_public_eligibility_reason_uses_supported_states_and_french_labels(self):
+        matchable = self._create_job(
+            "matchable-label",
+            "Python Developer",
+            "Django API",
+            True,
+            "software_development",
+            "high",
+            "success",
+            "strong",
+        )
+        self.assertEqual(JobPresentationService.get_safe_public_eligibility_reason(matchable), "")
+
+        expired = self._create_job(
+            "expired-label",
+            "Expired Job",
+            "Django API",
+            True,
+            "software_development",
+            "high",
+            "success",
+            "strong",
+        )
+        expired.status = JobStatus.EXPIRED
+        expired.save(update_fields=["status"])
+        self.assertEqual(JobPresentationService.get_safe_public_eligibility_reason(expired), "Offre expirée")
+
+        stale = self._create_job(
+            "stale-label",
+            "Stale Job",
+            "Django API",
+            True,
+            "software_development",
+            "high",
+            "success",
+            "strong",
+        )
+        stale.status = JobStatus.STALE
+        stale.save(update_fields=["status"])
+        self.assertEqual(JobPresentationService.get_safe_public_eligibility_reason(stale), "Offre ancienne")
+
+        unavailable = self._create_job(
+            "removed-label",
+            "Removed Job",
+            "Django API",
+            True,
+            "software_development",
+            "high",
+            "success",
+            "strong",
+        )
+        unavailable.status = JobStatus.REMOVED
+        unavailable.save(update_fields=["status"])
+        self.assertEqual(JobPresentationService.get_safe_public_eligibility_reason(unavailable), "Offre indisponible")
+
+        non_published = self._create_job(
+            "admin-label",
+            "Needs Review",
+            "Django API",
+            True,
+            "software_development",
+            "high",
+            "success",
+            "missing",
+            with_job_skill=False,
+        )
+        self.assertEqual(JobPresentationService.get_safe_public_eligibility_reason(non_published), "Non publiée")
+
     def test_bad_outreach_and_franchise_jobs_not_public_or_matchable(self):
         mediator = self._create_job(
             "mediator",
