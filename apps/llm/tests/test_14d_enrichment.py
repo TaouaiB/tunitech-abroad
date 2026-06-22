@@ -14,6 +14,7 @@ from apps.llm.tasks import enrich_job_task
 from apps.matching.services.scoring import MatchScoringService
 from apps.profiles.models import CandidateProfile, ProfileSkill
 
+@override_settings(JOB_ENRICHMENT_DAILY_LIMIT=1000, JOB_ENRICHMENT_MAX_PER_INGESTION_RUN=1000)
 class EnrichmentTests(TestCase):
     def setUp(self):
         self.source = JobSource.objects.create(name="Test Source", slug="test-source", source_type="fixture")

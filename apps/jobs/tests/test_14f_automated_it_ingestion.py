@@ -12,6 +12,7 @@ from django.utils import timezone
 from datetime import timedelta
 import hashlib
 
+@override_settings(JOB_ENRICHMENT_MAX_PER_INGESTION_RUN=1000)
 class TestAutomatedITIngestion(TestCase):
 
     def test_default_config_values(self):
