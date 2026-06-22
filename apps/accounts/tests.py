@@ -249,5 +249,5 @@ class AuthViewsTests(TestCase):
         self.assertIn("account/verification_sent.html", template_names)
         html = response.content.decode()
         self.assertIn('data-project-layout="tunitech-abroad"', html)
-        self.assertIn("TuniTech", html)
+        self.assertIn("TuniAtlas", html)
         self.assertNotIn("<h1>Verify Your Email Address</h1>", html)

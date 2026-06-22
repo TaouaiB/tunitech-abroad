@@ -1,7 +1,7 @@
 {% autoescape off %}
 Bonjour,
 
-Bienvenue sur TuniTech Abroad ! 
+Bienvenue sur TuniAtlas !
 
 Pour activer votre compte et confirmer votre adresse email, veuillez cliquer sur le lien ci-dessous :
 
@@ -9,5 +9,5 @@ Pour activer votre compte et confirmer votre adresse email, veuillez cliquer sur
 
 Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.
 
-L'équipe TuniTech Abroad
+L'équipe TuniAtlas
 {% endautoescape %}

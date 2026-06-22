@@ -44,7 +44,7 @@ class OpenRouterClient:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "https://tunitech-abroad.example.test",
-            "X-Title": "TuniTech Abroad",
+            "X-Title": "TuniAtlas",
         }
         
         payload = {

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}TuniTech Abroad - Emplois IT en France{% endblock %}
+{% block title %}TuniAtlas — Tech Jobs Abroad for Tunisians{% endblock %}
 
 {% block content %}
 <section class="tta-hero py-4 md:py-5">
@@ -8,7 +8,7 @@
     <div>
       <span class="tta-eyebrow text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">Objectif France · Profils IT tunisiens</span>
       <h1 class="tta-title mt-4 text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">Trouvez des offres IT en France adaptées à votre profil</h1>
-      <p class="tta-subtitle mt-5 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-300 md:text-lg">TuniTech Abroad aide les talents IT tunisiens à trouver des offres françaises, comprendre leur compatibilité et identifier les compétences à renforcer.</p>
+      <p class="tta-subtitle mt-5 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-300 md:text-lg">TuniAtlas aide les talents IT tunisiens à trouver des offres françaises, comprendre leur compatibilité et identifier les compétences à renforcer.</p>
       <form class="tta-card tta-search-panel mt-6 grid gap-4 p-4 md:grid-cols-[1fr_1fr_auto] md:items-end md:p-5" action="{% url 'jobs:list' %}" method="get">
         <div><label class="tta-label" for="home-q">Mot-clé</label><input id="home-q" class="tta-input" name="q" value="" placeholder="Python, data, frontend..."></div>
         <div><label class="tta-label" for="home-location">Lieu</label><input id="home-location" class="tta-input" name="location" value="France" placeholder="Paris, Lyon..."></div>

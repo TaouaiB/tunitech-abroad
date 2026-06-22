@@ -9,7 +9,7 @@ def admin_operations_view(request):
         **metrics,
         'title': 'Operations Dashboard',
         'has_permission': True,
-        'site_header': 'TuniTech Abroad Admin',
-        'site_title': 'TuniTech Abroad',
+        'site_header': 'TuniAtlas Admin',
+        'site_title': 'TuniAtlas',
     }
     return render(request, 'admin/operations_dashboard.html', context)
