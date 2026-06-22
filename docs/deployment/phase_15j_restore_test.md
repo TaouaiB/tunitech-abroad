@@ -13,5 +13,5 @@ createdb tunitech_db_dev
 gunzip < db_backup_YYYY-MM-DD.sql.gz | psql tunitech_db_dev
 
 # 4. Extract media
-tar -xzf private_private_media_backup_YYYY-MM-DD.tar.gz -C /tmp/restore_test/
+tar -xzf private_media_backup_YYYY-MM-DD.tar.gz -C /tmp/restore_test/
 ```
