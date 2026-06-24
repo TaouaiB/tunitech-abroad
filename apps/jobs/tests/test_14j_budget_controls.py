@@ -15,6 +15,7 @@ from apps.jobs.models import (
 from apps.llm.models import JobEnrichment
 from apps.jobs.services.ingestion import JobIngestionService
 
+@override_settings(JOB_ENRICHMENT_MAX_PER_INGESTION_RUN=1000)
 class BudgetControlsTests(TestCase):
     def setUp(self):
         self.config = JobIngestionConfig.objects.create(

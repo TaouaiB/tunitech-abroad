@@ -1,82 +1,36 @@
 <form action="{% url 'matching:quick_match' public_id=job.public_id %}" method="post" class="space-y-4" hx-post="{% url 'matching:quick_match' public_id=job.public_id %}" hx-target="#quick-match-result" hx-swap="innerHTML">
     {% csrf_token %}
-    <div>
-        <label for="id_skills" class="label-text block mb-2 font-semibold text-gray-700">Vos Compétences <span class="text-red-500">*</span> <span class="text-gray-400 font-normal text-xs ml-1">(séparées par des virgules)</span></label>
-        <textarea name="skills" id="id_skills" rows="3" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all shadow-sm text-gray-700 placeholder-gray-400" required placeholder="ex: Python, Django, React, Docker, AWS"></textarea>
-    </div>
-    
-    <div class="space-y-5">
-        <div>
-            <label class="label-text block mb-2 font-semibold text-gray-700">Votre Expérience <span class="text-red-500">*</span></label>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <label class="cursor-pointer">
-                    <input type="radio" name="experience_level" value="intern" class="peer sr-only" required>
-                    <div class="h-full flex items-center justify-center text-center px-2 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
-                        Stage / Étudiant
-                    </div>
-                </label>
-                <label class="cursor-pointer">
-                    <input type="radio" name="experience_level" value="junior" class="peer sr-only" required>
-                    <div class="h-full flex items-center justify-center text-center px-2 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
-                        Junior (0-2 ans)
-                    </div>
-                </label>
-                <label class="cursor-pointer">
-                    <input type="radio" name="experience_level" value="mid" class="peer sr-only" required>
-                    <div class="h-full flex items-center justify-center text-center px-2 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
-                        Confirmé (2-5)
-                    </div>
-                </label>
-                <label class="cursor-pointer">
-                    <input type="radio" name="experience_level" value="senior" class="peer sr-only" required>
-                    <div class="h-full flex items-center justify-center text-center px-2 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
-                        Senior (5+ ans)
-                    </div>
-                </label>
-            </div>
-        </div>
-        <div>
-            <label class="label-text block mb-2 font-semibold text-gray-700">Niveau de Français</label>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                <label class="cursor-pointer">
-                    <input type="radio" name="french_level" value="none" class="peer sr-only">
-                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
-                        Aucun
-                    </div>
-                </label>
-                <label class="cursor-pointer">
-                    <input type="radio" name="french_level" value="basic" class="peer sr-only">
-                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
-                        Débutant (A1/A2)
-                    </div>
-                </label>
-                <label class="cursor-pointer">
-                    <input type="radio" name="french_level" value="intermediate" class="peer sr-only">
-                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
-                        Intermédiaire (B1/B2)
-                    </div>
-                </label>
-                <label class="cursor-pointer">
-                    <input type="radio" name="french_level" value="advanced" class="peer sr-only">
-                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
-                        Avancé (C1)
-                    </div>
-                </label>
-                <label class="cursor-pointer sm:col-span-2 md:col-span-1">
-                    <input type="radio" name="french_level" value="fluent" class="peer sr-only">
-                    <div class="h-full flex items-center justify-center text-center px-2 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-brand-300 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 transition-all shadow-sm">
-                        Courant (C2)
-                    </div>
-                </label>
-            </div>
-        </div>
+    <div class="tta-field">
+        <label for="id_skills" class="tta-label">Vos compétences <span style="color:var(--red-600)">*</span></label>
+        <textarea name="skills" id="id_skills" rows="3" class="tta-input" required placeholder="ex: Python, Django, React, Docker, AWS"></textarea>
     </div>
 
-    <div class="pt-2">
-        <button type="submit" id="qm-btn" class="w-full btn-primary bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 py-2.5 shadow-md relative overflow-hidden group">
-            <span class="btn-text font-bold tracking-wide">Calculer le Match</span>
+    <div class="tta-field">
+        <label class="tta-label">Votre expérience <span style="color:var(--red-600)">*</span></label>
+        <select name="experience_level" class="tta-select" required>
+            <option value="intern">Stage / Étudiant</option>
+            <option value="junior">Junior (0-2 ans)</option>
+            <option value="mid">Confirmé (2-5 ans)</option>
+            <option value="senior">Senior (5+ ans)</option>
+        </select>
+    </div>
+
+    <div class="tta-field">
+        <label class="tta-label">Niveau de Français</label>
+        <select name="french_level" class="tta-select">
+            <option value="none">Aucun</option>
+            <option value="basic">Débutant (A1/A2)</option>
+            <option value="intermediate">Intermédiaire (B1/B2)</option>
+            <option value="advanced">Avancé (C1)</option>
+            <option value="fluent">Courant (C2)</option>
+        </select>
+    </div>
+
+    <div style="margin-top:18px">
+        <button type="submit" id="qm-btn" class="tta-btn tta-btn-primary" style="width:100%">
+            <span class="btn-text">Lancer le test rapide</span>
             <span class="btn-loading hidden ml-2 flex items-center gap-2">
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style="display:inline-block;">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>

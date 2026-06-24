@@ -1,7 +1,10 @@
+import logging
 from django.db import transaction
 from apps.cvs.models import CVUpload, CVParsedData
 from apps.profiles.models import ProfileSkill
 import uuid
+
+logger = logging.getLogger(__name__)
 
 class CVDeletionService:
     @classmethod
@@ -28,14 +31,16 @@ class CVDeletionService:
                     user=user,
                     metadata={"cv_public_id": str(cv_public_id)},
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to record cv_deleted event: {e}", exc_info=True)
                 
             try:
                 from apps.recommendations.services.staleness import RecommendationStalenessService
                 RecommendationStalenessService.mark_user_recommendations_stale(user, reason="cv_deleted")
             except ImportError:
                 pass
+            except Exception as e:
+                logger.warning(f"Failed to mark recommendations stale: {e}", exc_info=True)
 
         return {"success": True}
 
@@ -48,7 +53,7 @@ class CVDeletionService:
                 import os
                 if os.path.exists(cv.file.path):
                     os.remove(cv.file.path)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to remove CV file: {e}", exc_info=True)
 
         CVParsedData.objects.filter(cv_upload=cv).delete()

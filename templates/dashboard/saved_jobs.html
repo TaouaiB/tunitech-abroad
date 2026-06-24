@@ -1,65 +1,109 @@
 {% extends 'base.html' %}
+{% load job_presentation %}
 
-{% block title %}Offres Sauvegardées - TuniTech Abroad{% endblock %}
+{% block title %}Favoris - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8 flex justify-between items-end">
-        <div>
-            <a href="{% url 'dashboard:home' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Retour au tableau de bord
-            </a>
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Offres Sauvegardées</h1>
-            <p class="mt-2 text-lg text-gray-600">Retrouvez les annonces que vous avez mises de côté.</p>
+<div class="tta-container grid grid-cols-1 gap-6 py-8 lg:grid-cols-[280px_1fr]">
+    {% include 'dashboard/sidebar.html' %}
+    <section>
+        <div class="mb-6 flex flex-col gap-2">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">Favoris</span>
+                <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Offres sauvegardées</h1>
+                <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Retrouvez les annonces que vous avez mises de côté.</p>
+            </div>
         </div>
-    </div>
 
-    <div class="card p-6 md:p-8 bg-gray-50 border-0 shadow-inner min-h-[50vh]">
-        <div class="grid grid-cols-1 gap-4">
+        <div style="display:grid;gap:14px">
             {% for saved_job in saved_jobs %}
-                <div class="bg-white rounded-xl p-5 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border border-gray-100 shadow-sm hover:border-brand-300 hover:shadow-md transition-all group">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <h3 class="text-lg font-bold">
-                                <a href="{% url 'jobs:detail' saved_job.job.public_id %}" class="text-gray-900 group-hover:text-brand-600 transition-colors">
-                                    {{ saved_job.job.title }}
-                                </a>
-                            </h3>
-                            {% if saved_job.job.status == 'expired' %}
-                                <span class="badge badge-red text-xs">Expirée</span>
-                            {% elif saved_job.job.status != 'active' %}
-                                <span class="badge badge-gray text-xs">{{ saved_job.job.status }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="flex items-center gap-4 text-sm text-gray-600">
-                            <div class="flex items-center gap-1.5">
-                                <div class="w-5 h-5 rounded bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-[10px]">
-                                    {{ saved_job.job.company_name|make_list|first|upper }}
-                                </div>
-                                <span class="font-medium text-gray-700">{{ saved_job.job.company_name }}</span>
-                            </div>
-                            <div class="flex items-center gap-1.5">
-                                <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                {{ saved_job.job.location|default:saved_job.job.country|default:"France" }}
-                            </div>
-                        </div>
+                <article class="tta-card tta-card-hover tta-job-card">
+                  {% if saved_job.job|is_publicly_visible %}
+                  <a class="tta-job-card-link" href="{% url 'jobs:detail' saved_job.job.public_id %}">
+                  {% else %}
+                  <div class="tta-job-card-link">
+                  {% endif %}
+                    <div class="tta-chip-row" style="margin-top:0">
+                        {% for badge in saved_job.job|job_badges %}
+                            <span class="tta-badge {{ badge.css_class }}">{{ badge.text }}</span>
+                        {% endfor %}
+                        {% if saved_job.job.status == 'expired' %}
+                            <span class="tta-badge tta-badge-danger">Expirée</span>
+                        {% elif saved_job.job.status != 'active' %}
+                            <span class="tta-badge tta-badge-warning">{{ saved_job.job.get_status_display }}</span>
+                        {% endif %}
+                        {% if not saved_job.job|is_publicly_visible %}
+                            <span class="tta-badge tta-badge-warning">Non publiée</span>
+                        {% endif %}
                     </div>
-                    <div class="flex-shrink-0 w-full sm:w-auto">
-                        {% include 'jobs/partials/save_button.html' with job=saved_job.job is_saved=True %}
+
+                    <h3 class="tta-job-title" style="margin-top:12px">
+                        {{ saved_job.job.title|default:"Offre sans titre" }}
+                    </h3>
+
+                    <div class="tta-card-meta">
+                        {% if saved_job.job.company_name|is_valid_badge %}
+                            <span>{{ saved_job.job.company_name }}</span>
+                        {% endif %}
+                        {% if saved_job.job.location|is_valid_badge %}
+                            <span>{{ saved_job.job.location }}</span>
+                        {% elif saved_job.job.city|is_valid_badge %}
+                            <span>{{ saved_job.job.city }}</span>
+                        {% endif %}
+                        {% if saved_job.job.source.name|is_valid_badge %}
+                            <span>{{ saved_job.job.source.name }}</span>
+                        {% endif %}
+                        {% if saved_job.job.published_at %}
+                            <span class="tta-card-date">Publié le {{ saved_job.job.published_at|date:"d M Y" }}</span>
+                        {% elif saved_job.job.first_seen_at %}
+                            <span class="tta-card-date">Vu le {{ saved_job.job.first_seen_at|date:"d M Y" }}</span>
+                        {% elif saved_job.job.last_seen_at %}
+                            <span class="tta-card-date">Vu le {{ saved_job.job.last_seen_at|date:"d M Y" }}</span>
+                        {% endif %}
                     </div>
-                </div>
+
+                    {% if saved_job.job.description|is_valid_badge and saved_job.job.description|length > 12 %}
+                        <p class="tta-job-desc">{{ saved_job.job.description|striptags|truncatewords:28 }}</p>
+                    {% else %}
+                        <p class="tta-job-desc">Description disponible sur la source de l'offre.</p>
+                    {% endif %}
+
+                    {% with skill_chips=saved_job.job|card_skill_chips %}
+                    {% if skill_chips %}
+                        <div class="tta-chip-row">
+                            {% for skill in skill_chips %}
+                                {% if skill|is_valid_badge %}
+                                    <span class="tta-chip">{{ skill }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                  {% if saved_job.job|is_publicly_visible %}
+                  </a>
+                  {% else %}
+                    <p class="tta-muted">{{ saved_job.job|public_eligibility_reason }}</p>
+                  </div>
+                  {% endif %}
+
+                  <div class="tta-job-actions">
+                    {% if saved_job.job|is_publicly_visible %}
+                        <a class="tta-btn tta-btn-primary" href="{% url 'jobs:detail' saved_job.job.public_id %}">Voir l’offre</a>
+                    {% endif %}
+                    {% include 'jobs/partials/save_button.html' with job=saved_job.job is_saved=True %}
+                  </div>
+                </article>
             {% empty %}
-                <div class="bg-white p-10 rounded-xl border border-gray-200 text-center shadow-sm">
-                    <div class="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                <div class="tta-card" style="text-align:center; padding:40px 20px;">
+                    <div style="width:80px; height:80px; background:var(--brand-50); color:var(--brand-500); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px auto;">
+                        <svg class="w-10 h-10" style="width:40px;height:40px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Aucune offre sauvegardée</h3>
-                    <p class="text-gray-600 max-w-md mx-auto mb-6">Vous n'avez pas encore mis d'offres de côté. Parcourez les annonces et cliquez sur "Sauvegarder" pour les retrouver ici plus tard.</p>
-                    <a href="{% url 'jobs:list' %}" class="btn-primary inline-flex">Parcourir les offres</a>
+                    <h3 style="font-size:20px; font-weight:700; margin-bottom:8px;">Aucune offre sauvegardée</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400" style="max-width:500px; margin:0 auto 24px auto;">Sauvegardez les offres intéressantes pour les comparer plus tard.</p>
+                    <a href="{% url 'jobs:list' %}" class="tta-btn tta-btn-primary" style="display:inline-flex;">Explorer les offres</a>
                 </div>
             {% endfor %}
         </div>
-    </div>
+    </section>
 </div>
 {% endblock %}

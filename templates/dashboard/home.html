@@ -1,86 +1,56 @@
 {% extends 'base.html' %}
 
-{% block title %}Tableau de bord - TuniTech Abroad{% endblock %}
+{% block title %}Tableau de bord - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Bonjour, {{ user.email }} !</h1>
-            <p class="mt-2 text-lg text-gray-600">Bienvenue sur votre espace candidat TuniTech Abroad.</p>
+<div class="tta-app-grid" style="margin-top: 2rem; margin-bottom: 3rem;">
+    {% include 'dashboard/sidebar.html' %}
+    <section>
+        <div class="tta-section-head">
+            <div>
+                <span class="tta-eyebrow">Espace candidat</span>
+                <h1 class="tta-page-title" style="margin-top:12px">Bonjour, {{ dashboard_display_name }} !</h1>
+                <p class="tta-muted">Bienvenue sur votre espace candidat TuniAtlas.</p>
+            </div>
+            <div>
+                <a href="{% url 'jobs:list' %}" class="tta-btn tta-btn-primary">Explorer les offres</a>
+            </div>
         </div>
-        <div>
-            <a href="{% url 'jobs:list' %}" class="btn-primary">
-                Explorer les offres
-            </a>
+
+        <div class="tta-bento" style="margin-top:18px">
+            <div class="tta-card tta-card-body">
+                <h2 class="text-lg font-bold text-slate-950 dark:text-white">Mon profil</h2>
+                <p class="tta-muted">Mettez à jour vos informations et objectifs pour un meilleur matching.</p>
+                <div style="margin-top:16px">
+                    <a class="tta-btn tta-btn-primary" href="{% url 'dashboard:profile' %}">Gérer mon profil</a>
+                </div>
+            </div>
+            <div class="tta-card tta-card-body">
+                <h2 class="text-lg font-bold text-slate-950 dark:text-white">Mon CV</h2>
+                <p class="tta-muted">Gérez votre CV pour un matching précis avec les offres.</p>
+                <div style="margin-top:16px">
+                    <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:cv' %}">Gérer mon CV</a>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <!-- Profile Card -->
-        <a href="{% url 'dashboard:profile' %}" class="card p-6 hover:-translate-y-1 transition-transform group">
-            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        <div class="tta-bento-row" style="margin-top:18px">
+            <div class="tta-card tta-card-body">
+                <h3 class="font-bold text-slate-950 dark:text-white">Recommandations</h3>
+                <p class="tta-muted" style="margin-bottom: 12px;">Offres ciblant votre profil technique.</p>
+                <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:recommendations' %}">Voir</a>
             </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-1">Mon Profil</h3>
-            <p class="text-sm text-gray-500">Mettez à jour vos informations et objectifs.</p>
-        </a>
-
-        <!-- CV Card -->
-        <a href="{% url 'dashboard:cv' %}" class="card p-6 hover:-translate-y-1 transition-transform group">
-            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <div class="tta-card tta-card-body">
+                <h3 class="font-bold text-slate-950 dark:text-white">Favoris</h3>
+                <p class="tta-muted" style="margin-bottom: 12px;">Retrouvez vos annonces sauvegardées.</p>
+                <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:saved_jobs' %}">Voir</a>
             </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-1">Mon CV</h3>
-            <p class="text-sm text-gray-500">Gérez votre CV pour un matching précis.</p>
-        </a>
-
-        <!-- Recommendations Card -->
-        <a href="{% url 'dashboard:recommendations' %}" class="card p-6 hover:-translate-y-1 transition-transform group relative overflow-hidden">
-            <div class="absolute -right-4 -top-4 w-16 h-16 bg-brand-50 rounded-full group-hover:scale-150 transition-transform z-0"></div>
-            <div class="relative z-10">
-                <div class="w-12 h-12 bg-brand-100 text-brand-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900 mb-1">Recommandations</h3>
-                <p class="text-sm text-gray-500">Offres ciblant votre profil technique.</p>
+            <div class="tta-card tta-card-body">
+                <h3 class="font-bold text-slate-950 dark:text-white">Sécurité &amp; compte</h3>
+                <p class="tta-muted" style="margin-bottom: 12px;">Gérez vos préférences et la sécurité.</p>
+                <a class="tta-btn tta-btn-secondary" href="{% url 'dashboard:account' %}">Gérer</a>
             </div>
-        </a>
-
-        <!-- Saved Jobs Card -->
-        <a href="{% url 'dashboard:saved_jobs' %}" class="card p-6 hover:-translate-y-1 transition-transform group">
-            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-1">Offres Enregistrées</h3>
-            <p class="text-sm text-gray-500">Retrouvez vos annonces sauvegardées.</p>
-        </a>
-    </div>
-
-    <!-- Secondary Links -->
-    <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">Paramètres du compte</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a href="{% url 'dashboard:email_preferences' %}" class="flex items-center p-4 bg-white rounded-lg border border-gray-100 shadow-sm hover:border-brand-300 transition-colors">
-                <div class="flex-shrink-0 mr-4">
-                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-gray-900">Préférences d'emails</h4>
-                    <p class="text-xs text-gray-500">Gérez vos notifications hebdomadaires.</p>
-                </div>
-            </a>
-            <a href="{% url 'dashboard:account' %}" class="flex items-center p-4 bg-white rounded-lg border border-gray-100 shadow-sm hover:border-gray-300 transition-colors">
-                <div class="flex-shrink-0 mr-4">
-                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-gray-900">Sécurité & Compte</h4>
-                    <p class="text-xs text-gray-500">Mot de passe et suppression du compte.</p>
-                </div>
-            </a>
         </div>
-    </div>
+    </section>
 </div>
 {% endblock %}

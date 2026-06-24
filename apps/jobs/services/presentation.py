@@ -6,6 +6,7 @@ class JobPresentationService:
         "na",
         "none",
         "null",
+        "t",
         "unknown",
         "inconnu",
         "inconnue",
@@ -15,6 +16,39 @@ class JobPresentationService:
         "not specified",
         "unspecified",
     }
+
+    @staticmethod
+    def is_valid_badge_value(value) -> bool:
+        """
+        Returns False if the value is empty, None, or a known placeholder like "unknown".
+        """
+        if not value:
+            return False
+        val_str = str(value).strip().lower()
+        if not val_str:
+            return False
+        return val_str not in JobPresentationService.UNKNOWN_LANGUAGE_VALUES
+
+
+    @staticmethod
+    def get_deduplicated_badges(job):
+        badges = []
+        seen = set()
+
+        def add_badge(text, css_class):
+            if not JobPresentationService.is_valid_badge_value(text):
+                return
+            val_lower = str(text).strip().lower()
+            if val_lower not in seen:
+                seen.add(val_lower)
+                badges.append({"text": text, "css_class": css_class})
+
+        add_badge(job.contract_type, "tta-badge-brand")
+        add_badge(getattr(job, 'get_remote_type_display', lambda: job.remote_type)(), "tta-badge-muted")
+        add_badge(getattr(job, 'get_job_type_display', lambda: job.job_type)(), "tta-badge-muted")
+        add_badge(getattr(job, 'get_experience_level_display', lambda: job.experience_level)(), "tta-badge-muted")
+
+        return badges
 
     @staticmethod
     def get_card_skill_chips(job, limit=5):
@@ -64,3 +98,34 @@ class JobPresentationService:
             valid_langs[language_name] = code
 
         return valid_langs
+
+    @staticmethod
+    def get_safe_public_eligibility_reason(job) -> str:
+        from apps.jobs.services.eligibility import JobEligibilityService, PublicJobState
+        from apps.jobs.models import JobStatus
+        from django.utils import timezone
+
+        state = JobEligibilityService.classify_public_state(job)
+        if state in (
+            PublicJobState.PUBLIC_MATCHABLE,
+            PublicJobState.PUBLIC_LIMITED_PENDING_ANALYSIS,
+        ):
+            return ""
+
+        if job.status == JobStatus.EXPIRED:
+            return "Offre expirée"
+
+        if job.status == JobStatus.STALE:
+            return "Offre ancienne"
+
+        expires_at = getattr(job, "expires_at", None)
+        if expires_at and expires_at < timezone.now():
+            return "Offre expirée"
+
+        if not getattr(job.source, "is_active", True) or job.status in (
+            JobStatus.REMOVED,
+            JobStatus.ARCHIVED,
+        ):
+            return "Offre indisponible"
+
+        return "Non publiée"

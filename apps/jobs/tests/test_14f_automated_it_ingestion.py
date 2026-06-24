@@ -12,6 +12,7 @@ from django.utils import timezone
 from datetime import timedelta
 import hashlib
 
+@override_settings(JOB_ENRICHMENT_MAX_PER_INGESTION_RUN=1000)
 class TestAutomatedITIngestion(TestCase):
 
     def test_default_config_values(self):
@@ -183,7 +184,7 @@ class TestAutomatedITIngestion(TestCase):
             source=source, raw_record=raw_success, source_job_id="job_success", title="Success Job", description="desc",
             first_seen_at=now, last_seen_at=now, last_fetched_at=now
         )
-        hash_success = hashlib.md5("Success Job\ndesc".encode()).hexdigest()
+        hash_success = hashlib.sha256("Success Job\ndesc".encode()).hexdigest()
         JobEnrichment.objects.create(job=norm_success, status=JobEnrichment.Status.SUCCESS, payload_hash=hash_success)
 
         # Job 3: Existing pending
@@ -195,7 +196,7 @@ class TestAutomatedITIngestion(TestCase):
             source=source, raw_record=raw_pending, source_job_id="job_pending", title="Pending Job", description="desc",
             first_seen_at=now, last_seen_at=now, last_fetched_at=now
         )
-        hash_pending = hashlib.md5("Pending Job\ndesc".encode()).hexdigest()
+        hash_pending = hashlib.sha256("Pending Job\ndesc".encode()).hexdigest()
         JobEnrichment.objects.create(job=norm_pending, status=JobEnrichment.Status.PENDING, payload_hash=hash_pending)
 
         overrides = {"custom_keywords": ["python"], "preset": ""}

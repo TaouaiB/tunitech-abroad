@@ -1,0 +1,39 @@
+# Environment File Template (`.env`)
+
+Create this file at `/home/tunitech/tunitech-abroad/.env`. Do NOT commit it.
+
+```env
+# Django Settings
+DJANGO_SECRET_KEY=__PLACEHOLDER_SUPER_SECRET_KEY__
+DEBUG=False
+ALLOWED_HOSTS=tunitech-abroad.com,www.tunitech-abroad.com
+CSRF_TRUSTED_ORIGINS=https://tunitech-abroad.com,https://www.tunitech-abroad.com
+
+# Database
+DATABASE_URL=postgres://tunitech_db_user:__PLACEHOLDER_DB_PASSWORD__@127.0.0.1:5432/tunitech_db
+
+# Redis/Celery
+REDIS_URL=redis://127.0.0.1:6379/0
+
+# LLM Cost Safety Constraints
+LLM_ENABLED=True
+CV_LLM_EXTRACTION_ENABLED=False
+JOB_ENRICHMENT_ENABLED=False
+JOB_ENRICHMENT_MAX_PER_INGESTION_RUN=0
+JOB_ENRICHMENT_DAILY_LIMIT=0
+OPENROUTER_CIRCUIT_BREAKER_ENABLED=True
+OPENROUTER_ENRICHMENT_RATE_LIMIT=1/m
+OPENROUTER_API_KEY=__PLACEHOLDER_OPENROUTER_API_KEY__
+
+# France Travail
+FRANCE_TRAVAIL_CLIENT_ID=__PLACEHOLDER_FT_CLIENT_ID__
+FRANCE_TRAVAIL_CLIENT_SECRET=__PLACEHOLDER_FT_CLIENT_SECRET__
+
+# Email SMTP
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=__PLACEHOLDER_EMAIL_USER__
+EMAIL_HOST_PASSWORD=__PLACEHOLDER_EMAIL_PASSWORD__
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=no-reply@tunitech-abroad.com
+```

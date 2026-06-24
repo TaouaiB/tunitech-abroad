@@ -16,6 +16,7 @@ class CVDeterministicExtractionResult(TypedDict):
     current_level: str
     estimated_years_experience: float | None
     target_roles: list[str]
+    target_type: str
     raw_skills: list[str]
     warnings: list[str]
 
@@ -37,6 +38,7 @@ class CVDeterministicExtractorService:
             'current_level': '',
             'estimated_years_experience': None,
             'target_roles': [],
+            'target_type': '',
             'raw_skills': [],
             'warnings': []
         }

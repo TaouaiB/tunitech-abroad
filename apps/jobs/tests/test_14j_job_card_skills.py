@@ -64,7 +64,8 @@ class JobCardSkillsTests(TestCase):
         
         html = render_to_string('jobs/partials/job_card.html', {'job': self.dummy_job})
         
-        self.assertIn("Aucune compétence spécifique extraite", html)
+        self.assertIn("Compétences techniques non spécifiées", html)
+        self.assertNotIn("Compétences en cours d'analyse", html)
 
     def test_job_card_skills_all_raw_sentences_shows_empty_state(self):
         self.dummy_job.required_skills_json = [
@@ -76,7 +77,8 @@ class JobCardSkillsTests(TestCase):
         html = render_to_string('jobs/partials/job_card.html', {'job': self.dummy_job})
 
         self.assertNotIn("A very long raw string", html)
-        self.assertIn("Aucune compétence spécifique extraite", html)
+        self.assertIn("Compétences techniques non spécifiées", html)
+        self.assertNotIn("Compétences en cours d'analyse", html)
 
     def test_job_card_skills_processing_state(self):
         self.dummy_job.required_skills_json = []

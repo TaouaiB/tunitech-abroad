@@ -2,7 +2,7 @@
 
 {% block content %}
 <div id="content-main">
-    <h1>TuniTech Abroad Operations Dashboard</h1>
+    <h1>TuniAtlas Operations Dashboard</h1>
 
     <div class="module">
         <h2>Users &amp; Profiles</h2>
@@ -178,7 +178,7 @@
         <h2>Job Enrichment</h2>
         <table>
             <tr><th>Total Enrichment Records</th><td>{{ enrichment_total }}</td></tr>
-            <tr><th>Cost Today (OpenRouter)</th><td>${{ enrichment_cost_today|floatformat:2 }}</td></tr>
+            <tr><th>Job Enrichment Cost Today (OpenRouter)</th><td>${{ enrichment_cost_today|floatformat:2 }}</td></tr>
             <tr>
                 <th>OpenRouter Circuit</th>
                 <td>
@@ -302,6 +302,9 @@
             <tr><th>&nbsp;&nbsp;↳ Skipped due low confidence</th><td>{{ active_jobs_without_enrichment_skipped_low_confidence }}</td></tr>
             <tr><th>&nbsp;&nbsp;↳ Skipped due non-FR/excluded country</th><td>{{ active_jobs_without_enrichment_skipped_non_fr }}</td></tr>
             <tr><th>&nbsp;&nbsp;↳ Skipped due existing pending/reservation</th><td>{{ active_jobs_without_enrichment_skipped_existing_pending }}</td></tr>
+            <tr><th>&nbsp;&nbsp;↳ Failed enrichment</th><td>{{ active_jobs_without_enrichment_failed_enrichment }}</td></tr>
+            <tr><th>&nbsp;&nbsp;↳ Validation error enrichment</th><td>{{ active_jobs_without_enrichment_validation_error }}</td></tr>
+            <tr><th>&nbsp;&nbsp;↳ Skipped enrichment</th><td>{{ active_jobs_without_enrichment_skipped_enrichment }}</td></tr>
             <tr><th>&nbsp;&nbsp;↳ Other/unclassified</th><td>{{ active_jobs_without_enrichment_other }}</td></tr>
         </table>
 
@@ -365,8 +368,8 @@
     <div class="module">
         <h2>LLM &amp; Emails</h2>
         <table>
-            <tr><th>LLM Calls Today</th><td>{{ llm_calls_today }}</td></tr>
-            <tr><th>LLM Failures Today</th><td>{{ llm_failures_today }}</td></tr>
+            <tr><th>LLM Usage Log Calls Today</th><td>{{ llm_calls_today }}</td></tr>
+            <tr><th>LLM Usage Log Failures Today</th><td>{{ llm_failures_today }}</td></tr>
             <tr><th>France Travail Max Requests / Run</th><td>{{ ft_max_requests_per_run }}</td></tr>
             <tr><th>France Travail Request Delay</th><td>{{ ft_request_delay_seconds }}s</td></tr>
             <tr><th>France Travail 429 Backoff</th><td>{{ ft_backoff_on_429_seconds }}s</td></tr>

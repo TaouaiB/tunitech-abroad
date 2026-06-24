@@ -1,1 +1,1 @@
-{% load i18n %}Tentative d'inscription - TuniTech Abroad
+{% load i18n %}Tentative d'inscription - TuniAtlas

@@ -460,7 +460,8 @@ class EnrichmentMetricsTest(TestCase):
         self.assertEqual(metrics["active_jobs_without_enrichment_skipped_low_confidence"], 1)
         self.assertEqual(metrics["active_jobs_without_enrichment_skipped_non_fr"], 1)
         self.assertEqual(metrics["active_jobs_without_enrichment_skipped_existing_pending"], 1)
-        self.assertEqual(metrics["active_jobs_without_enrichment_other"], 1)
+        self.assertEqual(metrics["active_jobs_without_enrichment_failed_enrichment"], 1)
+        self.assertEqual(metrics["active_jobs_without_enrichment_other"], 0)
         self.assertEqual(metrics["active_jobs_without_enrichment_bucket_total"], metrics["jobs_without_enrichment"])
 
     @override_settings(JOB_ENRICHMENT_RETRY_COOLDOWN_MINUTES=60)

@@ -1,0 +1,23 @@
+# Phase 15K Tasks
+
+- [x] Run comprehensive hardening script
+  - [x] Run `git status`
+  - [x] Run `python manage.py check --settings=config.settings.local`
+  - [x] Run `python manage.py makemigrations --check --dry-run`
+  - [x] Run test suite
+  - [x] Collect static files and verify deploy settings
+  - [x] Run security scans (`pip-audit`, `bandit`, `npm audit`)
+  - [x] Check for leaked secrets (`git diff`, `git grep`)
+- [x] Review Configuration
+  - [x] Production settings safety
+  - [x] Static / private media exposure policy
+  - [x] LLM cost controls and tokens spending safety defaults
+  - [x] Public route safety (local DB only, no OpenRouter)
+  - [x] Deployment runbook quality
+- [x] Document Results
+  - [x] Generate `README_PHASE_15K.md`
+  - [x] Generate `tasks.md`
+  - [x] Generate `acceptance.md`
+  - [x] Generate `prompt_gemini.md`
+  - [x] Generate `prompt_glm_review.md`
+  - [x] Generate `agent_report.md`

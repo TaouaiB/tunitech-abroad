@@ -1,3 +1,6 @@
+from decimal import Decimal
+import re
+
 from django.utils import timezone
 from django.db import transaction
 from apps.cvs.models import CVUpload, CVParsedData
@@ -34,6 +37,35 @@ class CVParsingService:
         "Senior": "senior",
         "lead": "senior",
     }
+    MONTH_ALIASES = {
+        "january": 1,
+        "janvier": 1,
+        "february": 2,
+        "fevrier": 2,
+        "février": 2,
+        "march": 3,
+        "mars": 3,
+        "april": 4,
+        "avril": 4,
+        "may": 5,
+        "mai": 5,
+        "june": 6,
+        "juin": 6,
+        "july": 7,
+        "juillet": 7,
+        "august": 8,
+        "aout": 8,
+        "août": 8,
+        "september": 9,
+        "septembre": 9,
+        "october": 10,
+        "octobre": 10,
+        "november": 11,
+        "novembre": 11,
+        "december": 12,
+        "decembre": 12,
+        "décembre": 12,
+    }
 
     @classmethod
     def _normalize_current_level(cls, value: object) -> str:
@@ -43,7 +75,71 @@ class CVParsingService:
         if not cleaned:
             return ""
         normalized = cls.CURRENT_LEVEL_ALIASES.get(cleaned, cls.CURRENT_LEVEL_ALIASES.get(cleaned.lower(), cleaned))
-        return normalized if normalized in cls.CURRENT_LEVEL_VALUES else ""
+        if normalized in cls.CURRENT_LEVEL_VALUES:
+            return normalized
+        lowered = cleaned.lower()
+        for alias, level in cls.CURRENT_LEVEL_ALIASES.items():
+            if re.search(rf"\b{re.escape(alias.lower())}\b", lowered):
+                return level
+        return ""
+
+    @classmethod
+    def _infer_target_type(cls, parsed: dict) -> str:
+        roles = parsed.get("target_roles") or []
+        haystack = " ".join(str(role) for role in roles)
+        haystack = f"{haystack} {parsed.get('current_level', '')}".lower()
+
+        if any(token in haystack for token in ("apprenticeship", "alternance")):
+            return "apprenticeship"
+        if any(token in haystack for token in ("intern", "internship", "stage", "stagiaire", "pfe")):
+            return "internship"
+        if "junior" in haystack or any(token in haystack for token in ("developer", "engineer", "développeur")):
+            return "job"
+        return ""
+
+    @classmethod
+    def _infer_target_job_types(cls, target_type: str) -> list[str]:
+        if target_type == "internship":
+            return ["internship"]
+        if target_type == "apprenticeship":
+            return ["apprenticeship"]
+        if target_type == "job":
+            return ["full_time_job"]
+        return []
+
+    @classmethod
+    def _estimate_years_from_text(cls, raw_text: str) -> float | None:
+        spans: list[tuple[int, int, int, int]] = []
+        month_pattern = "|".join(re.escape(month) for month in cls.MONTH_ALIASES)
+        pattern = re.compile(
+            rf"\b({month_pattern})\s+(20\d{{2}})\s*(?:-|–|—|to|au|à)\s*({month_pattern}|present|current|aujourd'hui|actuel)\s*(20\d{{2}})?",
+            re.IGNORECASE,
+        )
+
+        for match in pattern.finditer(raw_text):
+            start_month = cls.MONTH_ALIASES.get(match.group(1).lower())
+            start_year = int(match.group(2))
+            end_token = match.group(3).lower()
+            if end_token in {"present", "current", "aujourd'hui", "actuel"}:
+                today = timezone.now().date()
+                end_month = today.month
+                end_year = today.year
+            else:
+                end_month = cls.MONTH_ALIASES.get(end_token)
+                end_year = int(match.group(4) or start_year)
+
+            if not start_month or not end_month:
+                continue
+            if (end_year, end_month) < (start_year, start_month):
+                continue
+            spans.append((start_year, start_month, end_year, end_month))
+
+        if not spans:
+            return None
+
+        total_months = sum((end_year - start_year) * 12 + (end_month - start_month) + 1 for start_year, start_month, end_year, end_month in spans)
+        years = max(Decimal("0.1"), (Decimal(total_months) / Decimal(12)).quantize(Decimal("0.1")))
+        return float(min(years, Decimal("40.0")))
 
     @classmethod
     def parse_by_id(cls, cv_upload_id: int) -> CVParsedData | None:
@@ -84,6 +180,17 @@ class CVParsingService:
         cv_upload.extracted_text_length = len(raw_text)
         
         det_result = CVDeterministicExtractorService.extract(raw_text)
+        if det_result.get('estimated_years_experience') is None:
+            estimated_from_dates = cls._estimate_years_from_text(raw_text)
+            if estimated_from_dates is not None:
+                det_result['estimated_years_experience'] = estimated_from_dates
+                if not det_result.get('current_level'):
+                    det_result['current_level'] = 'junior' if estimated_from_dates < Decimal("2.0") else 'mid'
+        if not det_result.get('current_level') and det_result.get('target_roles'):
+            det_result['current_level'] = cls._normalize_current_level(" ".join(det_result['target_roles']))
+        inferred_target_type = cls._infer_target_type(det_result)
+        if inferred_target_type:
+            det_result['target_type'] = inferred_target_type
         llm_result = CVLLMExtractionService.extract_structured(cv_upload, raw_text)
         
         with transaction.atomic():
@@ -164,6 +271,14 @@ class CVParsingService:
                 if not profile.target_roles and det_result.get('target_roles'):
                     profile.target_roles = det_result.get('target_roles')
                     update_fields.append('target_roles')
+                inferred_target_type = det_result.get('target_type') or cls._infer_target_type(det_result)
+                if not profile.target_type and inferred_target_type:
+                    profile.target_type = inferred_target_type
+                    update_fields.append('target_type')
+                inferred_job_types = cls._infer_target_job_types(inferred_target_type)
+                if not profile.target_job_types and inferred_job_types:
+                    profile.target_job_types = inferred_job_types
+                    update_fields.append('target_job_types')
                 extracted_level = cls._normalize_current_level(det_result.get('current_level'))
                 if not profile.current_level and extracted_level:
                     profile.current_level = extracted_level

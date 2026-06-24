@@ -191,30 +191,30 @@ CELERY_BEAT_SCHEDULE = {
     },
     "run_it_job_ingestion": {
         "task": "apps.jobs.tasks.run_it_job_ingestion",
-        "schedule": crontab(minute=0, hour="*/4"),
+        "schedule": crontab(minute="0", hour="*/4"),
     },
     "mark_stale_and_expired_jobs": {
         "task": "apps.jobs.tasks.mark_stale_and_expired_jobs",
-        "schedule": crontab(minute=30, hour=2),
+        "schedule": crontab(minute="30", hour="2"),
     },
     "refresh_active_users_recommendations": {
         "task": "apps.recommendations.tasks.refresh_active_users_recommendations",
-        "schedule": crontab(minute=30, hour=3),
+        "schedule": crontab(minute="30", hour="3"),
     },
     "cleanup_expired_quick_matches": {
         "task": "apps.privacy.tasks.cleanup_expired_quick_matches",
-        "schedule": crontab(minute=0, hour=4),
+        "schedule": crontab(minute="0", hour="4"),
     },
     "delete_orphaned_cv_files": {
         "task": "apps.privacy.tasks.delete_orphaned_cv_files",
-        "schedule": crontab(minute=30, hour=4, day_of_week="sun"),
+        "schedule": crontab(minute="30", hour="4", day_of_week="sun"),
     },
 }
 
 if JOB_ENRICHMENT_RETRY_ENABLED:
     CELERY_BEAT_SCHEDULE["retry_eligible_job_enrichments"] = {
         "task": "apps.llm.tasks.retry_eligible_job_enrichments",
-        "schedule": crontab(minute=15, hour="*/2"),
+        "schedule": crontab(minute="15", hour="*/2"),
     }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -353,14 +353,16 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 # Email SMTP configuration
 EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend",
+    "django.core.mail.backends.smtp.EmailBackend",
 )
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "False").lower() == "true"
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "False").lower() == "true"
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "TuniTech Abroad <noreply@localhost>")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "webmaster@localhost")
+SERVER_EMAIL = os.environ.get("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 
 # OAuth provider credentials
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")

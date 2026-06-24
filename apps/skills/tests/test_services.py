@@ -27,10 +27,10 @@ class NormalizerServiceTests(TestCase):
     def setUp(self):
         self.react = Skill.objects.create(canonical_name="React", slug="react")
         SkillAlias.objects.create(skill=self.react, alias="ReactJS", normalized_alias="reactjs")
-        
+
         self.postgres = Skill.objects.create(canonical_name="PostgreSQL", slug="postgresql")
         SkillAlias.objects.create(skill=self.postgres, alias="Postgres", normalized_alias="postgres")
-        
+
         self.python = Skill.objects.create(canonical_name="Python", slug="python")
         SkillAlias.objects.create(skill=self.python, alias="Python3", normalized_alias="python3")
 
@@ -48,7 +48,7 @@ class NormalizerServiceTests(TestCase):
         self.assertIn(self.react, result.canonical_skills)
         self.assertIn(self.postgres, result.canonical_skills)
         self.assertIn(self.python, result.canonical_skills)
-        
+
         self.assertEqual(len(result.unmatched_candidates), 1)
         self.assertEqual(result.unmatched_candidates[0].raw_skill_text, "Unknown Skill")
         self.assertEqual(result.unmatched_candidates[0].occurrence_count, 1)
@@ -58,7 +58,7 @@ class NormalizerServiceTests(TestCase):
         SkillNormalizerService.normalize_many(["New Unknown"], source_type="cv")
         candidate = UnmatchedSkillCandidate.objects.get(normalized_text="new unknown")
         self.assertEqual(candidate.occurrence_count, 1)
-        
+
         # Second extraction with same skill
         SkillNormalizerService.normalize_many(["New Unknown", "New Unknown"], source_type="cv")
         candidate.refresh_from_db()
@@ -72,11 +72,25 @@ class NormalizerServiceTests(TestCase):
     def test_inactive_skill_ignored(self):
         inactive_skill = Skill.objects.create(canonical_name="Inactive", slug="inactive", is_active=False)
         SkillAlias.objects.create(skill=inactive_skill, alias="InactiveJS", normalized_alias="inactivejs")
-        
+
         result = SkillNormalizerService.normalize_many(["InactiveJS"], source_type="cv")
         self.assertEqual(len(result.canonical_skills), 0)
         self.assertEqual(len(result.unmatched_candidates), 1)
         self.assertEqual(result.unmatched_candidates[0].raw_skill_text, "InactiveJS")
+
+    def test_materialization_with_new_aliases(self):
+        from apps.skills.services.seed import SkillSeedService
+        SkillSeedService.seed_initial_taxonomy()
+
+        test_aliases = ["API REST", "Cybersécurité", "Cloud", "Assistance technique"]
+        result = SkillNormalizerService.normalize_many(test_aliases, source_type="cv")
+
+        canonical_names = [s.canonical_name for s in result.canonical_skills]
+        self.assertIn("REST API", canonical_names)
+        self.assertIn("Cybersecurity", canonical_names)
+        self.assertIn("Cloud", canonical_names)
+        self.assertIn("IT Support", canonical_names)
+        self.assertEqual(len(result.unmatched_candidates), 0)
 
 class ReviewServiceTests(TestCase):
     def setUp(self):
@@ -95,7 +109,7 @@ class ReviewServiceTests(TestCase):
         self.assertEqual(self.candidate.status, "mapped")
         self.assertEqual(self.candidate.mapped_skill, self.skill)
         self.assertEqual(self.candidate.reviewed_by, self.staff_user)
-        
+
         # Check if alias was created
         self.assertTrue(SkillAlias.objects.filter(normalized_alias="react js", skill=self.skill).exists())
 

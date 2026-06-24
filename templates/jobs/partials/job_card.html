@@ -1,72 +1,106 @@
 {% load job_presentation %}
-<a href="{% url 'jobs:detail' job.public_id %}" class="block card hover:border-brand-300 hover:shadow-md transition-all duration-200 group">
-    <div class="p-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div class="flex-1 min-w-0">
-                <h2 class="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors truncate">{{ job.title }}</h2>
-                <div class="flex items-center gap-2 mt-2">
-                    <div class="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0 text-gray-500 font-bold text-xs">
-                        {{ job.company_name|make_list|first|upper }}
-                    </div>
-                    <p class="text-sm font-medium text-gray-700 truncate">{{ job.company_name }}</p>
-                </div>
-            </div>
-            <div class="flex-shrink-0 flex flex-col items-end gap-2">
-                {% if job.status == 'active' %}
-                    <span class="badge badge-green">Actif</span>
-                {% elif job.status == 'expired' %}
-                    <span class="badge badge-red">Expiré</span>
-                {% else %}
-                    <span class="badge badge-gray">{{ job.get_status_display }}</span>
-                {% endif %}
-                <span class="text-xs text-gray-500 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    {{ job.published_at|date:"d M Y" }}
-                </span>
-            </div>
-        </div>
-        
-        <div class="mt-5 flex flex-wrap gap-3 text-sm text-gray-600">
-            <div class="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100">
-                <svg class="flex-shrink-0 h-4 w-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                <span class="font-medium">{{ job.location|default:job.city|default:"France" }}</span>
-            </div>
-            <div class="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100">
-                <svg class="flex-shrink-0 h-4 w-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                <span class="font-medium">{{ job.get_job_type_display }}</span>
-            </div>
-            {% if job.remote_type %}
-            <div class="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100">
-                <svg class="flex-shrink-0 h-4 w-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                <span class="font-medium">{{ job.get_remote_type_display }}</span>
-            </div>
-            {% endif %}
-        </div>
-        
-        <div class="mt-4">
-            <p class="text-sm text-gray-500 line-clamp-2 leading-relaxed">
-                {{ job.description|striptags|truncatewords:35 }}
-            </p>
-        </div>
-        
-        {% with skill_chips=job|card_skill_chips %}
-        {% if skill_chips %}
-        <div class="mt-5 flex flex-wrap gap-2">
-            {% for skill in skill_chips %}
-                <span class="badge badge-brand bg-brand-50 border border-brand-100">
-                    {{ skill }}
-                </span>
+<article class="tta-job-card">
+  <div class="tta-job-main">
+    <a class="tta-job-card-link" href="{% url 'jobs:detail' job.public_id %}">
+        <div class="tta-chip-row">
+            {% for badge in job|job_badges %}
+                <span class="tta-badge {{ badge.css_class }}">{{ badge.text }}</span>
             {% endfor %}
-        </div>
-        {% else %}
-        <div class="mt-5">
-            {% if job.skill_extraction_status == 'pending' or job.skill_extraction_status == 'processing' %}
-            <span class="text-xs text-gray-400 italic">Compétences en cours d'analyse</span>
-            {% else %}
-            <span class="text-xs text-gray-400 italic">Aucune compétence spécifique extraite</span>
+            {% if job.status == 'expired' %}
+                <span class="tta-badge tta-badge-danger">Expiré</span>
+            {% elif job.status == 'stale' %}
+                <span class="tta-badge tta-badge-warning">À vérifier</span>
+            {% elif job.status != 'active' %}
+                <span class="tta-badge tta-badge-muted">{{ job.get_status_display }}</span>
             {% endif %}
         </div>
+
+        <h3 class="tta-job-title">
+            {{ job.title|default:"Offre IT sans titre" }}
+        </h3>
+
+        <div class="tta-card-meta">
+            {% if job.company_name|is_valid_badge %}
+                <span>{{ job.company_name }}</span>
+            {% endif %}
+            {% if job.location|is_valid_badge %}
+                <span>{{ job.location }}</span>
+            {% elif job.city|is_valid_badge %}
+                <span>{{ job.city }}</span>
+            {% endif %}
+            {% if job.source.name|is_valid_badge %}
+                <span>{{ job.source.name }}</span>
+            {% endif %}
+            {% if job.published_at %}
+                <span class="tta-card-date">Publié le {{ job.published_at|date:"d M Y" }}</span>
+            {% elif job.first_seen_at %}
+                <span class="tta-card-date">Vu le {{ job.first_seen_at|date:"d M Y" }}</span>
+            {% elif job.last_seen_at %}
+                <span class="tta-card-date">Vu le {{ job.last_seen_at|date:"d M Y" }}</span>
+            {% endif %}
+        </div>
+
+        {% if job.description|is_valid_badge and job.description|length > 12 %}
+            <p class="tta-job-desc">{{ job.description|striptags|truncatewords:28 }}</p>
+        {% else %}
+            <p class="tta-job-desc">Description disponible sur la source de l'offre.</p>
         {% endif %}
+
+        {% with skill_chips=job|card_skill_chips %}
+        <div class="tta-chip-row tta-job-skill-row">
+            {% if skill_chips %}
+                {% for skill in skill_chips %}
+                    {% if skill|is_valid_badge %}
+                        {% if forloop.first %}
+                            <span class="tta-chip tta-chip-strong">{{ skill }}</span>
+                        {% else %}
+                            <span class="tta-chip">{{ skill }}</span>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            {% elif job|is_pending_analysis %}
+                <span class="tta-chip tta-chip-empty">Compétences en cours d'analyse</span>
+            {% else %}
+                <span class="tta-chip tta-chip-empty">Compétences techniques non spécifiées</span>
+            {% endif %}
+        </div>
         {% endwith %}
+    </a>
+  </div>
+
+  <div class="tta-job-side">
+    <div class="tta-job-freshness">
+        {% if job.job_type == 'apprenticeship' or job.contract_type|lower == 'alternance' %}
+            <strong>Alternance</strong>
+            {% if job.experience_level == 'junior' or job.experience_level == 'internship' %}
+                <span>Profil junior</span>
+            {% else %}
+                <span>Contrat professionnalisant</span>
+            {% endif %}
+        {% elif job.job_type == 'internship' or job.contract_type|lower == 'stage' %}
+            <strong>Stage</strong>
+            <span>Profil junior</span>
+        {% elif job.status == 'expired' %}
+            <strong>Ancienne offre</strong>
+            <span>Disponibilité à vérifier</span>
+        {% elif job.status == 'stale' %}
+            <strong>Offre à vérifier</strong>
+            <span>Actualisation à confirmer</span>
+        {% elif job.published_at %}
+            <strong>Nouvelle offre</strong>
+            <span>Date de publication disponible</span>
+        {% elif job.first_seen_at or job.last_seen_at %}
+            <strong>Offre disponible</strong>
+            <span>Détail complet sur la fiche</span>
+        {% else %}
+            <strong>Offre disponible</strong>
+            <span>Détail complet sur la fiche</span>
+        {% endif %}
     </div>
-</a>
+
+    <div class="tta-job-actions">
+        <a class="tta-btn tta-btn-primary" href="{% url 'jobs:detail' job.public_id %}">Voir l'offre</a>
+        {% include 'jobs/partials/save_button.html' with job=job is_saved=job.is_saved %}
+    </div>
+  </div>
+</article>

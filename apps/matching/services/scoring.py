@@ -5,7 +5,6 @@ from apps.jobs.models import NormalizedJob, RequirementType
 from apps.cvs.models import CVUpload
 from apps.skills.services.normalizer import normalize_skill_text
 from apps.jobs.services.relevance import TECH_CATEGORIES
-from django.conf import settings
 from django.utils import timezone
 
 MISSING_FRENCH_LEVELS = {"", "none", "no", "a0"}
@@ -44,8 +43,6 @@ class MatchScoringService:
         classification_json = job.classification_json or {}
         it_confidence = classification_json.get("confidence", "unknown")
         skill_signal_quality = job.skill_signal_quality
-        enriched_data = MatchScoringService._get_successful_enrichment(job)
-
         job_skills = list(job.job_skills.select_related("skill").all())
         tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
         req_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.REQUIRED]
@@ -53,11 +50,6 @@ class MatchScoringService:
         match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
         if it_confidence == "excluded" or skill_signal_quality == "excluded_non_it":
             match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
-        elif enriched_data:
-            if enriched_data.get("required_skills") or enriched_data.get("optional_skills"):
-                match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
-            else:
-                match_confidence = MatchScoringService.CONFIDENCE_LOW
         elif it_confidence in ["high", "medium"]:
             if skill_signal_quality == "strong":
                 match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
@@ -95,38 +87,45 @@ class MatchScoringService:
             is_active = False
         if job.expires_at and job.expires_at < now:
             is_active = False
-            
+
         if not is_active:
             risk_flags.add("job_may_be_expired")
 
         # Profile complete check
         if profile.profile_completion_score < 50:
             risk_flags.add("profile_incomplete")
-            recommended_actions.add("Complete your candidate profile.")
+            recommended_actions.add("Complétez votre profil candidat.")
 
         # Signals
         if not profile.github_url:
             profile_signals.add("profile_signal_missing_github")
-            recommended_actions.add("Add your GitHub profile.")
+            recommended_actions.add("Ajoutez le lien vers votre profil GitHub.")
         if not profile.linkedin_url:
             profile_signals.add("profile_signal_missing_linkedin")
         if not profile.portfolio_url:
             profile_signals.add("profile_signal_missing_portfolio")
 
-        tech_score, strong_skills, missing_req, missing_opt = MatchScoringService._calc_technical_score(profile, job, profile_signals, risk_flags, recommended_actions)
+        tech_score, strong_skills, missing_req, missing_opt = MatchScoringService._calc_technical_score(profile, job, profile_signals, risk_flags)
         exp_score = MatchScoringService._calc_experience_score(profile, job, risk_flags)
         role_score = MatchScoringService._calc_role_title_score(profile, job)
         lang_score = MatchScoringService._calc_language_score(profile, job, risk_flags, recommended_actions)
         loc_score = MatchScoringService._calc_location_score(profile, job)
 
         fit_score = (
-            tech_score * 0.45
+            tech_score * 0.50
             + exp_score * 0.20
             + role_score * 0.15
-            + lang_score * 0.10
-            + loc_score * 0.10
+            + lang_score * 0.15
         )
-        
+
+        if missing_req:
+            first_missing = missing_req[0]["name"]
+            recommended_actions.add(f"Priorité : ajoutez {first_missing} à votre plan d'apprentissage. Mettez à jour votre CV si vous avez déjà utilisé {first_missing}.")
+        elif missing_opt:
+            recommended_actions.add("Votre profil couvre les compétences principales. Renforcez les compétences optionnelles pour améliorer votre score.")
+        else:
+            recommended_actions.add("Votre profil est bien aligné avec cette offre. Vérifiez les conditions de mobilité/contrat puis postulez sur la source.")
+
         fit_score = max(0, min(100, round(fit_score)))
         if match_confidence == MatchScoringService.CONFIDENCE_UNAVAILABLE:
             fit_score = min(fit_score, 25)
@@ -184,18 +183,43 @@ class MatchScoringService:
         return any(term in description for term in strong_description_terms)
 
     @staticmethod
-    def _get_successful_enrichment(job: NormalizedJob) -> dict:
-        if not getattr(settings, "JOB_RECOMMENDATIONS_USE_ENRICHED_DATA", False):
-            return {}
-        if not hasattr(job, "enrichment") or job.enrichment.status != "success":
-            return {}
-        enriched_data = job.enrichment.validated_output_json or {}
-        if not isinstance(enriched_data, dict):
-            return {}
-        return enriched_data
+    def _filter_noisy_skills(missing_skills, profile_skills_normalized):
+        noisy_display_terms = {
+            "json", "xml", "yaml", "csv", "markdown", "soap",
+            "jira", "confluence", "agile", "scrum", "kanban",
+            "excel", "office 365", "http", "https", "documentation",
+            "office tools", "microsoft office", "pack office",
+        }
+        preserved_advanced_terms = {
+            "json schema", "json ld", "openapi", "swagger", "graphql",
+            "rest api", "api rest", "restful api",
+        }
+        frontend_impliers = {
+            "react", "angular", "vue.js", "frontend development", "full-stack development"
+        }
+
+        filtered = []
+        for s in missing_skills:
+            name_norm = normalize_skill_text(s.get("name") or "") or (s.get("name") or "").lower().strip()
+
+            if name_norm in preserved_advanced_terms:
+                filtered.append(s)
+                continue
+
+            if name_norm in noisy_display_terms:
+                continue
+
+            # HTML/CSS rule (only if optional)
+            if s.get("requirement_type") == "optional" and name_norm in ["html", "css"]:
+                if any(imp in profile_skills_normalized for imp in frontend_impliers):
+                    continue
+
+            filtered.append(s)
+
+        return filtered
 
     @staticmethod
-    def _calc_technical_score(profile, job, profile_signals, risk_flags, recommended_actions):
+    def _calc_technical_score(profile, job, profile_signals, risk_flags):
         # Profile skills
         profile_skills_normalized = set()
         for profile_skill in ProfileSkill.objects.filter(profile=profile):
@@ -204,55 +228,10 @@ class MatchScoringService:
             if normalized_skill_name:
                 profile_skills_normalized.add(normalized_skill_name)
 
-        enriched_data = MatchScoringService._get_successful_enrichment(job)
-        use_enriched = bool(enriched_data)
-
         strong_skills = []
         missing_req = []
         missing_opt = []
 
-        if use_enriched:
-            en_req = enriched_data.get("required_skills", [])
-            en_opt = enriched_data.get("optional_skills", [])
-            
-            if not en_req and (en_req or en_opt):
-                profile_signals.add("low_confidence_job_skills")
-                risk_flags.add("no_required_skills_extracted")
-            elif not en_req:
-                risk_flags.add("no_required_skills_extracted")
-                risk_flags.add("insufficient_job_technical_signal")
-                
-            req_matched = 0
-            for skill_dict in en_req:
-                skill_name = skill_dict.get("name", "")
-                normalized_skill_name = normalize_skill_text(skill_name)
-                if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
-                    req_matched += 1
-                    strong_skills.append({"name": skill_name, "type": "required"})
-                else:
-                    missing_req.append({"name": skill_name, "requirement_type": "required"})
-
-            opt_matched = 0
-            for skill_dict in en_opt:
-                skill_name = skill_dict.get("name", "")
-                normalized_skill_name = normalize_skill_text(skill_name)
-                if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
-                    opt_matched += 1
-                    strong_skills.append({"name": skill_name, "type": "optional"})
-                else:
-                    missing_opt.append({"name": skill_name, "requirement_type": "optional"})
-            
-            if missing_req:
-                risk_flags.add("missing_required_skills")
-                recommended_actions.add("Add missing required skills to your learning plan.")
-                
-            req_score = (req_matched / len(en_req) * 100) if en_req else 0
-            opt_score = (opt_matched / len(en_opt) * 100) if en_opt else 50
-            tech_score = (req_score * 0.8) + (opt_score * 0.2)
-            
-            return max(0, min(100, round(tech_score))), strong_skills, missing_req, missing_opt
-
-        # Fallback to deterministic skills
         job_skills = list(job.job_skills.select_related("skill").all())
         tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
         req_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.REQUIRED]
@@ -289,12 +268,15 @@ class MatchScoringService:
 
         if missing_req:
             risk_flags.add("missing_required_skills")
-            recommended_actions.add("Add missing required skills to your learning plan.")
 
         req_score = (req_matched / len(req_skills) * 100) if req_skills else 0
         opt_score = (opt_matched / len(opt_skills) * 100) if opt_skills else 50
 
         tech_score = (req_score * 0.8) + (opt_score * 0.2)
+
+        missing_req = MatchScoringService._filter_noisy_skills(missing_req, profile_skills_normalized)
+        missing_opt = MatchScoringService._filter_noisy_skills(missing_opt, profile_skills_normalized)
+
         return max(0, min(100, round(tech_score))), strong_skills, missing_req, missing_opt
 
     @staticmethod
@@ -351,10 +333,10 @@ class MatchScoringService:
         for role in p_roles:
             if role in j_title:
                 return 100
-        
+
         if p_roles and j_title:
             return 50
-        
+
         return 60
 
     @staticmethod
@@ -379,15 +361,15 @@ class MatchScoringService:
             risk_flags.add("job_language_unknown")
         if france_first and not has_french_level:
             risk_flags.add("french_level_missing")
-            recommended_actions.add("Complete your French level.")
+            recommended_actions.add("Renseignez votre niveau de français.")
             score = 40
         elif req_english and not p_english:
             risk_flags.add("english_level_missing")
             score = min(score, 60)
-        
+
         if has_french_level:
             score = max(score, 70)
-            
+
         if has_french_level and p_english and j_lang_req:
             score = 85
 
@@ -397,7 +379,7 @@ class MatchScoringService:
     def _calc_location_score(profile, job):
         j_country = job.country.lower() if job.country else ""
         j_remote = job.remote_type.lower() if job.remote_type else ""
-        
+
         p_remote_pref = profile.remote_preference.lower() if profile.remote_preference else ""
         p_relocation = profile.relocation_preference
 

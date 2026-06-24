@@ -1,7 +1,6 @@
 import json
 import logging
-import urllib.request
-import urllib.error
+import requests
 from typing import Any
 from django.conf import settings
 
@@ -45,7 +44,7 @@ class OpenRouterClient:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "https://tunitech-abroad.example.test",
-            "X-Title": "TuniTech Abroad",
+            "X-Title": "TuniAtlas",
         }
         
         payload = {
@@ -57,18 +56,15 @@ class OpenRouterClient:
         if response_format:
             payload["response_format"] = response_format
 
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-
         try:
-            with urllib.request.urlopen(req, timeout=30) as response:
-                result = json.loads(response.read().decode("utf-8"))
-                return result
-        except urllib.error.HTTPError as e:
-            logger.error("OpenRouter HTTP Error: %s", e.code)
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            logger.error("OpenRouter HTTP Error: %s", e.response.status_code)
             raise
-        except urllib.error.URLError as e:
-            logger.error("OpenRouter Network Error: %s", e.reason)
+        except requests.exceptions.RequestException as e:
+            logger.error("OpenRouter Network Error: %s", str(e))
             raise
         except Exception as e:
             logger.error("OpenRouter Error: %s", str(e))

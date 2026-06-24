@@ -12,7 +12,7 @@ class Command(BaseCommand):
             id=1,
             defaults={
                 'domain': 'localhost:8000',
-                'name': 'TuniTech Abroad'
+                'name': 'TuniAtlas'
             }
         )
 

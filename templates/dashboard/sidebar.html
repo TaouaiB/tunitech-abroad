@@ -1,0 +1,23 @@
+<aside class="tta-card flex flex-col gap-1 p-3 lg:sticky lg:top-24 lg:self-start">
+    <a class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition {% if request.resolver_match.namespace == 'dashboard' and request.resolver_match.url_name == 'home' %}bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-300{% else %}text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}" href="{% url 'dashboard:home' %}">
+        <span>Tableau de bord</span><span>›</span>
+    </a>
+    <a class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition {% if request.resolver_match.namespace == 'dashboard' and request.resolver_match.url_name == 'recommendations' %}bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-300{% else %}text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}" href="{% url 'dashboard:recommendations' %}">
+        <span>Recommandations</span><span>›</span>
+    </a>
+    <a class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition {% if request.resolver_match.namespace == 'dashboard' and request.resolver_match.url_name == 'cv' or request.resolver_match.url_name == 'cv_status' %}bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-300{% else %}text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}" href="{% url 'dashboard:cv' %}">
+        <span>Mon CV</span><span>›</span>
+    </a>
+    <a class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition {% if request.resolver_match.namespace == 'dashboard' and request.resolver_match.url_name == 'profile' %}bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-300{% else %}text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}" href="{% url 'dashboard:profile' %}">
+        <span>Mon profil</span><span>›</span>
+    </a>
+    <a class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition {% if request.resolver_match.namespace == 'dashboard' and request.resolver_match.url_name == 'saved_jobs' %}bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-300{% else %}text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}" href="{% url 'dashboard:saved_jobs' %}">
+        <span>Favoris</span><span>›</span>
+    </a>
+    <a class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition {% if request.resolver_match.namespace == 'dashboard' and request.resolver_match.url_name == 'email_preferences' %}bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-300{% else %}text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}" href="{% url 'dashboard:email_preferences' %}">
+        <span>Préférences email</span><span>›</span>
+    </a>
+    <a class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition {% if request.resolver_match.namespace == 'dashboard' and request.resolver_match.url_name == 'account' or request.resolver_match.url_name == 'delete_account' %}bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-300{% else %}text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}" href="{% url 'dashboard:account' %}">
+        <span>Sécurité & compte</span><span>›</span>
+    </a>
+</aside>

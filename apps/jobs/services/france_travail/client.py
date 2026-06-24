@@ -9,7 +9,7 @@ class FranceTravailClient:
     AUTH_URL = "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire"
     SEARCH_URL = "https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search"
 
-    def __init__(self, client_id: str = "", client_secret: str = ""):
+    def __init__(self, client_id=None, client_secret=None):
         self.client_id = client_id or getattr(settings, "FRANCE_TRAVAIL_CLIENT_ID", "")
         self.client_secret = client_secret or getattr(settings, "FRANCE_TRAVAIL_CLIENT_SECRET", "")
         self._access_token = None

@@ -1,56 +1,74 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
+{% block title %}Mes Compatibilités - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="bg-white shadow rounded-lg overflow-hidden">
-    <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">
-            Match History
-        </h3>
-        <p class="mt-1 max-w-2xl text-sm text-gray-500">
-            A history of your job match evaluations.
-        </p>
-    </div>
-    
-    {% if matches %}
-    <ul class="divide-y divide-gray-200">
-        {% for match in matches %}
-        <li>
-            <a href="{% url 'matching:detail' public_id=match.public_id %}" class="block hover:bg-gray-50">
-                <div class="px-4 py-4 sm:px-6 flex items-center justify-between">
-                    <div class="text-sm font-medium text-indigo-600 truncate">
-                        {{ match.job_snapshot_json.title }} at {{ match.job_snapshot_json.company_name }}
+<div class="tta-container grid grid-cols-1 gap-6 py-8 lg:grid-cols-[280px_1fr]">
+    {% include 'dashboard/sidebar.html' %}
+    <section>
+        <div class="mb-6 flex flex-col gap-2">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">Compatibilités</span>
+                <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Mes compatibilités</h1>
+                <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Historique de vos évaluations de compatibilité avec des offres.</p>
+            </div>
+        </div>
+
+        <div style="display:grid;gap:14px">
+            {% for match in matches %}
+                <article class="tta-card tta-card-hover p-5 sm:p-6">
+                  <div>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="tta-badge">Évalué le {{ match.created_at|date:"d M Y" }}</span>
+                        {% if match.is_match_unavailable %}
+                            <span class="tta-badge tta-badge-danger">Données insuffisantes</span>
+                        {% elif match.is_match_low_confidence %}
+                            <span class="tta-badge tta-badge-warning">{{ match.fit_score }}% · Confiance faible</span>
+                        {% else %}
+                            {% if match.fit_score >= 80 %}
+                                <span class="tta-badge tta-badge-success">{{ match.fit_score }}% · Très bon match</span>
+                            {% elif match.fit_score >= 65 %}
+                                <span class="tta-badge tta-badge-brand">{{ match.fit_score }}% · Bon potentiel</span>
+                            {% elif match.fit_score >= 50 %}
+                                <span class="tta-badge tta-badge-warning">{{ match.fit_score }}% · Match partiel</span>
+                            {% else %}
+                                <span class="tta-badge tta-badge-danger">{{ match.fit_score }}% · Match faible</span>
+                            {% endif %}
+                        {% endif %}
                     </div>
-                    <div class="ml-2 flex-shrink-0 flex">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if match.fit_score >= 80 %}bg-green-100 text-green-800{% elif match.fit_score >= 60 %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
-                            {{ match.fit_score }}% Match
-                        </span>
+
+                    <h3 class="mt-3 text-lg font-bold text-slate-950 dark:text-white">
+                        <a href="{% url 'matching:detail' public_id=match.public_id %}">
+                            {{ match.job_snapshot_json.title|default:"Offre" }}
+                        </a>
+                    </h3>
+
+                    <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
+                        <span>{{ match.job_snapshot_json.company_name|default:"Entreprise inconnue" }}</span>
+                        <span>{{ match.job_snapshot_json.location|default:match.job_snapshot_json.country|default:"France" }}</span>
                     </div>
+                    {% if match.human_risk_flags %}
+                        <p class="mt-3 text-sm text-slate-600 dark:text-slate-400">Point principal : {{ match.human_risk_flags.0 }}</p>
+                    {% elif match.missing_required_skills_json %}
+                        <p class="mt-3 text-sm text-slate-600 dark:text-slate-400">Compétence à vérifier : {{ match.missing_required_skills_json.0.name|default:match.missing_required_skills_json.0 }}</p>
+                    {% endif %}
+                  </div>
+
+                  <div class="mt-5 flex flex-wrap gap-3">
+                    <a class="tta-btn tta-btn-primary" href="{% url 'matching:detail' public_id=match.public_id %}">Voir le rapport</a>
+                  </div>
+                </article>
+            {% empty %}
+                <div class="tta-card" style="text-align:center; padding:40px 20px;">
+                    <div style="width:80px; height:80px; background:var(--brand-50); color:var(--brand-500); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px auto;">
+                        <svg class="w-10 h-10" style="width:40px;height:40px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                    <h3 style="font-size:20px; font-weight:700; margin-bottom:8px;">Aucune analyse pour le moment</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400" style="max-width:500px; margin:0 auto 24px auto;">Lancez une analyse depuis une offre pour voir votre score détaillé.</p>
+                    <a href="{% url 'jobs:list' %}" class="tta-btn tta-btn-primary" style="display:inline-flex;">Explorer les offres</a>
                 </div>
-                <div class="px-4 pb-4 sm:px-6">
-                    <div class="sm:flex sm:justify-between">
-                        <div class="sm:flex text-sm text-gray-500">
-                            <p>
-                                {{ match.job_snapshot_json.country }}
-                            </p>
-                        </div>
-                        <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                            <p>
-                                Evaluated on {{ match.created_at|date:"M d, Y" }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <div class="p-8 text-center text-gray-500">
-        <p class="mb-4 text-lg">Vous n'avez pas encore effectué d'évaluations de compatibilité.</p>
-        <a href="{% url 'jobs:list' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-            Trouver des offres à évaluer
-        </a>
-    </div>
-    {% endif %}
+            {% endfor %}
+        </div>
+    </section>
 </div>
 {% endblock %}

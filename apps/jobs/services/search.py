@@ -3,11 +3,11 @@ from typing import Any
 
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.core.paginator import InvalidPage, Paginator
-from django.db.models import Q, QuerySet, TextField
+from django.db.models import F, Q, QuerySet, TextField
 from django.db.models.functions import Cast
-from django.utils import timezone
 
-from apps.jobs.models import JobStatus, NormalizedJob
+from apps.jobs.models import NormalizedJob
+from apps.jobs.services.eligibility import JobEligibilityService
 
 
 @dataclass(frozen=True)
@@ -60,10 +60,8 @@ class JobSearchService:
         has_query = False
         if q:
             search_query = SearchQuery(q, config="french")
-            search_document = cls._search_document()
-            qs = qs.annotate(search_document=search_document)
-            qs = qs.filter(search_document=search_query)
-            qs = qs.annotate(rank=SearchRank(search_document, search_query))
+            qs = qs.filter(search_vector=search_query)
+            qs = qs.annotate(rank=SearchRank(F("search_vector"), search_query))
             has_query = True
 
         sort = filters.get("sort", "")
@@ -97,11 +95,8 @@ class JobSearchService:
 
     @staticmethod
     def _public_queryset() -> QuerySet[NormalizedJob]:
-        now = timezone.now()
-        return (
+        return JobEligibilityService.filter_publicly_visible(
             NormalizedJob.objects.select_related("source")
-            .filter(status=JobStatus.ACTIVE, source__is_active=True)
-            .filter(Q(expires_at__isnull=True) | Q(expires_at__gte=now))
         )
 
     @staticmethod

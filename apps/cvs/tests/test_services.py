@@ -200,6 +200,75 @@ class CVServiceTests(TestCase):
         self.assertIn("https://github.com/aymen-bensalah-test", html)
         self.assertIn(f"https://{portfolio_domain}", html)
 
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    @patch('apps.cvs.services.upload.parse_cv.delay')
+    def test_aymen_cv_prefills_profile_skills_and_profile_page_safely(self, mock_delay, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        profile = CandidateProfile.objects.create(user=self.user)
+        for name in [
+            "JavaScript", "TypeScript", "React", "Next.js", "HTML5", "CSS3",
+            "Tailwind CSS", "Node.js", "Express.js", "REST API", "Django",
+            "MongoDB", "PostgreSQL", "SQL", "Git", "GitHub", "Docker",
+            "Linux", "Postman", "Jest",
+        ]:
+            skill = Skill.objects.create(canonical_name=name, slug=name.lower().replace(".", "").replace(" ", "-"), category="other")
+            SkillAlias.objects.create(skill=skill, alias=name, normalized_alias=normalize_skill_text(name))
+
+        portfolio_domain = "aymen-dev." + "example" + ".com"
+        pdf = self._pdf_file(
+            "Aymen Ben Salah\n"
+            "Junior Full Stack Developer\n"
+            "Location: Tunis, Tunisia\n"
+            "+216 55 123 456\n"
+            "aymen.bensalah.test@example.test\n"
+            "LinkedIn: linkedin.com/in/aymen-bensalah-test\n"
+            "GitHub: github.com/aymen-bensalah-test\n"
+            f"Portfolio: {portfolio_domain}\n"
+            "Target roles: Junior Full Stack Developer, Frontend Developer, Backend Developer, Web Developer Intern, Software Developer Intern, React Developer, Node.js Developer\n"
+            "Experience\n"
+            "September 2024 - August 2025 Freelance Web Developer\n"
+            "French: Professional working proficiency\n"
+            "English: Professional working proficiency\n"
+            "Skills\n"
+            "JavaScript, TypeScript basics, React, Next.js, HTML5, CSS3, Tailwind CSS\n"
+            "Node.js, Express.js, REST API design, Django basics, MongoDB, PostgreSQL, SQL basics\n"
+            "Git, GitHub, Docker basics, Linux/Fedora, Postman, Jest basics\n"
+        )
+        pdf.name = "test_cv_junior_full_stack_aymen_ben_salah.pdf"
+
+        with self.captureOnCommitCallbacks(execute=True):
+            cv = CVUploadService.upload_cv(self.user, pdf, consent_accepted=True)
+        CVParsingService.parse_by_id(cv.id)
+
+        profile.refresh_from_db()
+        self.assertEqual(profile.full_name, "Aymen Ben Salah")
+        self.assertEqual(profile.phone, "+216 55 123 456")
+        self.assertEqual(profile.location, "Tunis, Tunisia")
+        self.assertEqual(profile.linkedin_url, "https://linkedin.com/in/aymen-bensalah-test")
+        self.assertEqual(profile.github_url, "https://github.com/aymen-bensalah-test")
+        self.assertEqual(profile.portfolio_url, f"https://{portfolio_domain}")
+        self.assertEqual(profile.current_level, "junior")
+        self.assertIsNotNone(profile.years_experience)
+        self.assertGreaterEqual(float(profile.years_experience), 0.9)
+        self.assertIn("Junior Full Stack Developer", profile.target_roles)
+        self.assertIn(profile.target_type, {"job", "internship"})
+        self.assertEqual(profile.french_level, "fluent")
+        self.assertEqual(profile.english_level, "fluent")
+        self.assertGreater(profile.profile_completion_score, 0)
+
+        profile_skill_names = set(ProfileSkill.objects.filter(profile=profile).values_list("normalized_name", flat=True))
+        self.assertTrue({"javascript", "react", "postgresql", "django", "docker"}.issubset(profile_skill_names))
+
+        self.client.force_login(self.user)
+        response = self.client.get("/dashboard/profile/", HTTP_HOST="localhost")
+        html = response.content.decode()
+        self.assertContains(response, "Compétences")
+        self.assertContains(response, "React")
+        self.assertContains(response, "CV 80%")
+        self.assertNotIn("test_cv_junior_full_stack_aymen_ben_salah.pdf", html)
+        self.assertNotIn("raw_text", html)
+        self.assertNotIn("September 2024 - August 2025", html)
+
     @patch('os.remove')
     @patch('os.path.exists')
     def test_deletion_service(self, mock_exists, mock_remove):

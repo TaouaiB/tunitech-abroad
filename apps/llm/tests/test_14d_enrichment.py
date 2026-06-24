@@ -5,8 +5,8 @@ from unittest.mock import patch, MagicMock
 from pathlib import Path
 from typing import Any, cast
 
-from apps.jobs.models import NormalizedJob, JobStatus, RequirementType, JobSource, RawJobRecord
-from apps.skills.models import Skill
+from apps.jobs.models import NormalizedJob, NormalizedJobSkill, JobStatus, RequirementType, JobSource, RawJobRecord, SkillSource
+from apps.skills.models import Skill, SkillAlias, SkillCategory
 from apps.llm.models import JobEnrichment
 from apps.llm.services.job_enrichment import job_qualifies_for_enrichment, validate_enrichment_schema, enrich_job
 from apps.llm.management.commands.enrich_jobs import Command
@@ -14,6 +14,7 @@ from apps.llm.tasks import enrich_job_task
 from apps.matching.services.scoring import MatchScoringService
 from apps.profiles.models import CandidateProfile, ProfileSkill
 
+@override_settings(JOB_ENRICHMENT_DAILY_LIMIT=1000, JOB_ENRICHMENT_MAX_PER_INGESTION_RUN=1000)
 class EnrichmentTests(TestCase):
     def setUp(self):
         self.source = JobSource.objects.create(name="Test Source", slug="test-source", source_type="fixture")
@@ -140,12 +141,14 @@ class EnrichmentTests(TestCase):
         self.assertTrue(len(enrichment.validation_errors_json) > 0)
 
     @override_settings(JOB_RECOMMENDATIONS_USE_ENRICHED_DATA=True)
-    def test_match_scoring_uses_enriched_data(self):
+    def test_match_scoring_uses_materialized_enriched_skills(self):
         from django.contrib.auth import get_user_model
         User = get_user_model()
         user = User(username="test", email="test@example.com")
         user.set_password("123")
         user.save()
+        python = Skill.objects.create(canonical_name="Python", slug="python", category=SkillCategory.PROGRAMMING_LANGUAGE)
+        SkillAlias.objects.create(skill=python, alias="Python", normalized_alias="python")
         JobEnrichment.objects.create(
             job=self.job,
             status=JobEnrichment.Status.SUCCESS,
@@ -158,9 +161,17 @@ class EnrichmentTests(TestCase):
         profile = CandidateProfile.objects.create(user=user, years_experience=2)
         ProfileSkill.objects.create(profile=profile, raw_name="Python", normalized_name="python")
 
+        NormalizedJobSkill.objects.create(
+            job=self.job,
+            skill=python,
+            requirement_type=RequirementType.REQUIRED,
+            source=SkillSource.LLM,
+            confidence=1,
+        )
+
         res = MatchScoringService.calculate(profile, self.job)
         
-        # Python should match from enriched data
+        # Python should match from canonical materialized skills, not raw enrichment JSON.
         strong_names = [s["name"] for s in res.strong_skills]
         self.assertIn("Python", strong_names)
         self.assertEqual(res.match_confidence, MatchScoringService.CONFIDENCE_RELIABLE)
@@ -170,6 +181,28 @@ class EnrichmentTests(TestCase):
         from django.contrib.auth import get_user_model
         User = get_user_model()
         user = User(username="flagoff", email="flagoff@example.com")
+        user.set_password("123")
+        user.save()
+        JobEnrichment.objects.create(
+            job=self.job,
+            status=JobEnrichment.Status.SUCCESS,
+            validated_output_json={
+                "required_skills": [{"name": "Ruby", "evidence": "Ruby"}],
+                "optional_skills": []
+            }
+        )
+
+        profile = CandidateProfile.objects.create(user=user, years_experience=2)
+        ProfileSkill.objects.create(profile=profile, raw_name="Ruby", normalized_name="ruby")
+
+        res = MatchScoringService.calculate(profile, self.job)
+        self.assertNotIn("Ruby", [s["name"] for s in res.strong_skills])
+
+    @override_settings(JOB_RECOMMENDATIONS_USE_ENRICHED_DATA=True)
+    def test_match_scoring_does_not_use_unmaterialized_enrichment_json(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        user = User(username="canonical", email="canonical@example.com")
         user.set_password("123")
         user.save()
         JobEnrichment.objects.create(

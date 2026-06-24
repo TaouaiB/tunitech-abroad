@@ -13,10 +13,11 @@ class JobITClassificationService:
     @staticmethod
     def classify(payload: dict, description: str, title: str) -> JobITClassificationResult:
         combined_text = f"{title} {description}".lower()
+        title_lower = title.lower()
         rome_code = payload.get("romeCode", "")
         rome_libelle = payload.get("romeLibelle", "").lower()
         appellation_libelle = payload.get("appellationlibelle", "").lower()
-        
+
         reasons = []
         negative_reasons = []
 
@@ -24,32 +25,84 @@ class JobITClassificationService:
         family = "unknown"
         confidence = "unknown"
 
-        # Check for negative signals first
-        negative_signals = [
-            "commercial", "photographe", "photographie", "vendeur", "vendeuse",
-            "développement commercial", "business development", "retail",
-            "conseiller clientèle", "chargé de projet événementiel"
-        ]
         import re
-        for neg in negative_signals:
-            pattern = rf"\b{re.escape(neg)}\b"
-            if re.search(pattern, combined_text) or re.search(pattern, appellation_libelle):
-                negative_reasons.append("Contains explicit non-IT negative signals")
-                return JobITClassificationResult(
-                family="non_it",
-                is_it=False,
-                confidence="excluded",
-                reasons=reasons,
-                negative_reasons=negative_reasons
-            )
-
-        import re
-        def has_signals(signals: List[str]) -> bool:
+        def has_signals(signals: List[str], target: str = None) -> bool:
+            if target is None:
+                target = combined_text
             for sig in signals:
                 pattern = rf"\b{re.escape(sig)}\b"
-                if re.search(pattern, combined_text) or re.search(pattern, title.lower()) or re.search(pattern, appellation_libelle):
+                if re.search(pattern, target) or re.search(pattern, appellation_libelle) or re.search(pattern, title_lower):
                     return True
             return False
+
+        protected_it_title = has_signals(
+            [
+                "data engineer",
+                "tech lead",
+                "devops",
+                "fullstack",
+                "full stack",
+                "java/angular",
+                ".net",
+                "c#",
+                "consultant cybersécurité",
+                "consultant cybersecurite",
+                "ingénieur développement",
+                "ingenieur developpement",
+                "ingénieur développeur",
+                "ingenieur developpeur",
+            ],
+            title_lower,
+        )
+
+        decisive_non_it_patterns = [
+            "médiateur scientifique",
+            "mediateur scientifique",
+            "grand public",
+            "ateliers de découverte",
+            "ateliers de decouverte",
+            "promouvoir la filière",
+            "promouvoir la filiere",
+            "réseau de franchise",
+            "reseau de franchise",
+            "franchisés",
+            "franchises",
+            "points de vente",
+            "animer le réseau",
+            "animer le reseau",
+            "politique commerciale",
+        ]
+        for sig in decisive_non_it_patterns:
+            pattern = rf"\b{re.escape(sig)}\b"
+            if re.search(pattern, combined_text) or re.search(pattern, appellation_libelle):
+                if protected_it_title and sig in {"grand public", "ateliers de découverte", "ateliers de decouverte"}:
+                    continue
+                return JobITClassificationResult(
+                    family="non_it",
+                    is_it=False,
+                    confidence="excluded",
+                    reasons=["Decisive non-IT outreach/franchise/commercial pattern"],
+                    negative_reasons=[f"Decisive non-IT pattern: {sig}"],
+                )
+
+        # Strong negative titles that should immediately exclude
+        strong_commercial_titles = [
+            "sdr", "bdr", "business developer", "chargé d'affaires", "charge d'affaires",
+            "médiateur scientifique", "mediateur scientifique", "animateur réseau", "animateur reseau",
+            "développeur réseau de franchise", "developpeur reseau de franchise",
+            "vendeur", "vendeuse", "photographe", "photographie"
+        ]
+
+        for sig in strong_commercial_titles:
+            pattern = rf"\b{re.escape(sig)}\b"
+            if re.search(pattern, title_lower) or re.search(pattern, appellation_libelle):
+                return JobITClassificationResult(
+                    family="non_it",
+                    is_it=False,
+                    confidence="excluded",
+                    reasons=["Strong non-IT title"],
+                    negative_reasons=[f"Explicit non-IT role title: {sig}"]
+                )
 
         if has_signals(["data scientist", "data analyst", "data engineer", "bi", "power bi", "tableau", "pandas", "scikit-learn", "machine learning", "sql", "etl", "reporting", "crystal reports", "myreport"]):
             family = "data_ai_bi"
@@ -63,7 +116,7 @@ class JobITClassificationService:
         elif has_signals(["qa", "test automation", "tests unitaires", "tests d'intégration", "cypress", "selenium", "playwright", "jest", "qualité logiciel", "recette technique", "tester un logiciel"]):
             family = "qa_testing"
             reasons.append("qa_testing signals")
-        elif has_signals(["administrateur système", "réseau", "infrastructure", "windows server", "active directory", "vmware", "ovh", "supervision", "support n2/n3", "serveurs", "sauvegardes"]):
+        elif has_signals(["administrateur système", "réseau informatique", "infrastructure réseau", "systèmes et réseaux", "windows server", "active directory", "vmware", "ovh", "supervision", "support n2/n3", "serveurs", "sauvegardes"]):
             family = "systems_network"
             reasons.append("systems_network signals")
         elif has_signals(["as400", "ibm i", "rpg", "cl"]):
@@ -88,7 +141,7 @@ class JobITClassificationService:
             if "APP" in nature_contrat or "ALTERNANCE" in type_contrat or "STAGE" in type_contrat:
                  family = "it_training_apprenticeship"
                  reasons.append("it_training_apprenticeship signals")
-        elif has_signals(["software engineer", "ingénieur logiciel", "ingenieur logiciel", "développeur", "developpeur", "développeuse", "developpeuse", "développeur logiciel", "développeur d'application", "java", "c#", ".net", "php", "python", "backend", "back-end", "api", "architecture logicielle", "application métier", "as400", "ibm i", "rpg", "cl"]):
+        elif has_signals(["software engineer", "ingénieur logiciel", "ingenieur logiciel", "développeur", "developpeur", "développeuse", "developpeuse", "développeur logiciel", "développeur d'application", "java", "c#", ".net", "php", "python", "backend", "back-end", "api", "architecture logicielle", "application métier", "algorithme", "algorithmes", "algorithmique", "optimisation logicielle", "outillage r&d", "outil r&d", "programmation", "logiciel de calcul", "interface graphique"]):
             family = "software_development"
             reasons.append("software_development signals")
         elif has_signals(["full stack", "full-stack", "frontend", "front-end", "backend web", "mobile", "react", "angular", "vue", "flutter", "swift", "kotlin", "node.js", "typescript", "javascript", "html", "css", "rest api", "rest apis", "graphql", "application web", "prestashop"]):
@@ -103,14 +156,41 @@ class JobITClassificationService:
                 family = "non_it"
                 reasons.append("No IT signals found")
 
+        # Generic negative signals
+        negative_signals = [
+            "commercial", "photographe", "photographie", "vendeur", "vendeuse",
+            "développement commercial", "business development", "retail",
+            "conseiller clientèle", "chargé de projet événementiel",
+            "réseau de franchise", "franchisés", "points de vente", "franchise",
+            "pédagogie", "pédagogique", "grand public", "ateliers de découverte",
+            "promouvoir la filière", "animer le réseau",
+            "réseau commercial", "politique commerciale",
+            "transformation digitale", "conduite du changement", "performance commerciale"
+        ]
+
+        has_negative = False
+        for neg in negative_signals:
+            pattern = rf"\b{re.escape(neg)}\b"
+            if re.search(pattern, combined_text) or re.search(pattern, appellation_libelle):
+                negative_reasons.append(f"Contains negative signal: {neg}")
+                has_negative = True
+
         is_it = family not in ["non_it", "unknown"]
-        if is_it:
-            if family == "low_confidence_it":
-                confidence = "low"
+
+        # Conflict resolution
+        if has_negative:
+            if family in ["low_confidence_it", "non_it"]:
+                is_it = False
+                family = "non_it"
+                confidence = "excluded"
             else:
+                # Strong IT signals exist -> ignore negative signal for confidence
                 confidence = "high"
         else:
-            confidence = "excluded"
+            if is_it:
+                confidence = "low" if family == "low_confidence_it" else "high"
+            else:
+                confidence = "excluded"
 
         return JobITClassificationResult(
             family=family,

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Accueil · TuniTech Abroad Prototype</title>
+  <link rel="stylesheet" href="assets/prototype.css">
+  <script src="assets/prototype.js" defer></script>
+</head>
+<body>
+  <div class="tta-shell ">
+
+    <header class="tta-nav">
+      <div class="tta-container tta-nav-row">
+        <a class="tta-brand" href="index.html"><span class="tta-logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 17.5 12 4l7 13.5-7-3-7 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><span>TuniTech Abroad</span></a>
+        <nav class="tta-nav-links"><a class="tta-nav-link  hide-md" href="jobs.html">Offres</a><a class="tta-nav-link  hide-md" href="cv-checker.html">Analyse CV</a><a class="tta-nav-link  hide-md" href="index.html#comment-ca-marche">Comment ça marche</a><a class="tta-nav-link hide-md" href="login.html">Connexion</a><a class="tta-btn tta-btn-primary" href="signup.html">Créer un compte</a></nav>
+      </div>
+    </header>
+    <main>
+  <section class="tta-hero"><div class="tta-container tta-hero-grid">
+    <div>
+      <span class="tta-eyebrow">Objectif France · Profils IT tunisiens</span>
+      <h1 class="tta-title">Trouve des offres IT en France adaptées à ton profil.</h1>
+      <p class="tta-subtitle">Recherche des jobs, teste rapidement ta compatibilité, puis utilise ton CV pour obtenir des recommandations réalistes et des compétences à renforcer.</p>
+      <form class="tta-card tta-search-panel" style="margin-top:24px" action="jobs.html">
+        <div><label class="tta-label">Mot-clé</label><input class="tta-input" value="Django" placeholder="Python, data, frontend..."></div>
+        <div><label class="tta-label">Lieu</label><input class="tta-input" value="France" placeholder="Paris, Lyon..."></div>
+        <div><label class="tta-label">Type</label><select class="tta-select"><option>Stage / PFE</option><option>Junior</option><option>CDI</option></select></div>
+        <button class="tta-btn tta-btn-primary">Voir les offres</button>
+      </form>
+      <div class="tta-chip-row"><span class="tta-chip">Stage</span><span class="tta-chip">PFE</span><span class="tta-chip">Alternance</span><span class="tta-chip">Junior</span><span class="tta-chip">Django</span><span class="tta-chip">Data</span><span class="tta-chip">Remote</span></div>
+      <p class="tta-small tta-muted" style="margin-top:16px">CV privé. Pas de promesse d’emploi. Score déterministe, explicable.</p>
+    </div>
+    <div class="tta-card tta-card-body">
+      <div class="tta-section-head"><div><span class="tta-eyebrow">Aperçu intelligent</span><h2 class="tta-section-title" style="margin-top:14px">Ce que tu vois avant de postuler</h2></div></div>
+      <div style="display:grid;gap:14px">
+        <div class="tta-alert tta-alert-info"><strong>82% · Très bon match</strong><br><span class="tta-small">Django, PostgreSQL et REST alignés.</span></div>
+        <div class="tta-alert tta-alert-warning"><strong>Compétences requises manquantes</strong><br><span class="tta-small">Docker, tests automatisés.</span></div>
+        <div class="tta-alert"><strong>Action recommandée</strong><br><span class="tta-small">Renforcer le profil GitHub et confirmer le niveau français.</span></div>
+      </div>
+    </div>
+  </div></section>
+  <section id="comment-ca-marche" class="tta-section"><div class="tta-container">
+    <div class="tta-section-head"><div><h2 class="tta-section-title">Comment ça marche</h2><p class="tta-muted">Une expérience jobs-first, sans bloquer l’utilisateur anonyme.</p></div></div>
+    <div class="tta-grid-3">
+      <div class="tta-card tta-card-body"><span class="tta-eyebrow">1</span><h3>Explore les offres</h3><p class="tta-muted">Recherche locale PostgreSQL sur les offres normalisées.</p></div>
+      <div class="tta-card tta-card-body"><span class="tta-eyebrow">2</span><h3>Teste ton match</h3><p class="tta-muted">Test rapide anonyme, puis analyse complète après connexion.</p></div>
+      <div class="tta-card tta-card-body"><span class="tta-eyebrow">3</span><h3>Renforce ton profil</h3><p class="tta-muted">Compétences manquantes, recommandations et actions concrètes.</p></div>
+    </div>
+  </div></section>
+  <section class="tta-section"><div class="tta-container"><div class="tta-section-head"><h2 class="tta-section-title">Offres récentes</h2><a class="tta-btn tta-btn-secondary" href="jobs.html">Toutes les offres</a></div><div style="display:grid;gap:14px">
+    <article class="tta-card tta-card-hover tta-job-card">
+      <div>
+        <div class="tta-chip-row" style="margin-top:0"><span class="tta-badge tta-badge-brand">CDI</span><span class="tta-badge ">Hybride</span><span class="tta-badge ">Junior</span><span class="tta-badge ">Vu récemment</span></div>
+        <h3 class="tta-job-title" style="margin-top:12px"><a href="job-detail.html">Développeur Python Django</a></h3>
+        <div class="tta-job-meta"><span>NovaTech Paris</span><span>Paris, France</span><span>France Travail</span></div>
+        <p class="tta-job-desc">Développement backend, API, PostgreSQL, collaboration avec équipe produit.</p>
+        <div class="tta-chip-row"><span class="tta-chip">Python</span><span class="tta-chip">Django</span><span class="tta-chip">PostgreSQL</span><span class="tta-chip">REST</span><span class="tta-chip">Git</span></div>
+      </div>
+      <div class="tta-job-actions">
+        <a class="tta-btn tta-btn-primary" href="job-detail.html">Voir l’offre</a>
+        <a class="tta-btn tta-btn-secondary" href="job-detail.html#quick-match">Test rapide</a>
+      </div>
+    </article>
+    <article class="tta-card tta-card-hover tta-job-card">
+      <div>
+        <div class="tta-chip-row" style="margin-top:0"><span class="tta-badge tta-badge-brand">CDI</span><span class="tta-badge ">Hybride</span><span class="tta-badge ">Junior</span><span class="tta-badge ">Vu récemment</span></div>
+        <h3 class="tta-job-title" style="margin-top:12px"><a href="job-detail.html">Data Analyst Junior</a></h3>
+        <div class="tta-job-meta"><span>DataFrance Lyon</span><span>Paris, France</span><span>France Travail</span></div>
+        <p class="tta-job-desc">Développement backend, API, PostgreSQL, collaboration avec équipe produit.</p>
+        <div class="tta-chip-row"><span class="tta-chip">Python</span><span class="tta-chip">Django</span><span class="tta-chip">PostgreSQL</span><span class="tta-chip">REST</span><span class="tta-chip">Git</span></div>
+      </div>
+      <div class="tta-job-actions">
+        <a class="tta-btn tta-btn-primary" href="job-detail.html">Voir l’offre</a>
+        <a class="tta-btn tta-btn-secondary" href="job-detail.html#quick-match">Test rapide</a>
+      </div>
+    </article>
+    <article class="tta-card tta-card-hover tta-job-card">
+      <div>
+        <div class="tta-chip-row" style="margin-top:0"><span class="tta-badge tta-badge-brand">CDI</span><span class="tta-badge ">Hybride</span><span class="tta-badge ">Junior</span><span class="tta-badge ">Vu récemment</span></div>
+        <h3 class="tta-job-title" style="margin-top:12px"><a href="job-detail.html">Stage PFE Backend API</a></h3>
+        <div class="tta-job-meta"><span>Studio Cloud Toulouse</span><span>Paris, France</span><span>France Travail</span></div>
+        <p class="tta-job-desc">Développement backend, API, PostgreSQL, collaboration avec équipe produit.</p>
+        <div class="tta-chip-row"><span class="tta-chip">Python</span><span class="tta-chip">Django</span><span class="tta-chip">PostgreSQL</span><span class="tta-chip">REST</span><span class="tta-chip">Git</span></div>
+      </div>
+      <div class="tta-job-actions">
+        <a class="tta-btn tta-btn-primary" href="job-detail.html">Voir l’offre</a>
+        <a class="tta-btn tta-btn-secondary" href="job-detail.html#quick-match">Test rapide</a>
+      </div>
+    </article></div></div></section>
+</main>
+    <footer class="tta-footer"><div class="tta-container" style="display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap"><div><strong style="color:var(--text)">TuniTech Abroad</strong><div class="tta-small">Job intelligence France pour profils IT tunisiens.</div></div><div style="display:flex;gap:14px"><a href="privacy.html">Confidentialité</a><a href="terms.html">CGU</a><a href="jobs.html">Offres</a></div></div></footer>
+  </div>
+</body>
+</html>

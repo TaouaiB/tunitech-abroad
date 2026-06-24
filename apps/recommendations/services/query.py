@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 import logging
 from apps.recommendations.models import JobRecommendation, RecommendationRun, SavedJob
+from apps.matching.models import MatchResult
+from apps.jobs.services.eligibility import JobEligibilityService
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +16,42 @@ class RecommendationDashboardResult:
 
 
 class RecommendationQueryService:
+    @classmethod
+    def _freshness_value(cls, recommendation: JobRecommendation):
+        job = recommendation.job
+        return (
+            job.published_at
+            or job.first_seen_at
+            or job.last_seen_at
+            or recommendation.computed_at
+        )
+
+    @classmethod
+    def _sort_recommendations(cls, recommendations: list[JobRecommendation]) -> list[JobRecommendation]:
+        return sorted(
+            recommendations,
+            key=lambda recommendation: (
+                -recommendation.fit_score,
+                -float(recommendation.ranking_score),
+                -cls._freshness_value(recommendation).timestamp(),
+            ),
+        )
+
+    @classmethod
+    def _get_recommendations_by_status(cls, user, status: str, limit: int) -> list[JobRecommendation]:
+        recommendations = list(
+            JobRecommendation.objects.filter(
+                user=user,
+                status=status,
+                job__in=JobEligibilityService.filter_publicly_visible(),
+            )
+            .select_related("job", "job__source")
+            .order_by("-fit_score", "-ranking_score", "-job__published_at", "-job__first_seen_at", "-job__last_seen_at")[
+                : max(limit * 3, limit)
+            ]
+        )
+        return cls._sort_recommendations(recommendations)[:limit]
+
     @classmethod
     def _enqueue_refresh(cls, user) -> None:
         try:
@@ -29,8 +67,15 @@ class RecommendationQueryService:
         saved_job_ids = set(
             SavedJob.objects.filter(user=user, job_id__in=job_ids).values_list("job_id", flat=True)
         )
+        match_public_ids_by_job_id = {}
+        matches = MatchResult.objects.filter(user=user, job_id__in=job_ids).order_by("job_id", "-created_at")
+        for match in matches:
+            if match.job_id not in match_public_ids_by_job_id:
+                match_public_ids_by_job_id[match.job_id] = match.public_id
+
         for recommendation in recommendations:
             recommendation.is_saved = recommendation.job_id in saved_job_ids
+            recommendation.match_public_id = match_public_ids_by_job_id.get(recommendation.job_id)
         return recommendations
 
     @classmethod
@@ -78,10 +123,7 @@ class RecommendationQueryService:
         is_profile_complete = blocked_reason is None
         
         # Check active recommendations
-        active_recs = list(JobRecommendation.objects.filter(
-            user=user, 
-            status="active"
-        ).select_related("job", "job__source").order_by("rank")[:limit])
+        active_recs = cls._get_recommendations_by_status(user, "active", limit)
         
         if active_recs:
             return RecommendationDashboardResult(
@@ -92,10 +134,7 @@ class RecommendationQueryService:
             )
             
         # If no active ones, check stale ones
-        stale_recs = list(JobRecommendation.objects.filter(
-            user=user, 
-            status="stale"
-        ).select_related("job", "job__source").order_by("rank")[:limit])
+        stale_recs = cls._get_recommendations_by_status(user, "stale", limit)
         
         if stale_recs:
             if not is_running and is_profile_complete:
@@ -117,10 +156,7 @@ class RecommendationQueryService:
             else:
                 previous_run_id = latest_run.id if latest_run else None
                 cls._enqueue_refresh(user)
-                active_recs = list(JobRecommendation.objects.filter(
-                    user=user,
-                    status="active"
-                ).select_related("job", "job__source").order_by("rank")[:limit])
+                active_recs = cls._get_recommendations_by_status(user, "active", limit)
                 if active_recs:
                     return RecommendationDashboardResult(
                         recommendations=cls._with_saved_state(user, active_recs),

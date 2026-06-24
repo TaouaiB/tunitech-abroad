@@ -39,6 +39,7 @@ def job_list(request):
         filters = form.cleaned_data
 
     result = JobSearchService.search(filters, user=request.user)
+    effective_filters = {**result.filters, "sort": result.sort}
 
     safe_record_event("job_search", request.user, metadata={"q": filters.get("q", "")})
 
@@ -46,7 +47,7 @@ def job_list(request):
         "form": form,
         "page_obj": result.page_obj,
         "paginator": result.paginator,
-        "filters": result.filters,
+        "filters": effective_filters,
         "total_count": result.total_count,
         "sort": result.sort,
     })
@@ -54,6 +55,11 @@ def job_list(request):
 
 def job_detail(request, public_id):
     job = JobQueryService.get_public_job(public_id)
+    from apps.jobs.services.eligibility import JobEligibilityService
+    if not request.user.is_staff and not JobEligibilityService.is_publicly_visible(job):
+        from django.http import Http404
+        raise Http404("Job is not publicly visible")
+
     try:
         job = JobRevalidationService.revalidate_if_needed(job)
     except Exception as exc:

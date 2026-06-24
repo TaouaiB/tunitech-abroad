@@ -39,6 +39,22 @@ class CVViewTests(TestCase):
         response = self.client.get(reverse('dashboard:cv'))
         self.assertEqual(response.status_code, 200)
 
+    def test_dashboard_cv_upload_dropzone_is_clickable_and_valid(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('dashboard:cv'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'method="post"')
+        self.assertContains(response, 'enctype="multipart/form-data"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertContains(response, 'name="file"')
+        self.assertContains(response, 'id="id_file"')
+        self.assertContains(response, 'for="id_file"')
+        self.assertContains(response, 'role="button"')
+        self.assertContains(response, 'tabindex="0"')
+        self.assertContains(response, '@drop.prevent="handleDrop($event)"')
+        self.assertContains(response, 'name="consent_accepted"')
+
     def test_dashboard_cv_status_requires_owner(self):
         other_user = create_test_user(username="otheruser", email="other@test.com", password="password")
         file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")

@@ -1,41 +1,52 @@
 {% extends "base.html" %}
 
-{% block title %}Offres d'emploi en France - TuniTech Abroad{% endblock %}
+{% block title %}Offres d'emploi en France - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Offres d'emploi en France</h1>
-        <p class="mt-2 text-lg text-gray-600">Trouvez le CDI, CDD ou stage qui correspond à votre profil technique.</p>
+<div class="tta-section-head">
+    <div>
+        <span class="tta-eyebrow">Offres publiques</span>
+        <h1 class="tta-page-title" style="margin-top:12px">Offres IT en France</h1>
+        <p class="tta-muted">{{ total_count }} offres actives · Offres IT françaises actualisées</p>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-8">
-        <!-- Filter Panel -->
-        <aside class="w-full lg:w-1/4 lg:flex-shrink-0">
-            <div class="sticky top-20">
-                {% include "jobs/partials/job_filter_panel.html" %}
-            </div>
-        </aside>
+    <button class="tta-btn tta-btn-secondary tta-mobile-filter-button" data-drawer-open onclick="document.querySelector('[data-filter-drawer]').style.display='block'; document.querySelector('[data-drawer-backdrop]').style.display='block';">Filtres</button>
+    <div class="tta-drawer-backdrop" data-drawer-backdrop data-drawer-close onclick="document.querySelector('[data-filter-drawer]').style.display='none'; this.style.display='none';" style="display:none;"></div>
 
-        <!-- Results Section -->
-        <section class="w-full lg:w-3/4 flex-1">
-            <div class="mb-6 flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                <h2 class="text-lg font-medium text-gray-900">
-                    <span class="text-brand-600 font-bold">{{ total_count }}</span> offres trouvées
-                </h2>
-                
-                <!-- Sort Dropdown Mobile only (Desktop is in filter panel) -->
-                <div class="lg:hidden">
-                    <select onchange="window.location.href=this.value" class="input-field py-1.5 pl-3 pr-8 text-sm">
-                        <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=relevance" {% if sort == "relevance" %}selected{% endif %}>Pertinence</option>
-                        <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=newest" {% if sort == "newest" %}selected{% endif %}>Plus récentes</option>
-                        <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=company" {% if sort == "company" %}selected{% endif %}>Entreprise</option>
-                    </select>
-                </div>
-            </div>
-
-            {% include "jobs/partials/job_results.html" %}
-        </section>
+    <div class="tta-filter-drawer" data-filter-drawer style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <h3 class="text-lg font-bold text-slate-950 dark:text-white" style="margin:0;">Filtres</h3>
+            <button class="tta-btn tta-btn-ghost" data-drawer-close onclick="document.querySelector('[data-filter-drawer]').style.display='none'; document.querySelector('[data-drawer-backdrop]').style.display='none';">Fermer</button>
+        </div>
+        {% include "jobs/partials/job_filter_panel.html" %}
     </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
+    <!-- Filter Panel Desktop -->
+    <aside class="tta-card tta-card-body desktop-only">
+        <h3 class="text-lg font-bold text-slate-950 dark:text-white" style="margin-top:0">Filtres</h3>
+        {% include "jobs/partials/job_filter_panel.html" %}
+    </aside>
+
+    <!-- Results Section -->
+    <section>
+        <div class="tta-card tta-card-body" style="margin-bottom:14px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+            <strong class="text-slate-950 dark:text-white">
+                {% if filters.q %}
+                    Résultats pour {{ filters.q }}
+                {% else %}
+                    Toutes les offres
+                {% endif %}
+            </strong>
+            <select onchange="window.location.href=this.value" class="tta-select" style="max-width:220px">
+                <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=relevance" {% if sort == "relevance" %}selected{% endif %}>Plus pertinentes</option>
+                <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=newest" {% if sort == "newest" %}selected{% endif %}>Plus récentes</option>
+                <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=company" {% if sort == "company" %}selected{% endif %}>Entreprise</option>
+            </select>
+        </div>
+
+        {% include "jobs/partials/job_results.html" %}
+    </section>
 </div>
 {% endblock %}
