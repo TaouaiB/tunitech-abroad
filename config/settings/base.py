@@ -31,6 +31,17 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
 
+def _admin_url_from_env() -> str:
+    """Return a normalized Django admin URL path from DJANGO_ADMIN_URL."""
+    value = (os.environ.get("DJANGO_ADMIN_URL") or "admin/").strip().strip("/")
+    if not value:
+        value = "admin"
+    return f"{value}/"
+
+
+ADMIN_URL = _admin_url_from_env()
+
+
 raw_trusted_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in raw_trusted_origins.split(",") if origin.strip()]
 
