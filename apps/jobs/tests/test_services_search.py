@@ -14,10 +14,12 @@ from apps.jobs.models import (
     RawJobRecord,
     RemoteType,
     SourceType,
+    SearchQueryLog,
 )
 from apps.jobs.services.query import JobQueryService
 from apps.jobs.services.revalidation import JobRevalidationService
 from apps.jobs.services.search import JobSearchService
+from apps.skills.models import Skill, SkillAlias
 
 
 class JobSearchServiceTests(TestCase):
@@ -38,6 +40,8 @@ class JobSearchServiceTests(TestCase):
             required_skills_json=["Python", "Django"], optional_skills_json=["Docker"],
             first_seen_at=timezone.now(), last_seen_at=timezone.now(), last_fetched_at=timezone.now()
         )
+        self.skill_python = Skill.objects.create(canonical_name="Python", slug="python")
+        SkillAlias.objects.create(skill=self.skill_python, alias="py", normalized_alias="py")
         
         raw2 = RawJobRecord.objects.create(
             source=self.source, source_job_id="2", raw_payload_json={}, payload_hash="2",
@@ -121,6 +125,47 @@ class JobSearchServiceTests(TestCase):
         result = JobSearchService.search({"skill": "Docker"})
         self.assertEqual(result.total_count, 1)
         self.assertEqual(result.page_obj[0].id, self.job1.id)
+
+    def test_search_filter_skill_alias(self):
+        result = JobSearchService.search({"skill": "py"})
+        self.assertEqual(result.total_count, 1)
+        self.assertEqual(result.page_obj[0].id, self.job1.id)
+
+    def test_whitespace_query_behaves_like_empty_query(self):
+        result = JobSearchService.search({"q": "   "})
+        self.assertEqual(result.total_count, 2)
+
+    def test_company_and_published_date_filters(self):
+        published = timezone.now().replace(hour=10, minute=0, second=0, microsecond=0)
+        self.job1.published_at = published
+        self.job1.save(update_fields=["published_at"])
+        self.job2.published_at = published - timezone.timedelta(days=3)
+        self.job2.save(update_fields=["published_at"])
+
+        exact = JobSearchService.search({"company": "tech", "published_exact": published.date().isoformat()})
+        self.assertEqual(exact.total_count, 1)
+        self.assertEqual(exact.page_obj[0].id, self.job1.id)
+
+        ranged = JobSearchService.search({"published_from": (published.date() - timezone.timedelta(days=4)).isoformat()})
+        self.assertEqual(ranged.total_count, 2)
+
+    def test_invalid_published_date_is_safe(self):
+        result = JobSearchService.search({"published_from": "not-a-date"})
+        self.assertEqual(result.total_count, 2)
+
+    def test_search_logging_records_audit_flags(self):
+        class AnonymousUser:
+            is_authenticated = False
+
+        class Request:
+            user = AnonymousUser()
+            session = {}
+
+        JobSearchService.search({"q": "   ", "published_from": "bad-date"}, request=Request())
+
+        log = SearchQueryLog.objects.get()
+        self.assertTrue(log.was_whitespace_only)
+        self.assertTrue(log.had_invalid_filters)
 
     def test_search_pagination(self):
         result = JobSearchService.search({"page_size": 1})

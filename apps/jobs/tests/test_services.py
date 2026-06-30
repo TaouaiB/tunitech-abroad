@@ -16,6 +16,8 @@ from apps.jobs.models import (
     JobStatus,
     NormalizationStatus,
     RequirementType,
+    JobIngestionConfig,
+    JobIngestionRun,
 )
 from apps.jobs.services.source_seed import seed_job_sources
 from apps.jobs.services.fixture_ingestion import JobFixtureIngestionService
@@ -259,6 +261,11 @@ class JobServicesTest(TestCase):
         )
 
     def test_freshness_service(self):
+        JobIngestionConfig.objects.create(
+            name="freshness_config",
+            stale_after_hours=24,
+            removed_after_hours=72,
+        )
         now = timezone.now()
         raw = RawJobRecord.objects.create(
             source=self.source,
@@ -293,8 +300,62 @@ class JobServicesTest(TestCase):
         self.assertEqual(job.status, JobStatus.REMOVED.value)
 
         # Expired
-        job.expires_at = now - timedelta(hours=1)
+        job.expires_at = now - timedelta(hours=25)
         job.save()
         JobFreshnessService.mark_stale_and_expired(now=now)
         job.refresh_from_db()
         self.assertEqual(job.status, JobStatus.EXPIRED.value)
+
+    def test_freshness_failed_ingestion_does_not_mass_stale_or_remove(self):
+        JobIngestionConfig.objects.create(name="freshness_failed_config")
+        JobIngestionRun.objects.create(status="failed", trigger="test")
+        now = timezone.now()
+        raw = RawJobRecord.objects.create(
+            source=self.source,
+            source_job_id="fresh-failed",
+            raw_payload_json={"intitule": "Dev Python"},
+            payload_hash="hash",
+            first_seen_at=now,
+            last_seen_at=now - timedelta(days=10),
+            last_fetched_at=now - timedelta(days=10),
+        )
+        job = JobNormalizationService.normalize(raw)
+        self.assertIsNotNone(job)
+        assert job is not None
+        job.status = JobStatus.ACTIVE.value
+        job.last_seen_at = now - timedelta(days=10)
+        job.save(update_fields=["status", "last_seen_at"])
+
+        result = JobFreshnessService.mark_stale_and_expired(now=now)
+        job.refresh_from_db()
+
+        self.assertTrue(result["aborted"])
+        self.assertEqual(job.status, JobStatus.ACTIVE.value)
+
+    def test_freshness_date_only_expiry_uses_end_of_day_plus_grace(self):
+        config = JobIngestionConfig.objects.create(name="freshness_date_config", expire_grace_hours=24)
+        now = timezone.now().replace(hour=12, minute=0, second=0, microsecond=0)
+        date_only_expiry = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        raw = RawJobRecord.objects.create(
+            source=self.source,
+            source_job_id="fresh-date-only",
+            raw_payload_json={"intitule": "Dev Python"},
+            payload_hash="hash",
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+        )
+        job = JobNormalizationService.normalize(raw)
+        self.assertIsNotNone(job)
+        assert job is not None
+        job.expires_at = date_only_expiry
+        job.save(update_fields=["expires_at"])
+
+        JobFreshnessService.mark_stale_and_expired(now=now)
+        job.refresh_from_db()
+        self.assertEqual(job.status, JobStatus.ACTIVE.value)
+
+        JobFreshnessService.mark_stale_and_expired(now=now + timedelta(days=1))
+        job.refresh_from_db()
+        self.assertEqual(job.status, JobStatus.EXPIRED.value)
+        config.delete()

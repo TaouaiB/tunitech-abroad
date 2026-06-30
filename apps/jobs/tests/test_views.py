@@ -27,7 +27,7 @@ class JobViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test View Job")
         self.assertNotContains(response, "recherche depuis la base locale")
-        self.assertContains(response, "Offres IT françaises actualisées")
+        self.assertContains(response, "Offres IT actualisées")
 
     def test_job_list_view_filters(self):
         response = self.client.get(reverse("jobs:list"), {"q": "Test", "location": "Paris"})

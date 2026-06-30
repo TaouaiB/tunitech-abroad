@@ -718,7 +718,7 @@ class Phase15GHardeningTests(TestCase):
         response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
 
         self.assertContains(response, "Mobilité / contrat")
-        self.assertContains(response, "Poste basé en France")
+        self.assertContains(response, "Vérifiez la localisation")
         self.assertNotContains(response, "Localisation")
         self.assertContains(response, "Compétences requises manquantes")
         self.assertContains(response, "Angular")

@@ -259,6 +259,16 @@ class JobIngestionConfig(models.Model):
     max_total_per_run = models.PositiveIntegerField(default=1000)
     max_pages_per_keyword = models.PositiveIntegerField(default=10)
 
+    # Phase 16B additions
+    target_daily_fetch_count = models.PositiveIntegerField(default=1000)
+    max_jobs_per_run = models.PositiveIntegerField(default=1000)
+    max_pages_per_query = models.PositiveIntegerField(default=10)
+    page_size = models.PositiveIntegerField(default=100)
+    queries_json = models.JSONField(default=list, blank=True)
+    stale_after_hours = models.PositiveIntegerField(default=48)
+    removed_after_hours = models.PositiveIntegerField(default=168)
+    expire_grace_hours = models.PositiveIntegerField(default=24)
+
     frequency_minutes = models.PositiveIntegerField(default=240)
     nightly_enabled = models.BooleanField(default=True)
     nightly_max_total = models.PositiveIntegerField(default=2000)
@@ -308,6 +318,67 @@ class JobIngestionRun(models.Model):
     enrichment_skipped_count = models.PositiveIntegerField(default=0)
     error_count = models.PositiveIntegerField(default=0)
     error_summary = models.TextField(blank=True, default="")
+    query_stats_json = models.JSONField(default=dict, blank=True)
+    config_snapshot_json = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return f"Run {self.id} ({self.status}) for config {self.config_id}"
+
+
+class JobIngestionQueryRun(models.Model):
+    ingestion_run = models.ForeignKey(JobIngestionRun, on_delete=models.CASCADE, related_name="query_runs")
+    query_label = models.CharField(max_length=120, blank=True)
+    params_json = models.JSONField(default=dict, blank=True)
+    requested_range_json = models.JSONField(default=dict, blank=True)
+    fetched_count = models.PositiveIntegerField(default=0)
+    created_count = models.PositiveIntegerField(default=0)
+    updated_count = models.PositiveIntegerField(default=0)
+    unchanged_count = models.PositiveIntegerField(default=0)
+    skipped_count = models.PositiveIntegerField(default=0)
+    error_count = models.PositiveIntegerField(default=0)
+    error_message = models.TextField(blank=True)
+    started_at = models.DateTimeField()
+    finished_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["ingestion_run"]),
+            models.Index(fields=["query_label"]),
+            models.Index(fields=["started_at"]),
+            models.Index(fields=["error_count"]),
+        ]
+
+    def __str__(self):
+        return f"{self.query_label or 'query'} for run {self.ingestion_run_id}"
+
+
+class SearchQueryLog(models.Model):
+    query = models.CharField(max_length=500, blank=True)
+    normalized_query = models.CharField(max_length=500, blank=True)
+    company = models.CharField(max_length=255, blank=True)
+    normalized_company = models.CharField(max_length=255, blank=True)
+    skill = models.CharField(max_length=255, blank=True)
+    filters_json = models.JSONField(default=dict, blank=True)
+    result_count = models.PositiveIntegerField(default=0)
+    user_hash = models.CharField(max_length=64, blank=True)
+    session_hash = models.CharField(max_length=64, blank=True)
+    had_invalid_filters = models.BooleanField(default=False)
+    was_whitespace_only = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["query"]),
+            models.Index(fields=["normalized_query"]),
+            models.Index(fields=["company"]),
+            models.Index(fields=["normalized_company"]),
+            models.Index(fields=["user_hash"]),
+            models.Index(fields=["result_count"]),
+            models.Index(fields=["had_invalid_filters"]),
+            models.Index(fields=["was_whitespace_only"]),
+        ]
+
+    def __str__(self):
+        return f"Search: '{self.query}' ({self.result_count} results)"

@@ -35,7 +35,7 @@ class TestAutomatedITIngestion(TestCase):
             name="test_dedup",
             limit_per_keyword=2,
             max_total_per_run=3,
-            max_pages_per_keyword=1,
+            max_pages_per_query=1,
             enrichment_enabled=False
         )
 

@@ -99,7 +99,7 @@
             {% else %}
                 <div class="rounded-xl border border-blue-200 bg-blue-50/70 p-3 dark:border-blue-900/50 dark:bg-blue-950/20">
                     <h2 class="text-sm font-bold text-slate-950 dark:text-white">Aucun CV actif</h2>
-                    <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">Ajoutez votre CV ci-dessous pour calculer la compatibilité avec les offres françaises. Fichier privé, non partagé avec les employeurs.</p>
+                    <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">Ajoutez votre CV ci-dessous pour calculer la compatibilité avec les offres ciblées. Fichier privé, non partagé avec les employeurs.</p>
                 </div>
             {% endif %}
         </div>
@@ -214,7 +214,7 @@
                         </div>
                         <div class="text-sm">
                             <label for="{{ form.consent_accepted.id_for_label }}" class="font-medium text-slate-950 dark:text-white">Consentement au traitement des données</label>
-                            <p class="text-slate-600 dark:text-slate-400 mt-1">J'accepte que mon CV soit analysé par le système pour extraire mes compétences et calculer mon score de compatibilité avec les offres d'emploi françaises. Mon CV ne sera jamais rendu public ni partagé avec des tiers non autorisés.</p>
+                            <p class="text-slate-600 dark:text-slate-400 mt-1">J'accepte que mon CV soit analysé par le système pour extraire mes compétences et calculer mon score de compatibilité avec les offres ciblées. Mon CV ne sera jamais rendu public ni partagé avec des tiers non autorisés.</p>
                             {% if form.consent_accepted.errors %}
                                 <p class="mt-1 text-sm text-red-600 font-medium">{{ form.consent_accepted.errors|join:", " }}</p>
                             {% endif %}

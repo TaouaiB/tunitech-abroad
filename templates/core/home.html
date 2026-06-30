@@ -6,12 +6,12 @@
 <section class="tta-hero py-4 md:py-5">
   <div class="tta-hero-grid grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] lg:items-center">
     <div>
-      <span class="tta-eyebrow text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">Objectif France · Profils IT tunisiens</span>
-      <h1 class="tta-title mt-4 text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">Trouvez des offres IT en France adaptées à votre profil</h1>
-      <p class="tta-subtitle mt-5 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-300 md:text-lg">TuniAtlas aide les talents IT tunisiens à trouver des offres françaises, comprendre leur compatibilité et identifier les compétences à renforcer.</p>
+      <span class="tta-eyebrow text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">Objectif International · Profils IT tunisiens</span>
+      <h1 class="tta-title mt-4 text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">Trouvez des offres IT adaptées à votre profil</h1>
+      <p class="tta-subtitle mt-5 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-300 md:text-lg">TuniAtlas aide les talents IT tunisiens à trouver des offres IT ciblées, comprendre leur compatibilité et identifier les compétences à renforcer.</p>
       <form class="tta-card tta-search-panel mt-6 grid gap-4 p-4 md:grid-cols-[1fr_1fr_auto] md:items-end md:p-5" action="{% url 'jobs:list' %}" method="get">
         <div><label class="tta-label" for="home-q">Mot-clé</label><input id="home-q" class="tta-input" name="q" value="" placeholder="Python, data, frontend..."></div>
-        <div><label class="tta-label" for="home-location">Lieu</label><input id="home-location" class="tta-input" name="location" value="France" placeholder="Paris, Lyon..."></div>
+        <div><label class="tta-label" for="home-location">Lieu</label><input id="home-location" class="tta-input" name="location" value="" placeholder="Paris, Lyon..."></div>
         <button type="submit" class="tta-btn tta-btn-primary">Rechercher</button>
       </form>
       <div class="tta-chip-row mt-4 flex flex-wrap gap-2"><span class="tta-chip rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">Stage PFE</span><span class="tta-chip rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">Alternance</span><span class="tta-chip rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">Junior</span><span class="tta-chip rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">Django</span><span class="tta-chip rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">Data</span><span class="tta-chip rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">Remote</span></div>
@@ -19,7 +19,7 @@
         <a class="tta-btn tta-btn-primary" href="{% url 'jobs:list' %}">Explorer les offres</a>
         <a class="tta-btn tta-btn-secondary" href="{% url 'account_signup' %}">Analyser mon CV</a>
       </div>
-      <p class="tta-small tta-muted mt-4 text-sm text-slate-500 dark:text-slate-400">CV privé • Analyse de compatibilité • Offres France</p>
+      <p class="tta-small tta-muted mt-4 text-sm text-slate-500 dark:text-slate-400">CV privé • Analyse de compatibilité • Offres IT</p>
     </div>
     <div class="tta-card tta-card-body p-5 md:p-6">
       <div class="tta-section-head"><div><span class="tta-eyebrow text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">Aperçu intelligent</span><h2 class="tta-section-title mt-3 text-xl font-bold text-slate-950 dark:text-white">Ce que tu vois avant de postuler</h2></div></div>
@@ -37,7 +37,7 @@
     <div class="tta-section-head mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 id="offres-recentes" class="tta-section-title text-2xl font-bold text-slate-950 dark:text-white">Offres récentes</h2>
-        <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Parcourez les offres IT françaises actualisées.</p>
+        <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Parcourez les offres IT actualisées.</p>
       </div>
       <a class="tta-btn tta-btn-secondary" href="{% url 'jobs:list' %}">Toutes les offres</a>
     </div>
@@ -71,11 +71,11 @@
     <div class="tta-section-head mb-5">
       <div>
         <h2 id="profils-candidats" class="tta-section-title text-2xl font-bold text-slate-950 dark:text-white">Pensé pour les parcours IT tunisiens</h2>
-        <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Un front door clair pour chercher en France, puis enrichir son profil après connexion.</p>
+        <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Un front door clair pour chercher des offres, puis enrichir son profil après connexion.</p>
       </div>
     </div>
     <div class="tta-grid-3 grid gap-4 md:grid-cols-3">
-      <div class="tta-card tta-card-body p-5"><span class="tta-eyebrow text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">Étudiants</span><h3 class="mt-3 font-semibold text-slate-950 dark:text-white">Stage PFE et alternance</h3><p class="tta-muted mt-2 text-sm text-slate-600 dark:text-slate-400">Repérez les offres adaptées aux premiers pas professionnels en France.</p></div>
+      <div class="tta-card tta-card-body p-5"><span class="tta-eyebrow text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">Étudiants</span><h3 class="mt-3 font-semibold text-slate-950 dark:text-white">Stage PFE et alternance</h3><p class="tta-muted mt-2 text-sm text-slate-600 dark:text-slate-400">Repérez les offres adaptées aux premiers pas professionnels.</p></div>
       <div class="tta-card tta-card-body p-5"><span class="tta-eyebrow text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">Juniors</span><h3 class="mt-3 font-semibold text-slate-950 dark:text-white">Premiers postes IT</h3><p class="tta-muted mt-2 text-sm text-slate-600 dark:text-slate-400">Comparez les attentes techniques avant de postuler.</p></div>
       <div class="tta-card tta-card-body p-5"><span class="tta-eyebrow text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">Développeurs</span><h3 class="mt-3 font-semibold text-slate-950 dark:text-white">Progression ciblée</h3><p class="tta-muted mt-2 text-sm text-slate-600 dark:text-slate-400">Identifiez les compétences requises à renforcer pour vos rôles cibles.</p></div>
     </div>
@@ -108,7 +108,7 @@
         <h2 id="cta-final" class="tta-section-title text-2xl font-bold text-slate-950 dark:text-white">Continuez depuis votre espace candidat</h2>
         <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Retrouvez votre tableau de bord, vos recommandations et votre CV.</p>
         {% else %}
-        <h2 id="cta-final" class="tta-section-title text-2xl font-bold text-slate-950 dark:text-white">Commencez par les offres France</h2>
+        <h2 id="cta-final" class="tta-section-title text-2xl font-bold text-slate-950 dark:text-white">Commencez par les offres IT</h2>
         <p class="tta-muted mt-2 text-slate-600 dark:text-slate-400">Recherchez maintenant, puis créez un compte pour préparer votre CV et vos recommandations.</p>
         {% endif %}
       </div>

@@ -38,7 +38,7 @@ def job_list(request):
     if form.is_valid():
         filters = form.cleaned_data
 
-    result = JobSearchService.search(filters, user=request.user)
+    result = JobSearchService.search(filters, request=request)
     effective_filters = {**result.filters, "sort": result.sort}
 
     safe_record_event("job_search", request.user, metadata={"q": filters.get("q", "")})
