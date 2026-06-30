@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import Http404
 from django.test import Client, TestCase, override_settings
@@ -25,6 +25,7 @@ from apps.jobs.models import (
     SourceType,
 )
 from apps.matching.models import MatchResult, QuickMatchSession
+from apps.matching.services.feedback import MatchFeedbackService
 from apps.matching.services.match_result import MatchResultService
 from apps.matching.services.quick_match import QuickMatchRateLimitExceeded, QuickMatchService
 from apps.matching.services.scoring import MatchScoringService
@@ -166,13 +167,13 @@ class MatchingTests(TestCase):
             last_fetched_at=now,
         )
 
-    def _job_skill(self, job, skill, requirement_type):
+    def _job_skill(self, job, skill, requirement_type, *, confidence=1):
         return NormalizedJobSkill.objects.create(
             job=job,
             skill=skill,
             requirement_type=requirement_type,
             source=SkillSource.RULE,
-            confidence=1,
+            confidence=confidence,
         )
 
     def _job_without_extracted_skills(self, source_job_id, title, description="Build software.", classification_json=None):
@@ -254,6 +255,32 @@ class MatchingTests(TestCase):
 
         self.assertIn({"name": ".NET", "type": "required"}, result.strong_skills)
         self.assertNotIn({"name": ".NET", "requirement_type": "required"}, result.missing_required_skills)
+
+    def test_low_confidence_required_skill_does_not_inflate_technical_score(self):
+        go = self._skill("Go", SkillCategory.PROGRAMMING_LANGUAGE)
+        ProfileSkill.objects.create(
+            profile=self.profile,
+            raw_name="Go",
+            normalized_name="go",
+            skill=go,
+        )
+        high_confidence_job = self._job("go-high-confidence", "Go Developer")
+        low_confidence_job = self._job("go-low-confidence", "Go Developer")
+        self._job_skill(high_confidence_job, go, RequirementType.REQUIRED, confidence=0.9)
+        self._job_skill(low_confidence_job, go, RequirementType.REQUIRED, confidence=0.49)
+
+        high_result = MatchScoringService.calculate(self.profile, high_confidence_job)
+        low_result = MatchScoringService.calculate(self.profile, low_confidence_job)
+
+        self.assertIn({"name": "Go", "type": "required"}, high_result.strong_skills)
+        self.assertEqual(high_result.technical_skills_score, 90)
+        self.assertEqual(high_result.match_confidence, MatchScoringService.CONFIDENCE_RELIABLE)
+
+        self.assertNotIn({"name": "Go", "type": "required"}, low_result.strong_skills)
+        self.assertLess(low_result.technical_skills_score, high_result.technical_skills_score)
+        self.assertIn("low_confidence_job_skills", low_result.risk_flags)
+        self.assertIn("low_confidence_job_skills", low_result.profile_signals)
+        self.assertNotEqual(low_result.match_confidence, MatchScoringService.CONFIDENCE_RELIABLE)
 
     def test_missing_required_french_and_expired_job_risk_flags(self):
         self.profile.french_level = ""
@@ -669,60 +696,7 @@ class Phase15GHardeningTests(TestCase):
         self.assertEqual(res1.fit_score, 45)
         self.assertEqual(res2.fit_score, 55)
 
-    def test_json_is_suppressed_when_implied(self):
-        # Profile has JavaScript, lacks Angular
-        ProfileSkill.objects.create(profile=self.profile, raw_name="JavaScript", normalized_name="javascript", skill=self.skill_js)
 
-        res = MatchScoringService.calculate(self.profile, self.job)
-
-        missing_opt = [s["name"] for s in res.missing_optional_skills]
-        self.assertNotIn("JSON", missing_opt)
-        self.assertNotIn("Jira", missing_opt)
-        self.assertNotIn("Confluence", missing_opt)
-        self.assertIn("JSON Schema", missing_opt)
-        self.assertIn("OpenAPI", missing_opt)
-        self.assertIn("WordPress", missing_opt)
-
-        missing_req = [s["name"] for s in res.missing_required_skills]
-        self.assertIn("Angular", missing_req)
-
-        self.assertEqual(Skill.objects.filter(canonical_name__in=["JSON", "Jira", "Confluence"]).count(), 3)
-        self.assertEqual(NormalizedJobSkill.objects.filter(job=self.job, skill__canonical_name__in=["JSON", "Jira", "Confluence"]).count(), 3)
-
-    def test_wordpress_is_not_suppressed_when_required(self):
-        NormalizedJobSkill.objects.filter(job=self.job, skill=self.skill_wordpress).update(
-            requirement_type=RequirementType.REQUIRED
-        )
-
-        res = MatchScoringService.calculate(self.profile, self.job)
-
-        missing_req = [s["name"] for s in res.missing_required_skills]
-        self.assertIn("Angular", missing_req)
-        self.assertIn("WordPress", missing_req)
-
-    def test_noisy_optional_skills_suppressed_but_preserved_terms_display(self):
-        noisy_skills = [
-            self._skill("XML", SkillCategory.BACKEND),
-            self._skill("YAML", SkillCategory.BACKEND),
-            self._skill("CSV", SkillCategory.DATA_AI),
-            self._skill("Markdown", SkillCategory.TOOLS),
-            self._skill("SOAP", SkillCategory.BACKEND),
-            self._skill("Agile", SkillCategory.METHODOLOGY),
-            self._skill("Scrum", SkillCategory.METHODOLOGY),
-            self._skill("Kanban", SkillCategory.METHODOLOGY),
-            self._skill("Excel", SkillCategory.TOOLS),
-            self._skill("Office 365", SkillCategory.TOOLS),
-        ]
-        for skill in noisy_skills:
-            NormalizedJobSkill.objects.create(job=self.job, skill=skill, requirement_type=RequirementType.OPTIONAL)
-
-        res = MatchScoringService.calculate(self.profile, self.job)
-
-        missing_opt = [s["name"] for s in res.missing_optional_skills]
-        for skill_name in ["JSON", "XML", "YAML", "CSV", "Markdown", "SOAP", "Jira", "Confluence", "Agile", "Scrum", "Kanban", "Excel", "Office 365"]:
-            self.assertNotIn(skill_name, missing_opt)
-        for skill_name in ["JSON Schema", "OpenAPI", "WordPress"]:
-            self.assertIn(skill_name, missing_opt)
 
     def test_actions_recommended_copy_is_french(self):
         res = MatchScoringService.calculate(self.profile, self.job)
@@ -834,3 +808,94 @@ class Phase15GRecommendationsViewTests(TestCase):
         self.assertContains(response, "Actualiser mes recommandations")
         self.assertContains(response, f'action="{reverse("recommendations:refresh")}"')
         self.assertContains(response, "csrfmiddlewaretoken")
+
+
+class Phase16FFeedbackTests(TestCase):
+    def setUp(self):
+        from apps.matching.models import MatchQualityFeedback, MatchQualityIssue
+        self.user = UserModel.objects.create_user(username="reviewer", email="reviewer@example.com", password="password")
+        self.profile = CandidateProfile.objects.create(
+            user=self.user,
+            years_experience=3.0,
+            current_level="mid",
+            french_level="c1",
+            profile_completion_score=100
+        )
+        now = timezone.now()
+        source = JobSource.objects.create(name="test", slug="test", source_type="fixture")
+        raw = RawJobRecord.objects.create(source=source, source_job_id="test2", payload_hash="test2", first_seen_at=now, last_seen_at=now, last_fetched_at=now, raw_payload_json={})
+        self.job = NormalizedJob.objects.create(
+            source=source,
+            raw_record=raw,
+            source_job_id="test2",
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+            public_id="11111111-1111-1111-1111-111111111111",
+            title="Dev",
+            status="active",
+        )
+        self.match = MatchResult.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=self.job,
+            fit_score=50,
+            technical_skills_score=50,
+            experience_score=50,
+            role_title_score=50,
+            language_score=50,
+            location_score=50,
+        )
+
+    def test_match_quality_feedback_creation(self):
+        from apps.matching.models import MatchQualityFeedback, MatchQualityIssue
+        feedback = MatchQualityFeedback.objects.create(
+            match_result=self.match,
+            reason=MatchQualityIssue.MISSING_KEY_SKILL,
+            notes="Missing React",
+            reviewed_by=self.user
+        )
+        self.assertEqual(feedback.reason, MatchQualityIssue.MISSING_KEY_SKILL)
+        self.assertEqual(self.match.quality_feedback.count(), 1)
+
+    def test_match_feedback_service_rejects_invalid_reason(self):
+        with self.assertRaises(ValidationError):
+            MatchFeedbackService.record_feedback(
+                self.user,
+                self.match.public_id,
+                "not_a_valid_reason",
+                "bad value",
+            )
+
+        self.assertEqual(self.match.quality_feedback.count(), 0)
+
+    def test_match_feedback_view_uses_public_id_and_owner_filter(self):
+        from apps.matching.models import MatchQualityFeedback, MatchQualityIssue
+
+        other_user = UserModel.objects.create_user(
+            username="other_reviewer",
+            email="other_reviewer@example.com",
+            password="password",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("matching:feedback", kwargs={"public_id": self.match.public_id}),
+            {"reason": MatchQualityIssue.GOOD_MATCH, "notes": "useful"},
+        )
+
+        self.assertRedirects(response, reverse("matching:detail", kwargs={"public_id": self.match.public_id}))
+        self.assertTrue(
+            MatchQualityFeedback.objects.filter(
+                match_result=self.match,
+                reason=MatchQualityIssue.GOOD_MATCH,
+                reviewed_by=self.user,
+            ).exists()
+        )
+
+        self.client.force_login(other_user)
+        response = self.client.post(
+            reverse("matching:feedback", kwargs={"public_id": self.match.public_id}),
+            {"reason": MatchQualityIssue.GOOD_MATCH},
+        )
+        self.assertEqual(response.status_code, 404)

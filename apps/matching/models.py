@@ -91,24 +91,24 @@ class MatchResult(models.Model):
         on_delete=models.PROTECT,
         related_name="match_results",
     )
-    
+
     profile_snapshot_json = models.JSONField(default=dict)
     job_snapshot_json = models.JSONField(default=dict)
-    
+
     fit_score = models.PositiveSmallIntegerField()
     technical_skills_score = models.PositiveSmallIntegerField()
     experience_score = models.PositiveSmallIntegerField()
     role_title_score = models.PositiveSmallIntegerField()
     language_score = models.PositiveSmallIntegerField()
     location_score = models.PositiveSmallIntegerField()
-    
+
     strong_skills_json = models.JSONField(default=list, blank=True)
     missing_required_skills_json = models.JSONField(default=list, blank=True)
     missing_optional_skills_json = models.JSONField(default=list, blank=True)
     risk_flags_json = models.JSONField(default=list, blank=True)
     profile_signals_json = models.JSONField(default=list, blank=True)
     recommended_actions_json = models.JSONField(default=list, blank=True)
-    
+
     llm_explanation_status = models.CharField(
         max_length=50,
         choices=LlmStatusChoices.choices,
@@ -116,7 +116,7 @@ class MatchResult(models.Model):
     )
     llm_explanation_text = models.TextField(blank=True)
     scoring_version = models.CharField(max_length=50, default="score_v1")
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -165,17 +165,17 @@ class QuickMatchSession(models.Model):
         on_delete=models.PROTECT,
         related_name="quick_match_sessions",
     )
-    
+
     entered_skills_json = models.JSONField(default=list)
     normalized_skills_json = models.JSONField(default=list, blank=True)
     experience_level = models.CharField(max_length=50)
     french_level = models.CharField(max_length=50)
-    
+
     estimated_fit_score = models.PositiveSmallIntegerField()
     matched_skills_json = models.JSONField(default=list, blank=True)
     missing_skills_json = models.JSONField(default=list, blank=True)
     risk_flags_json = models.JSONField(default=list, blank=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(db_index=True)
 
@@ -192,3 +192,39 @@ class QuickMatchSession(models.Model):
 
     def __str__(self):
         return f"QuickMatch {self.public_id} - Est Score {self.estimated_fit_score}"
+
+
+class MatchQualityIssue(models.TextChoices):
+    TOO_JUNIOR = "too_junior", "Trop Junior"
+    TOO_SENIOR = "too_senior", "Trop Senior"
+    MISSING_KEY_SKILL = "missing_key_skill", "Compétence clé manquante"
+    WRONG_LOCATION = "wrong_location", "Mauvaise localisation"
+    LANGUAGE_BARRIER = "language_barrier", "Barrière linguistique"
+    NOT_IT = "not_it", "Non IT"
+    GOOD_MATCH = "good_match", "Bon Match"
+    OTHER = "other", "Autre"
+
+
+class MatchQualityFeedback(models.Model):
+    match_result = models.ForeignKey(MatchResult, on_delete=models.CASCADE, related_name="quality_feedback")
+    reason = models.CharField(max_length=32, choices=MatchQualityIssue.choices)
+    notes = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="match_quality_feedback",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["match_result"]),
+            models.Index(fields=["reason"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["reviewed_by"]),
+        ]
+
+    def __str__(self):
+        return f"{self.match_result_id}: {self.reason}"

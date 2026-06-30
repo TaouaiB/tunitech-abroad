@@ -130,3 +130,37 @@ class SavedJob(models.Model):
 
     def __str__(self):
         return f"{self.user} saved {self.job}"
+
+
+class RecommendationQualityIssue(models.TextChoices):
+    IRRELEVANT = "irrelevant", "Non pertinent"
+    TOO_JUNIOR = "too_junior", "Trop Junior"
+    TOO_SENIOR = "too_senior", "Trop Senior"
+    BAD_LOCATION = "bad_location", "Mauvaise localisation"
+    GOOD_RECOMMENDATION = "good_recommendation", "Bonne recommandation"
+    OTHER = "other", "Autre"
+
+
+class RecommendationQualityFeedback(models.Model):
+    recommendation = models.ForeignKey(JobRecommendation, on_delete=models.CASCADE, related_name="quality_feedback")
+    reason = models.CharField(max_length=32, choices=RecommendationQualityIssue.choices)
+    notes = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="recommendation_quality_feedback",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["recommendation"]),
+            models.Index(fields=["reason"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["reviewed_by"]),
+        ]
+
+    def __str__(self):
+        return f"{self.recommendation_id}: {self.reason}"

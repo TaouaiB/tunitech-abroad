@@ -3,7 +3,6 @@ from typing import Optional
 from apps.profiles.models import CandidateProfile, ProfileSkill
 from apps.jobs.models import NormalizedJob, RequirementType
 from apps.cvs.models import CVUpload
-from apps.skills.services.normalizer import normalize_skill_text
 from apps.jobs.services.relevance import TECH_CATEGORIES
 from django.utils import timezone
 
@@ -30,6 +29,7 @@ class MatchScoringService:
     CONFIDENCE_RELIABLE = "reliable"
     CONFIDENCE_LOW = "low_confidence"
     CONFIDENCE_UNAVAILABLE = "unavailable"
+    SKILL_CONFIDENCE_THRESHOLD = 0.5
 
     @staticmethod
     def calculate(
@@ -45,14 +45,28 @@ class MatchScoringService:
         skill_signal_quality = job.skill_signal_quality
         job_skills = list(job.job_skills.select_related("skill").all())
         tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
-        req_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.REQUIRED]
+        low_confidence_job_skills = [
+            js for js in tech_job_skills
+            if js.confidence is not None and js.confidence < MatchScoringService.SKILL_CONFIDENCE_THRESHOLD
+        ]
+        reliable_tech_job_skills = [
+            js for js in tech_job_skills
+            if js.confidence is None or js.confidence >= MatchScoringService.SKILL_CONFIDENCE_THRESHOLD
+        ]
+        req_skills = [
+            js for js in reliable_tech_job_skills
+            if js.requirement_type == RequirementType.REQUIRED
+        ]
 
         match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
         if it_confidence == "excluded" or skill_signal_quality == "excluded_non_it":
             match_confidence = MatchScoringService.CONFIDENCE_UNAVAILABLE
         elif it_confidence in ["high", "medium"]:
             if skill_signal_quality == "strong":
-                match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
+                if low_confidence_job_skills and not req_skills:
+                    match_confidence = MatchScoringService.CONFIDENCE_LOW
+                else:
+                    match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
             elif skill_signal_quality == "partial":
                 if len(req_skills) > 0:
                     match_confidence = MatchScoringService.CONFIDENCE_RELIABLE
@@ -184,53 +198,12 @@ class MatchScoringService:
         return any(term in description for term in strong_description_terms)
 
     @staticmethod
-    def _filter_noisy_skills(missing_skills, profile_skills_normalized):
-        noisy_display_terms = {
-            "json", "xml", "yaml", "csv", "markdown", "soap",
-            "jira", "confluence", "agile", "scrum", "kanban",
-            "excel", "office 365", "http", "https", "documentation",
-            "office tools", "microsoft office", "pack office",
-        }
-        preserved_advanced_terms = {
-            "json schema", "json ld", "openapi", "swagger", "graphql",
-            "rest api", "api rest", "restful api",
-        }
-        frontend_impliers = {
-            "react", "angular", "vue.js", "frontend development", "full-stack development"
-        }
-
-        filtered = []
-        for s in missing_skills:
-            name_norm = normalize_skill_text(s.get("name") or "") or (s.get("name") or "").lower().strip()
-
-            if name_norm in preserved_advanced_terms:
-                filtered.append(s)
-                continue
-
-            if name_norm in noisy_display_terms:
-                continue
-
-            # HTML/CSS rule (only if optional)
-            if s.get("requirement_type") == "optional" and name_norm in ["html", "css"]:
-                if any(imp in profile_skills_normalized for imp in frontend_impliers):
-                    continue
-
-            filtered.append(s)
-
-        return filtered
-
-    @staticmethod
     def _calc_technical_score(profile, job, profile_signals, risk_flags):
         # Profile skills
-        profile_skills_normalized = set()
         profile_skill_ids = set()
         for profile_skill in ProfileSkill.objects.filter(profile=profile):
             if profile_skill.skill_id:
                 profile_skill_ids.add(profile_skill.skill_id)
-            skill_name = profile_skill.normalized_name or profile_skill.raw_name
-            normalized_skill_name = normalize_skill_text(skill_name)
-            if normalized_skill_name:
-                profile_skills_normalized.add(normalized_skill_name)
 
         strong_skills = []
         missing_req = []
@@ -238,8 +211,23 @@ class MatchScoringService:
 
         job_skills = list(job.job_skills.select_related("skill").all())
         tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
-        req_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.REQUIRED]
-        opt_skills = [js for js in tech_job_skills if js.requirement_type == RequirementType.OPTIONAL]
+
+        # Handle low confidence skills
+        low_conf_skills = [
+            js for js in tech_job_skills
+            if js.confidence is not None and js.confidence < MatchScoringService.SKILL_CONFIDENCE_THRESHOLD
+        ]
+        if low_conf_skills:
+            risk_flags.add("low_confidence_job_skills")
+            profile_signals.add("low_confidence_job_skills")
+
+        reliable_tech_skills = [
+            js for js in tech_job_skills
+            if js.confidence is None or js.confidence >= MatchScoringService.SKILL_CONFIDENCE_THRESHOLD
+        ]
+
+        req_skills = [js for js in reliable_tech_skills if js.requirement_type == RequirementType.REQUIRED]
+        opt_skills = [js for js in reliable_tech_skills if js.requirement_type == RequirementType.OPTIONAL]
 
         if not req_skills and tech_job_skills:
             profile_signals.add("low_confidence_job_skills")
@@ -275,9 +263,6 @@ class MatchScoringService:
         opt_score = (opt_matched / len(opt_skills) * 100) if opt_skills else 50
 
         tech_score = (req_score * 0.8) + (opt_score * 0.2)
-
-        missing_req = MatchScoringService._filter_noisy_skills(missing_req, profile_skills_normalized)
-        missing_opt = MatchScoringService._filter_noisy_skills(missing_opt, profile_skills_normalized)
 
         return max(0, min(100, round(tech_score))), strong_skills, missing_req, missing_opt
 
