@@ -158,7 +158,11 @@ class CVServiceTests(TestCase):
         self.assertEqual(profile.github_url, "https://github.com/amina")
         self.assertEqual(profile.portfolio_url, "https://amina.dev")
         self.assertEqual(ProfileSkill.objects.filter(profile=profile, normalized_name="python").count(), 1)
-        
+        self.assertEqual(
+            ProfileSkill.objects.get(profile=profile, normalized_name="python").skill,
+            skill,
+        )
+
         self.assertIsNotNone(parsed_data)
         # Check warning was added
         self.assertTrue(any("differs from CV name 'Amina Ben Ali'" in w for w in parsed_data.warnings_json))
@@ -170,7 +174,7 @@ class CVServiceTests(TestCase):
         pdf = self._pdf_file("Amina Ben Ali\nPhone: +33 6 12 34 56 78\nSome extra text to bypass the minimum text length requirement of 50 characters.")
         cv = CVUpload.objects.create(user=self.user, file=pdf, original_filename="cv2.pdf", file_hash="hash4", file_size=pdf.size, is_active=True)
         CVParsingService.parse(cv)
-        
+
         profile.refresh_from_db()
         self.assertEqual(profile.full_name, "Amina Ben Ali")
         self.assertEqual(profile.phone, "+33 6 12 34 56 78")

@@ -223,7 +223,10 @@ class MatchScoringService:
     def _calc_technical_score(profile, job, profile_signals, risk_flags):
         # Profile skills
         profile_skills_normalized = set()
+        profile_skill_ids = set()
         for profile_skill in ProfileSkill.objects.filter(profile=profile):
+            if profile_skill.skill_id:
+                profile_skill_ids.add(profile_skill.skill_id)
             skill_name = profile_skill.normalized_name or profile_skill.raw_name
             normalized_skill_name = normalize_skill_text(skill_name)
             if normalized_skill_name:
@@ -249,8 +252,7 @@ class MatchScoringService:
         req_matched = 0
         for js in req_skills:
             skill_name = js.skill.canonical_name
-            normalized_skill_name = normalize_skill_text(skill_name)
-            if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
+            if js.skill_id in profile_skill_ids:
                 req_matched += 1
                 strong_skills.append({"name": skill_name, "type": "required"})
             else:
@@ -260,8 +262,7 @@ class MatchScoringService:
         opt_matched = 0
         for js in opt_skills:
             skill_name = js.skill.canonical_name
-            normalized_skill_name = normalize_skill_text(skill_name)
-            if normalized_skill_name and normalized_skill_name in profile_skills_normalized:
+            if js.skill_id in profile_skill_ids:
                 opt_matched += 1
                 strong_skills.append({"name": skill_name, "type": "optional"})
             else:

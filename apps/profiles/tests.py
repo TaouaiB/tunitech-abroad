@@ -5,6 +5,9 @@ from django.db import IntegrityError
 from .models import CandidateProfile, ProfileSkill
 from .forms import ProfileForm
 from .services.completeness import ProfileCompletenessService
+from .services.backfill import ProfileSkillBackfillService
+from apps.skills.models import Skill, SkillAlias, UnmatchedSkillCandidate
+from apps.skills.services.normalizer import normalize_skill_text
 
 def create_test_user(username: str, email: str, password: str = "password123") -> User:
     user = User(username=username, email=email)
@@ -25,7 +28,7 @@ class ProfileModelsTests(TestCase):
     def test_profile_skill_uniqueness(self):
         profile = CandidateProfile.objects.create(user=self.user)
         ProfileSkill.objects.create(profile=profile, raw_name="Python", normalized_name="python")
-        
+
         with self.assertRaises(IntegrityError):
             ProfileSkill.objects.create(profile=profile, raw_name="Python 3", normalized_name="python")
 
@@ -84,3 +87,33 @@ class ProfileModelsTests(TestCase):
         self.assertIn("linkedin_url", form.errors)
         self.assertIn("portfolio_url", form.errors)
         self.assertIn("current_level", form.errors)
+
+    def test_profile_skill_backfill_maps_alias_and_is_idempotent_for_unmatched(self):
+        profile = CandidateProfile.objects.create(user=self.user)
+        dotnet = Skill.objects.create(canonical_name=".NET", slug="dotnet", category="backend")
+        SkillAlias.objects.create(
+            skill=dotnet,
+            alias=".NET Core",
+            normalized_alias=normalize_skill_text(".NET Core"),
+        )
+        mapped = ProfileSkill.objects.create(
+            profile=profile,
+            raw_name=".NET Core",
+            normalized_name=normalize_skill_text(".NET Core"),
+        )
+        ProfileSkill.objects.create(
+            profile=profile,
+            raw_name="Unknown Skill",
+            normalized_name=normalize_skill_text("Unknown Skill"),
+            source="cv_upload",
+        )
+
+        first = ProfileSkillBackfillService.backfill_profile_skills()
+        second = ProfileSkillBackfillService.backfill_profile_skills()
+
+        mapped.refresh_from_db()
+        self.assertEqual(mapped.skill, dotnet)
+        self.assertEqual(first["mapped_to_canonical"], 1)
+        self.assertEqual(second["mapped_to_canonical"], 0)
+        candidate = UnmatchedSkillCandidate.objects.get(normalized_text="unknown skill", source_type="cv")
+        self.assertEqual(candidate.occurrence_count, 1)

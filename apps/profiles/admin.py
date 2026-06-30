@@ -21,7 +21,7 @@ class CandidateProfileAdmin(admin.ModelAdmin):
 
 @admin.register(ProfileSkill)
 class ProfileSkillAdmin(admin.ModelAdmin):
-    list_display = ('normalized_name', 'profile', 'confidence', 'is_confirmed', 'created_at')
-    search_fields = ('normalized_name', 'raw_name', 'profile__user__email')
-    list_filter = ('is_confirmed', 'source')
+    list_display = ('normalized_name', 'skill', 'profile', 'confidence', 'is_confirmed', 'created_at')
+    search_fields = ('normalized_name', 'raw_name', 'skill__canonical_name', 'profile__user__email')
+    list_filter = ('is_confirmed', 'source', 'skill__category')
     readonly_fields = ('created_at', 'updated_at')

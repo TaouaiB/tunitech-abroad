@@ -63,6 +63,70 @@ class SeedServiceTests(TestCase):
             alias_obj = SkillAlias.objects.get(normalized_alias=alias_norm)
             self.assertEqual(alias_obj.skill.canonical_name, canonical)
 
+    def test_phase_16d_required_alias_mappings(self):
+        from apps.skills.services.normalizer import normalize_skill_text
+        SkillSeedService.seed_initial_taxonomy()
+
+        mappings = [
+            (".NET Core", ".NET"),
+            ("dotnet", ".NET"),
+            ("ASP.NET Core", "ASP.NET Core"),
+            ("EF Core", "Entity Framework Core"),
+            ("C sharp", "C#"),
+            ("csharp", "C#"),
+            ("Node.js", "Node.js"),
+            ("node js", "Node.js"),
+            ("ReactJS", "React"),
+            ("Postgres", "PostgreSQL"),
+            ("postgresql", "PostgreSQL"),
+            ("JS", "JavaScript"),
+            ("TS", "TypeScript"),
+            ("C++", "C++"),
+            ("CI/CD", "CI/CD"),
+            ("Docker Compose", "Docker Compose"),
+            ("GitHub Actions", "GitHub Actions"),
+        ]
+
+        for alias_raw, canonical in mappings:
+            alias = SkillAlias.objects.get(normalized_alias=normalize_skill_text(alias_raw))
+            self.assertEqual(alias.skill.canonical_name, canonical)
+
+    def test_phase_16d_seed_repairs_legacy_dotnet_canonical_rows(self):
+        from apps.skills.services.normalizer import normalize_skill_text
+        legacy_dotnet = Skill.objects.create(
+            canonical_name=".NET Core",
+            slug="dotnet-core",
+            category="backend",
+        )
+        legacy_aspnet = Skill.objects.create(
+            canonical_name="ASP.NET",
+            slug="aspdotnet",
+            category="backend",
+        )
+        SkillAlias.objects.create(
+            skill=legacy_dotnet,
+            alias=".NET Core",
+            normalized_alias=normalize_skill_text(".NET Core"),
+        )
+        SkillAlias.objects.create(
+            skill=legacy_aspnet,
+            alias="ASP.NET",
+            normalized_alias=normalize_skill_text("ASP.NET"),
+        )
+
+        SkillSeedService.seed_initial_taxonomy()
+
+        self.assertFalse(Skill.objects.filter(canonical_name=".NET Core").exists())
+        self.assertFalse(Skill.objects.filter(canonical_name="ASP.NET").exists())
+        self.assertEqual(
+            SkillAlias.objects.get(normalized_alias=normalize_skill_text(".NET Core")).skill.canonical_name,
+            ".NET",
+        )
+        self.assertEqual(
+            SkillAlias.objects.get(normalized_alias=normalize_skill_text("ASP.NET")).skill.canonical_name,
+            "ASP.NET Core",
+        )
+
     def test_phase_15b_aliases_are_idempotent_without_duplicates(self):
         SkillSeedService.seed_initial_taxonomy()
 

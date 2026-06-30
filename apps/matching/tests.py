@@ -29,7 +29,7 @@ from apps.matching.services.match_result import MatchResultService
 from apps.matching.services.quick_match import QuickMatchRateLimitExceeded, QuickMatchService
 from apps.matching.services.scoring import MatchScoringService
 from apps.profiles.models import CandidateProfile, ProfileSkill
-from apps.skills.models import Skill, SkillAlias, SkillCategory
+from apps.skills.models import Skill, SkillAlias, SkillCategory, UnmatchedSkillCandidate
 
 UserModel = get_user_model()
 
@@ -91,8 +91,8 @@ class MatchingTests(TestCase):
         self.postgres = self._skill("PostgreSQL", SkillCategory.DATABASE)
         self.react = self._skill("React", SkillCategory.FRONTEND)
 
-        ProfileSkill.objects.create(profile=self.profile, raw_name="Python", normalized_name="python")
-        ProfileSkill.objects.create(profile=self.profile, raw_name="Django", normalized_name="django")
+        ProfileSkill.objects.create(profile=self.profile, raw_name="Python", normalized_name="python", skill=self.python)
+        ProfileSkill.objects.create(profile=self.profile, raw_name="Django", normalized_name="django", skill=self.django)
 
         self.source = JobSource.objects.create(
             name="France Travail",
@@ -229,13 +229,31 @@ class MatchingTests(TestCase):
             french_level="intermediate",
             profile_completion_score=80,
         )
-        ProfileSkill.objects.create(profile=optional_only_profile, raw_name="PostgreSQL", normalized_name="postgresql")
-        ProfileSkill.objects.create(profile=required_only_profile, raw_name="Python", normalized_name="python")
+        postgres_skill = Skill.objects.get(canonical_name="PostgreSQL")
+        python_skill = Skill.objects.get(canonical_name="Python")
+        ProfileSkill.objects.create(profile=optional_only_profile, raw_name="PostgreSQL", normalized_name="postgresql", skill=postgres_skill)
+        ProfileSkill.objects.create(profile=required_only_profile, raw_name="Python", normalized_name="python", skill=python_skill)
 
         optional_score = MatchScoringService.calculate(optional_only_profile, self.job).technical_skills_score
         required_score = MatchScoringService.calculate(required_only_profile, self.job).technical_skills_score
 
         self.assertGreater(required_score, optional_score)
+
+    def test_scoring_uses_canonical_skill_id_not_raw_profile_text(self):
+        dotnet = self._skill(".NET", SkillCategory.BACKEND)
+        job = self._job("dotnet-job", ".NET Backend Developer")
+        self._job_skill(job, dotnet, RequirementType.REQUIRED)
+        ProfileSkill.objects.create(
+            profile=self.profile,
+            raw_name=".NET Core",
+            normalized_name=".net core",
+            skill=dotnet,
+        )
+
+        result = MatchScoringService.calculate(self.profile, job)
+
+        self.assertIn({"name": ".NET", "type": "required"}, result.strong_skills)
+        self.assertNotIn({"name": ".NET", "requirement_type": "required"}, result.missing_required_skills)
 
     def test_missing_required_french_and_expired_job_risk_flags(self):
         self.profile.french_level = ""
@@ -454,6 +472,30 @@ class MatchingTests(TestCase):
         self.assertIn("french_level_missing", session.risk_flags_json)
         self.assertLess(session.estimated_fit_score, 90)
 
+    def test_quick_match_uses_aliases_and_records_unknown_skills(self):
+        dotnet = self._skill(".NET", SkillCategory.BACKEND)
+        SkillAlias.objects.create(skill=dotnet, alias=".NET Core", normalized_alias=".net core")
+        job = self._job("quick-dotnet", ".NET Developer")
+        self._job_skill(job, dotnet, RequirementType.REQUIRED)
+
+        session = QuickMatchService.run_quick_match(
+            session_key="alias-session",
+            job=job,
+            entered_skills=[".NET Core", "Mystery Stack"],
+            experience_level="mid_level",
+            french_level="intermediate",
+            ip_address="127.0.0.9",
+        )
+
+        self.assertIn({"name": ".NET", "type": "required"}, session.matched_skills_json)
+        self.assertTrue(
+            UnmatchedSkillCandidate.objects.filter(
+                normalized_text="mystery stack",
+                source_type="quick_match",
+                status="pending",
+            ).exists()
+        )
+
     def test_full_match_post_requires_login_and_uses_uuid_route(self):
         url = reverse("matching:create", kwargs={"public_id": self.job.public_id})
         anonymous_response = self.client.post(url)
@@ -629,7 +671,7 @@ class Phase15GHardeningTests(TestCase):
 
     def test_json_is_suppressed_when_implied(self):
         # Profile has JavaScript, lacks Angular
-        ProfileSkill.objects.create(profile=self.profile, raw_name="JavaScript", normalized_name="javascript")
+        ProfileSkill.objects.create(profile=self.profile, raw_name="JavaScript", normalized_name="javascript", skill=self.skill_js)
 
         res = MatchScoringService.calculate(self.profile, self.job)
 
@@ -688,7 +730,7 @@ class Phase15GHardeningTests(TestCase):
         self.assertTrue(any("Priorité : ajoutez" in action for action in actions))
 
         # Test when no required skills missing
-        ProfileSkill.objects.create(profile=self.profile, raw_name="Angular", normalized_name="angular")
+        ProfileSkill.objects.create(profile=self.profile, raw_name="Angular", normalized_name="angular", skill=self.skill_angular)
         res2 = MatchScoringService.calculate(self.profile, self.job)
         actions2 = res2.recommended_actions
         self.assertTrue(any("Votre profil couvre les compétences principales" in action for action in actions2))

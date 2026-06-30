@@ -5,7 +5,7 @@ from django.conf import settings
 
 from apps.matching.models import QuickMatchSession
 from apps.jobs.models import NormalizedJob, RequirementType
-from apps.skills.services.normalizer import normalize_skill_text
+from apps.skills.services.normalizer import SkillNormalizerService, normalize_skill_text
 
 class QuickMatchRateLimitExceeded(Exception):
     pass
@@ -26,23 +26,23 @@ class QuickMatchService:
         french_level: str,
         ip_address: str | None = None,
     ) -> QuickMatchSession:
-        
+
         if not session_key:
             session_key = "anonymous_session"
 
         # Rate Limiting
         session_hash = hashlib.sha256(f"{settings.SECRET_KEY}:{session_key}".encode()).hexdigest()
         ip_hash = hashlib.sha256(f"{settings.SECRET_KEY}:{ip_address}".encode()).hexdigest() if ip_address else ""
-        
+
         one_hour_ago = timezone.now() - timedelta(hours=1)
-        
+
         session_count = QuickMatchSession.objects.filter(
             session_key_hash=session_hash,
             created_at__gte=one_hour_ago
         ).count()
         if session_count >= 10:
             raise QuickMatchRateLimitExceeded("Too many quick matches from this session.")
-            
+
         if ip_hash:
             ip_count = QuickMatchSession.objects.filter(
                 ip_hash=ip_hash,
@@ -51,37 +51,41 @@ class QuickMatchService:
             if ip_count >= 20:
                 raise QuickMatchRateLimitExceeded("Too many quick matches from this IP.")
 
-        # Normalize entered skills
+        # Normalize entered skills and map to canonical IDs
         normalized_skills = [normalize_skill_text(s) for s in entered_skills]
         normalized_skills = [s for s in normalized_skills if s]
+
+        normalized_result = SkillNormalizerService.normalize_many(
+            raw_skills=entered_skills,
+            source_type="quick_match",
+        )
+        entered_skill_ids = {skill.id for skill in normalized_result.canonical_skills}
 
         # Process Job Skills
         job_skills = list(job.job_skills.select_related("skill").all())
         req_skills = [js for js in job_skills if js.requirement_type == RequirementType.REQUIRED]
         opt_skills = [js for js in job_skills if js.requirement_type == RequirementType.OPTIONAL]
-        
+
         if not req_skills and job_skills:
             req_skills = job_skills
             opt_skills = []
 
         matched_skills = []
         missing_skills = []
-        
+
         req_matched = 0
         for js in req_skills:
             skill_name = js.skill.canonical_name
-            normalized_skill_name = normalize_skill_text(skill_name)
-            if normalized_skill_name in normalized_skills:
+            if js.skill_id in entered_skill_ids:
                 req_matched += 1
                 matched_skills.append({"name": skill_name, "type": "required"})
             else:
                 missing_skills.append({"name": skill_name, "requirement_type": "required"})
-                
+
         opt_matched = 0
         for js in opt_skills:
             skill_name = js.skill.canonical_name
-            normalized_skill_name = normalize_skill_text(skill_name)
-            if normalized_skill_name in normalized_skills:
+            if js.skill_id in entered_skill_ids:
                 opt_matched += 1
                 matched_skills.append({"name": skill_name, "type": "optional"})
             else:
@@ -96,7 +100,7 @@ class QuickMatchService:
         exp_score = 70
         j_level = job.experience_level.lower() if job.experience_level else ""
         p_level = experience_level.lower() if experience_level else ""
-        
+
         if "intern" in j_level or "student" in j_level:
             exp_score = 100 if "intern" in p_level or "student" in p_level or "junior" in p_level else 80
         elif "junior" in j_level:
@@ -110,7 +114,7 @@ class QuickMatchService:
         france_first = job.country.lower() == "france" if job.country else True
         lang_score = 70
         has_french_level = QuickMatchService._has_french_level(french_level)
-        
+
         if france_first and not has_french_level:
             lang_score = 40
         elif has_french_level:
@@ -125,9 +129,9 @@ class QuickMatchService:
             risk_flags.append('missing_required_skills')
         if france_first and not has_french_level:
             risk_flags.append('french_level_missing')
-            
+
         expires_at = timezone.now() + timedelta(hours=24)
-        
+
         session = QuickMatchSession.objects.create(
             session_key_hash=session_hash,
             ip_hash=ip_hash,
@@ -142,5 +146,5 @@ class QuickMatchService:
             risk_flags_json=risk_flags,
             expires_at=expires_at
         )
-        
+
         return session
