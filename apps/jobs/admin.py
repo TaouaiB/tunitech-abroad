@@ -7,6 +7,7 @@ from apps.jobs.models import (
     RawJobRecord,
     NormalizedJob,
     NormalizedJobSkill,
+    JobQualityFeedback,
     JobIngestionConfig,
     JobIngestionRun,
     JobIngestionQueryRun,
@@ -222,6 +223,15 @@ class NormalizedJobSkillInline(admin.TabularInline):
     fields = ('skill', 'requirement_type', 'source', 'confidence')
     autocomplete_fields = ('skill',)
 
+
+class JobQualityFeedbackInline(admin.TabularInline):
+    model = JobQualityFeedback
+    extra = 0
+    fields = ("reason", "notes", "reviewed_by", "created_at")
+    readonly_fields = ("created_at",)
+    autocomplete_fields = ("reviewed_by",)
+
+
 class NoSkillsFilter(admin.SimpleListFilter):
     title = "Has materialized skills"
     parameter_name = "has_skills"
@@ -294,6 +304,7 @@ class NormalizedJobAdmin(admin.ModelAdmin):
         "skill_signal_quality",
         "skill_extraction_status",
         "enrichment_status",
+        "quality_issue",
         "job_skill_count",
         "last_seen_at",
         "created_at",
@@ -308,11 +319,12 @@ class NormalizedJobAdmin(admin.ModelAdmin):
         "job_type",
         "remote_type",
         "experience_level",
+        "quality_issue",
     )
     search_fields = ("title", "company_name", "source_job_id", "public_id", "source__name", "source__slug")
     readonly_fields = ("public_id", "created_at", "updated_at", "first_seen_at", "last_seen_at", "last_fetched_at")
     actions = [mark_jobs_stale, mark_jobs_expired, queue_selected_eligible_job_enrichments, re_extract_skills_action, rematerialize_skills_action, recover_zero_skill_jobs_action]
-    inlines = [NormalizedJobSkillInline]
+    inlines = [NormalizedJobSkillInline, JobQualityFeedbackInline]
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -330,7 +342,16 @@ class NormalizedJobAdmin(admin.ModelAdmin):
 
 @admin.register(NormalizedJobSkill)
 class NormalizedJobSkillAdmin(admin.ModelAdmin):
-    list_display = ("job", "skill", "requirement_type", "source")
+    list_display = ("job", "skill", "requirement_type", "source", "confidence")
     list_filter = ("requirement_type", "source")
     search_fields = ("job__title", "skill__canonical_name")
+    readonly_fields = ("created_at",)
+
+
+@admin.register(JobQualityFeedback)
+class JobQualityFeedbackAdmin(admin.ModelAdmin):
+    list_display = ("job", "reason", "reviewed_by", "created_at")
+    list_filter = ("reason", "created_at")
+    search_fields = ("job__title", "job__company_name", "notes", "reviewed_by__email")
+    autocomplete_fields = ("job", "reviewed_by")
     readonly_fields = ("created_at",)

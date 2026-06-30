@@ -1,16 +1,11 @@
 import re
 from typing import Dict
 
-from django.db import transaction
-
 from apps.jobs.models import (
     NormalizedJob,
-    NormalizedJobSkill,
     RequirementType,
-    SkillSource,
-    SkillExtractionStatus,
 )
-from apps.skills.services.normalizer import SkillNormalizerService, SkillExtractionResult, normalize_skill_text
+from apps.skills.services.normalizer import SkillExtractionResult
 from apps.skills.models import SkillAlias
 
 GENERIC_FT_LABELS = [
@@ -37,7 +32,7 @@ class JobSkillExtractionService:
         required_raw = job.required_skills_json if isinstance(job.required_skills_json, list) else []
         optional_raw = job.optional_skills_json if isinstance(job.optional_skills_json, list) else []
 
-        raw_skills_dict: Dict[str, str] = {}
+        raw_skills_dict: Dict[str, dict] = {}
 
         # Check description context
         strong_requirement_context = bool(re.search(r'(maîtrise de|maitrise de|compétences techniques indispensables|indispensable|exigé|exige|obligatoire|stack technique|compétences techniques|environnement technique|profil recherché)', combined_text))
@@ -45,18 +40,18 @@ class JobSkillExtractionService:
         for req in required_raw:
             if isinstance(req, str) and req.strip():
                 if any(g in req.lower() for g in GENERIC_FT_LABELS):
-                    raw_skills_dict[req] = RequirementType.DETECTED.value # Downgrade generic FT
+                    raw_skills_dict[req] = {"type": RequirementType.DETECTED.value, "confidence": "0.400"}
                 else:
-                    raw_skills_dict[req] = RequirementType.REQUIRED.value
+                    raw_skills_dict[req] = {"type": RequirementType.REQUIRED.value, "confidence": "1.000"}
 
         for opt in optional_raw:
             if isinstance(opt, str) and opt.strip() and opt not in raw_skills_dict:
                 if any(g in opt.lower() for g in GENERIC_FT_LABELS):
-                    raw_skills_dict[opt] = RequirementType.DETECTED.value
+                    raw_skills_dict[opt] = {"type": RequirementType.DETECTED.value, "confidence": "0.400"}
                 elif strong_requirement_context:
-                    raw_skills_dict[opt] = RequirementType.REQUIRED.value
+                    raw_skills_dict[opt] = {"type": RequirementType.REQUIRED.value, "confidence": "1.000"}
                 else:
-                    raw_skills_dict[opt] = RequirementType.OPTIONAL.value
+                    raw_skills_dict[opt] = {"type": RequirementType.OPTIONAL.value, "confidence": "1.000"}
 
         # Find aliases in text
         aliases = list(SkillAlias.objects.filter(skill__is_active=True).values_list('normalized_alias', flat=True))
@@ -70,12 +65,14 @@ class JobSkillExtractionService:
                 if re.search(pattern, combined_text):
                     if alias not in raw_skills_dict:
                         req_type = RequirementType.REQUIRED.value if strong_requirement_context else RequirementType.DETECTED.value
-                        raw_skills_dict[alias] = req_type
+                        conf = "1.000" if strong_requirement_context else "0.700"
+                        raw_skills_dict[alias] = {"type": req_type, "confidence": conf}
             else:
                 if alias in combined_text:
                     if alias not in raw_skills_dict:
                         req_type = RequirementType.REQUIRED.value if strong_requirement_context else RequirementType.DETECTED.value
-                        raw_skills_dict[alias] = req_type
+                        conf = "1.000" if strong_requirement_context else "0.700"
+                        raw_skills_dict[alias] = {"type": req_type, "confidence": conf}
 
         from apps.jobs.services.skill_materialization import JobSkillMaterializationService
 

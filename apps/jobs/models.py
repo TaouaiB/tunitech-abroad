@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.db import models
@@ -149,6 +150,15 @@ class SkillExtractionStatus(models.TextChoices):
     NOT_ENOUGH_TEXT = "not_enough_text", _("Not enough text")
 
 
+class JobQualityIssue(models.TextChoices):
+    NOT_IT = "not_it", _("Not IT")
+    WRONG_SKILLS = "wrong_skills", _("Wrong Skills")
+    WRONG_LEVEL = "wrong_level", _("Wrong Level")
+    EXPIRED = "expired", _("Expired")
+    DUPLICATE = "duplicate", _("Duplicate")
+    SOURCE_NOISE = "source_noise", _("Source Noise")
+
+
 def default_list():
     return []
 
@@ -190,6 +200,7 @@ class NormalizedJob(models.Model):
     language_requirements_json = models.JSONField(default=default_dict, blank=True)
     classification_json = models.JSONField(default=default_dict, blank=True)
     skill_signal_quality = models.CharField(max_length=32, default="unknown")
+    quality_issue = models.CharField(max_length=32, choices=JobQualityIssue.choices, blank=True)
     search_vector = SearchVectorField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -247,6 +258,31 @@ class NormalizedJobSkill(models.Model):
 
     def __str__(self):
         return f"{self.job.title} requires {self.skill.canonical_name}"
+
+
+class JobQualityFeedback(models.Model):
+    job = models.ForeignKey(NormalizedJob, on_delete=models.CASCADE, related_name="quality_feedback")
+    reason = models.CharField(max_length=32, choices=JobQualityIssue.choices)
+    notes = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="job_quality_feedback",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["job"]),
+            models.Index(fields=["reason"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["reviewed_by"]),
+        ]
+
+    def __str__(self):
+        return f"{self.job_id}: {self.reason}"
 
 
 class JobIngestionConfig(models.Model):
