@@ -228,6 +228,16 @@ class EnrichmentTests(TestCase):
         self.assertEqual(status, JobEnrichment.Status.SKIPPED)
         self.assertEqual(enrichment.status, JobEnrichment.Status.SKIPPED)
 
+    @override_settings(JOB_ENRICHMENT_ENABLED=True, LLM_ENABLED=False)
+    def test_enrich_job_llm_disabled_returns_skipped_not_fake_success(self):
+        enrichment = enrich_job(self.job, force=True)
+
+        self.assertEqual(enrichment.status, JobEnrichment.Status.SKIPPED)
+        self.assertEqual(enrichment.status_reason, "LLM disabled")
+        self.assertEqual(enrichment.validated_output_json, {})
+        self.assertEqual(enrichment.validation_errors_json, [])
+        self.assertEqual(enrichment.total_tokens, 0)
+
     @override_settings(JOB_ENRICHMENT_ENABLED=True)
     @patch('apps.llm.management.commands.enrich_jobs.enrich_job_task.delay')
     def test_management_command_enqueueing(self, mock_delay):

@@ -42,7 +42,15 @@
       <a class="tta-btn tta-btn-secondary" href="{% url 'jobs:list' %}">Toutes les offres</a>
     </div>
     <div class="tta-card tta-card-body p-5 md:p-6">
-      <p class="tta-muted text-slate-600 dark:text-slate-400">Les offres seront bientôt disponibles.</p>
+      {% if latest_jobs %}
+      <div class="grid gap-4">
+        {% for job in latest_jobs %}
+          {% include "jobs/partials/job_card.html" with job=job %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="tta-muted text-slate-600 dark:text-slate-400">Il n'y a pas d'offres récentes pour le moment.</p>
+      {% endif %}
     </div>
   </div>
 </section>

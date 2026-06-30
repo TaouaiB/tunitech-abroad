@@ -112,10 +112,11 @@ class MatchScoringService:
         loc_score = MatchScoringService._calc_location_score(profile, job)
 
         fit_score = (
-            tech_score * 0.50
+            tech_score * 0.45
             + exp_score * 0.20
             + role_score * 0.15
-            + lang_score * 0.15
+            + lang_score * 0.10
+            + loc_score * 0.10
         )
 
         if missing_req:

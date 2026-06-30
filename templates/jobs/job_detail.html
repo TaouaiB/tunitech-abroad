@@ -39,7 +39,7 @@
 
         <div class="tta-card tta-card-body" style="margin-top:18px">
             <h2 class="text-xl font-bold text-slate-950 dark:text-white">Description de l’offre</h2>
-            <div class="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300" style="white-space:pre-wrap;margin-bottom:24px;">{{ job.description|safe|default:"Description non disponible" }}</div>
+            <div class="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300" style="white-space:pre-wrap;margin-bottom:24px;">{{ job.description|linebreaksbr|default:"Description non disponible" }}</div>
 
             <h3 class="font-bold text-slate-950 dark:text-white" style="margin-top:0;">Compétences requises</h3>
             {% if job.required_skills_json %}

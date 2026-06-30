@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /operations/
+Disallow: /private/
+
+Sitemap: https://tuniatlas.com/sitemap.xml

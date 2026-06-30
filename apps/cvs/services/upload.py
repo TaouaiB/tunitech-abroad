@@ -91,6 +91,12 @@ class CVUploadService:
         if Path(filename).suffix.lower() != ".pdf":
             raise ValueError("Only PDF files are allowed")
 
+        head = uploaded_file.read(2048)
+        uploaded_file.seek(0)
+
         content_type = getattr(uploaded_file, "content_type", "")
         if content_type not in cls.PDF_MIME_TYPES:
+            raise ValueError("Only PDF files are allowed")
+
+        if not head.startswith(b"%PDF-"):
             raise ValueError("Only PDF files are allowed")

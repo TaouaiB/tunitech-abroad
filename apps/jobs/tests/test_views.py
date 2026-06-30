@@ -75,6 +75,18 @@ class JobViewTests(TestCase):
         self.assertContains(response, "Test View Job")
         self.assertContains(response, "Test Company")
 
+    def test_job_detail_escapes_external_description_html_and_preserves_line_breaks(self):
+        self.job.description = 'Line 1\n<img src=x onerror="alert(1)"><script>alert(2)</script>'
+        self.job.save(update_fields=["description"])
+
+        response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Line 1<br>", html=False)
+        self.assertContains(response, "&lt;script&gt;alert(2)&lt;/script&gt;", html=False)
+        self.assertNotContains(response, "<script>alert(2)</script>", html=False)
+        self.assertNotContains(response, '<img src=x onerror="alert(1)">', html=False)
+
     def test_job_detail_view_404(self):
         invalid_uuid = uuid.uuid4()
         response = self.client.get(reverse("jobs:detail", args=[invalid_uuid]))

@@ -10,8 +10,9 @@ class OpenRouterClientTests(TestCase):
     def test_client_disabled_mode(self):
         client = OpenRouterClient()
         content, usage = client.chat([{"role": "user", "content": "Hello"}])
-        self.assertIn("mocked", content)
-        self.assertIn("total_tokens", usage)
+        payload = json.loads(content)
+        self.assertTrue(payload["disabled"])
+        self.assertEqual(usage["total_tokens"], 0)
 
     @override_settings(LLM_ENABLED=True, OPENROUTER_API_KEY="")
     def test_client_missing_api_key_raises_error(self):

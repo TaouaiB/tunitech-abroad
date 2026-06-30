@@ -193,10 +193,11 @@ class MatchingTests(TestCase):
     def test_scoring_uses_formula_and_clamps_scores(self):
         result = MatchScoringService.calculate(self.profile, self.job)
         expected = round(
-            result.technical_skills_score * 0.50
+            result.technical_skills_score * 0.45
             + result.experience_score * 0.20
             + result.role_title_score * 0.15
-            + result.language_score * 0.15
+            + result.language_score * 0.10
+            + result.location_score * 0.10
         )
 
         self.assertEqual(result.fit_score, expected)
@@ -606,20 +607,25 @@ class Phase15GHardeningTests(TestCase):
         NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_wordpress, requirement_type=RequirementType.OPTIONAL)
         NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_angular, requirement_type=RequirementType.REQUIRED)
 
-    def test_location_removed_from_final_score(self):
-        # Even if profile relocation matches vs not matches, fit score stays same because location is not in calculation.
-        # However, location_score might differ.
+    def test_location_affects_final_score(self):
+        self.job.skill_signal_quality = "strong"
+        self.job.classification_json = {"confidence": "high", "family": "software_development"}
+        self.job.save(update_fields=["skill_signal_quality", "classification_json"])
 
-        self.profile.relocation_preference = True
-        self.profile.save()
-        res1 = MatchScoringService.calculate(self.profile, self.job)
-
-        self.profile.relocation_preference = False
-        self.profile.save()
-        res2 = MatchScoringService.calculate(self.profile, self.job)
+        with (
+            patch.object(MatchScoringService, "_calc_technical_score", return_value=(50, [], [], [])),
+            patch.object(MatchScoringService, "_calc_experience_score", return_value=50),
+            patch.object(MatchScoringService, "_calc_role_title_score", return_value=50),
+            patch.object(MatchScoringService, "_calc_language_score", return_value=50),
+            patch.object(MatchScoringService, "_calc_location_score", side_effect=[0, 100]),
+        ):
+            res1 = MatchScoringService.calculate(self.profile, self.job)
+            res2 = MatchScoringService.calculate(self.profile, self.job)
 
         self.assertNotEqual(res1.location_score, res2.location_score)
-        self.assertEqual(res1.fit_score, res2.fit_score)
+        self.assertNotEqual(res1.fit_score, res2.fit_score)
+        self.assertEqual(res1.fit_score, 45)
+        self.assertEqual(res2.fit_score, 55)
 
     def test_json_is_suppressed_when_implied(self):
         # Profile has JavaScript, lacks Angular

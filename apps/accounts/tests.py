@@ -6,7 +6,10 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from allauth.account.models import EmailAddress
+from allauth.core.exceptions import ImmediateHttpResponse
 from allauth.socialaccount.models import SocialAccount, SocialLogin
+from django.contrib.messages import get_messages
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.backends.db import SessionStore
 from django.test import RequestFactory
 
@@ -87,6 +90,7 @@ class SocialAccountAdapterTests(TestCase):
     def _request(self):
         request = self.request_factory.get("/")
         request.session = SessionStore()
+        request._messages = FallbackStorage(request)
         return request
 
     def _social_login(self, provider="google", email="oauth@example.test", verified=True):
@@ -160,6 +164,52 @@ class SocialAccountAdapterTests(TestCase):
 
         self.assertEqual(send_mail.call_count, 0)
         self.assertEqual(login._did_authenticate_by_email, "warning@gmail.test")
+
+    def test_pre_social_login_links_google_to_verified_local_email(self):
+        existing_user = create_test_user(username="verifiedlocal", email="verified-local@gmail.test")
+        EmailAddress.objects.create(user=existing_user, email=existing_user.email, verified=True, primary=True)
+        login = self._social_login(provider="google", email=existing_user.email, verified=True)
+
+        with patch.object(login, "connect") as connect:
+            TuniTechSocialAccountAdapter().pre_social_login(self._request(), login)
+
+        connect.assert_called_once()
+        self.assertEqual(connect.call_args.args[1], existing_user)
+
+    def test_pre_social_login_unverified_provider_collision_is_unsafe(self):
+        existing_user = create_test_user(username="unverifiedprovider", email="unverified-provider@gmail.test")
+        EmailAddress.objects.create(user=existing_user, email=existing_user.email, verified=True, primary=True)
+        login = self._social_login(provider="google", email=existing_user.email, verified=False)
+
+        with self.assertRaises(ImmediateHttpResponse), patch.object(login, "connect") as connect:
+            TuniTechSocialAccountAdapter().pre_social_login(self._request(), login)
+
+        connect.assert_not_called()
+
+    def test_pre_social_login_unverified_local_collision_is_unsafe(self):
+        existing_user = create_test_user(username="unverifiedlocal", email="unverified-local@gmail.test")
+        EmailAddress.objects.create(user=existing_user, email=existing_user.email, verified=False, primary=True)
+        login = self._social_login(provider="google", email=existing_user.email, verified=True)
+
+        with self.assertRaises(ImmediateHttpResponse), patch.object(login, "connect") as connect:
+            TuniTechSocialAccountAdapter().pre_social_login(self._request(), login)
+
+        connect.assert_not_called()
+
+    def test_pre_social_login_unsafe_collision_message_is_provider_neutral(self):
+        existing_user = create_test_user(username="githubcollision", email="github-collision@example.test")
+        EmailAddress.objects.create(user=existing_user, email=existing_user.email, verified=False, primary=True)
+        login = self._social_login(provider="github", email=existing_user.email, verified=True)
+        request = self._request()
+
+        with self.assertRaises(ImmediateHttpResponse):
+            TuniTechSocialAccountAdapter().pre_social_login(request, login)
+
+        messages = [str(message) for message in get_messages(request)]
+        self.assertIn(
+            "Connexion sociale non liée automatiquement : vérifiez d'abord votre adresse email locale.",
+            messages,
+        )
 
     def test_oauth_socialaccount_extra_data_mapping(self):
         user = create_test_user(username="oauthuser", email="oauth@example.test", password="password123")

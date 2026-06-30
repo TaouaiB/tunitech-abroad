@@ -40,7 +40,8 @@ class CVServiceTests(TestCase):
 
     @patch('apps.cvs.services.upload.parse_cv.delay')
     def test_upload_cv_success(self, mock_delay):
-        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
+        file = self._pdf_file("test content")
+        file.name = "test.pdf"
         with self.captureOnCommitCallbacks(execute=True):
             cv = CVUploadService.upload_cv(self.user, file, consent_accepted=True)
         self.assertEqual(cv.user, self.user)
@@ -49,7 +50,8 @@ class CVServiceTests(TestCase):
         mock_delay.assert_called_once_with(cv.id)
 
     def test_upload_cv_no_consent(self):
-        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
+        file = self._pdf_file("test content")
+        file.name = "test.pdf"
         with self.assertRaises(ValueError):
             CVUploadService.upload_cv(self.user, file, consent_accepted=False)
 
@@ -57,6 +59,29 @@ class CVServiceTests(TestCase):
         file = SimpleUploadedFile("test.txt", b"text", content_type="text/plain")
         with self.assertRaises(ValueError):
             CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+
+    def test_upload_cv_rejects_fake_pdf_magic_bytes(self):
+        file = SimpleUploadedFile("fake.pdf", b"not a pdf", content_type="application/pdf")
+
+        with self.assertRaises(ValueError):
+            CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+
+        self.assertEqual(file.tell(), 0)
+
+    def test_upload_cv_rejects_wrong_content_type_even_with_pdf_header(self):
+        file = SimpleUploadedFile("fake.pdf", b"%PDF-1.4\n", content_type="text/plain")
+
+        with self.assertRaises(ValueError):
+            CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+
+        self.assertEqual(file.tell(), 0)
+
+    def test_pdf_validation_accepts_valid_pdf_and_resets_pointer(self):
+        file = self._pdf_file("valid pdf")
+
+        CVUploadService._validate_pdf(file)
+
+        self.assertEqual(file.tell(), 0)
 
     def test_upload_cv_rejects_oversized_file_in_service(self):
         from django.conf import settings
@@ -274,7 +299,8 @@ class CVServiceTests(TestCase):
     def test_deletion_service(self, mock_exists, mock_remove):
         mock_exists.return_value = True
 
-        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
+        file = self._pdf_file("test content")
+        file.name = "test.pdf"
         cv = CVUpload.objects.create(
             user=self.user, file=file, original_filename="test.pdf",
             file_hash="hash", file_size=1, is_active=True
@@ -290,7 +316,8 @@ class CVServiceTests(TestCase):
 
     def test_deletion_service_wrong_user(self):
         other_user = create_test_user(username="other", email="other@test.com", password="pw")
-        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
+        file = self._pdf_file("test content")
+        file.name = "test.pdf"
         cv = CVUpload.objects.create(
             user=other_user, file=file, original_filename="test.pdf",
             file_hash="hash_other", file_size=1, is_active=True

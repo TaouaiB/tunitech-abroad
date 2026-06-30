@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import path, include
-
+from django.views.generic import TemplateView
 
 from apps.core.services.health import HealthCheckService
 from apps.analytics.admin_views import admin_operations_view
@@ -24,6 +24,8 @@ def health(request):
 
 
 urlpatterns = [
+    path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
+    path("sitemap.xml", TemplateView.as_view(template_name="sitemap.xml", content_type="application/xml")),
     path(f"{settings.ADMIN_URL}operations/", admin_operations_view, name="admin_operations"),
     path(settings.ADMIN_URL, admin.site.urls),
     path("health/", health, name="health"),

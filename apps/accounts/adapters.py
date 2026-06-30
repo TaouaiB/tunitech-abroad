@@ -1,6 +1,10 @@
+from allauth.core.exceptions import ImmediateHttpResponse
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.contrib import messages
+from django.shortcuts import redirect
 
 from apps.accounts.services.account_provisioning import AccountProvisioningService
+from apps.accounts.services.oauth_linking import OAuthAccountLinkingService
 
 
 class TuniTechSocialAccountAdapter(DefaultSocialAccountAdapter):
@@ -20,3 +24,27 @@ class TuniTechSocialAccountAdapter(DefaultSocialAccountAdapter):
         user = super().save_user(request, sociallogin, form=form)
         AccountProvisioningService.provision_new_user(user)
         return user
+
+    def pre_social_login(self, request, sociallogin):
+        if sociallogin.is_existing:
+            return
+
+        if not sociallogin.email_addresses:
+            return
+
+        email_address = sociallogin.email_addresses[0]
+        decision = OAuthAccountLinkingService.decide_verified_email_link(
+            email=email_address.email,
+            provider_email_verified=email_address.verified,
+        )
+
+        if decision.should_link:
+            sociallogin.connect(request, decision.user)
+            return
+
+        if decision.is_unsafe_collision:
+            messages.error(
+                request,
+                "Connexion sociale non liée automatiquement : vérifiez d'abord votre adresse email locale.",
+            )
+            raise ImmediateHttpResponse(redirect("account_login"))
