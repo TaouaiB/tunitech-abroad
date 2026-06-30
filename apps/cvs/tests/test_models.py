@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.files.uploadedfile import SimpleUploadedFile
-from apps.cvs.models import CVUpload, CVParsedData
+from apps.cvs.models import CVUpload, CVParsedData, CVFieldCorrection
 
 UserModel = get_user_model()
 
@@ -78,3 +78,25 @@ class CVModelTests(TestCase):
 
         with self.assertRaises(ValueError):
             _ = cv.file.url
+
+    def test_cv_field_correction_captures_source(self):
+        cv = CVUpload.objects.create(
+            user=self.user,
+            file=SimpleUploadedFile("cv.pdf", b"%PDF-1.4 test", content_type="application/pdf"),
+            original_filename="cv.pdf",
+            file_hash="hash-correction",
+            file_size=12,
+            is_active=True,
+        )
+        correction = CVFieldCorrection.objects.create(
+            cv_upload=cv,
+            field_name="name",
+            extracted_value="Jean Developer",
+            corrected_value="Jean Dupont",
+            confidence=40,
+            source="admin",
+            source_user=self.user,
+        )
+
+        self.assertEqual(correction.source, "admin")
+        self.assertEqual(correction.source_user, self.user)

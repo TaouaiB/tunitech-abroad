@@ -127,3 +127,28 @@ class CVParsedData(models.Model):
 
     def __str__(self):
         return f"Parsed Data for {self.cv_upload.public_id}"
+
+class CVFieldCorrection(models.Model):
+    SOURCE_CHOICES = [
+        ('user', 'User'),
+        ('admin', 'Admin'),
+        ('system', 'System'),
+    ]
+
+    cv_upload = models.ForeignKey(CVUpload, on_delete=models.CASCADE, related_name="field_corrections")
+    field_name = models.CharField(max_length=100)
+    extracted_value = models.TextField(blank=True)
+    corrected_value = models.TextField(blank=True)
+    confidence = models.PositiveSmallIntegerField(null=True, blank=True)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    source_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['cv_upload', 'field_name']),
+            models.Index(fields=['source', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"Correction for {self.field_name} on {self.cv_upload.public_id}"

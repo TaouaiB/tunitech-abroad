@@ -16,14 +16,18 @@ class CVDeterministicExtractionResult(TypedDict):
     current_level: str
     estimated_years_experience: float | None
     target_roles: list[str]
-    target_type: str
-    raw_skills: list[str]
     warnings: list[str]
+    name_confidence: int
+    email_confidence: int
+    phone_confidence: int
+    url_confidence: int
 
+
+from apps.cvs.services.name_extraction import CVNameExtractionService
 
 class CVDeterministicExtractorService:
     @classmethod
-    def extract(cls, raw_text: str) -> CVDeterministicExtractionResult:
+    def extract(cls, raw_text: str, auth_user_name: str = "", user_email: str = "") -> CVDeterministicExtractionResult:
         result: CVDeterministicExtractionResult = {
             'extracted_email': '',
             'extracted_phone': '',
@@ -40,7 +44,11 @@ class CVDeterministicExtractorService:
             'target_roles': [],
             'target_type': '',
             'raw_skills': [],
-            'warnings': []
+            'warnings': [],
+            'name_confidence': 0,
+            'email_confidence': 0,
+            'phone_confidence': 0,
+            'url_confidence': 0
         }
         estimated_years_experience: float | None = None
         target_roles: list[str] = []
@@ -49,21 +57,25 @@ class CVDeterministicExtractorService:
         email_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', raw_text)
         if email_match:
             result['extracted_email'] = email_match.group(0)
+            result['email_confidence'] = 100
             
         # Phone
         phone_match = re.search(r'(\+?\d[ -]?){8,14}\d', raw_text)
         if phone_match:
             result['extracted_phone'] = phone_match.group(0).strip()
+            result['phone_confidence'] = 100
             
         # LinkedIn
         linkedin_match = re.search(r'(?:https?://)?(?:www\.)?linkedin\.com/in/([A-Za-z0-9_-]+)', raw_text, re.IGNORECASE)
         if linkedin_match:
             result['extracted_linkedin_url'] = f"https://linkedin.com/in/{linkedin_match.group(1)}"
+            result['url_confidence'] = 100
             
         # GitHub
         github_match = re.search(r'(?:https?://)?(?:www\.)?github\.com/([A-Za-z0-9_-]+)', raw_text, re.IGNORECASE)
         if github_match:
             result['extracted_github_url'] = f"https://github.com/{github_match.group(1)}"
+            result['url_confidence'] = 100
 
         # Portfolio / Website
         portfolio_match = None
@@ -96,13 +108,13 @@ class CVDeterministicExtractorService:
         if portfolio_match:
             result['extracted_portfolio_url'] = f"https://{portfolio_match}"
             result['website_url'] = result['extracted_portfolio_url']
+            result['url_confidence'] = max(result['url_confidence'], 90)
 
         # Name
-        for line in lines[:8]:
-            candidate = line.strip()
-            if cls._looks_like_safe_name(candidate):
-                result['extracted_name'] = candidate
-                break
+        name_result = CVNameExtractionService.extract(raw_text, auth_user_name, user_email or result['extracted_email'])
+        result['extracted_name'] = name_result['value'] or ''
+        result['name_confidence'] = name_result['confidence']
+        result['warnings'].extend(name_result['warnings'])
 
         # Location
         location_match = re.search(r'(?:location|localisation|adresse)\s*:\s*([^\n\r\|]+)', raw_text, re.IGNORECASE)
@@ -272,19 +284,10 @@ class CVDeterministicExtractorService:
                                 skill_candidates.add(cleaned)
                             
         result['raw_skills'] = list(skill_candidates)
+        if not result['raw_skills']:
+            result['warnings'].append("no_skills_detected")
         
         if not result['extracted_email'] and not result['extracted_phone']:
             result['warnings'].append("No contact information found")
             
         return result
-
-    @staticmethod
-    def _looks_like_safe_name(value: str) -> bool:
-        if not value or len(value) > 80:
-            return False
-        if any(token in value.lower() for token in ("@", "http", "linkedin", "github", "cv", "resume", "target", "roles", "salary", "tunis", "tunisia", "france")):
-            return False
-        words = value.split()
-        if not 2 <= len(words) <= 4:
-            return False
-        return all(re.fullmatch(r"[A-Za-zÀ-ÖØ-öø-ÿ' -]+", word) for word in words)

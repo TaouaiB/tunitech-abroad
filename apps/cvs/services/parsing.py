@@ -147,7 +147,7 @@ class CVParsingService:
             cv_upload = CVUpload.all_objects.get(id=cv_upload_id)
         except CVUpload.DoesNotExist:
             return None
-            
+
         return cls.parse(cv_upload)
 
     @classmethod
@@ -178,8 +178,14 @@ class CVParsingService:
         raw_text = text_result['raw_text']
         cv_upload.text_extraction_status = 'success'
         cv_upload.extracted_text_length = len(raw_text)
-        
-        det_result = CVDeterministicExtractorService.extract(raw_text)
+
+        user = cv_upload.user
+        auth_user_name = getattr(user, "first_name", "") + " " + getattr(user, "last_name", "")
+        auth_user_name = auth_user_name.strip()
+        if not auth_user_name and hasattr(user, 'candidate_profile') and user.candidate_profile.full_name:
+            auth_user_name = user.candidate_profile.full_name
+
+        det_result = CVDeterministicExtractorService.extract(raw_text, auth_user_name=auth_user_name, user_email=user.email)
         if det_result.get('estimated_years_experience') is None:
             estimated_from_dates = cls._estimate_years_from_text(raw_text)
             if estimated_from_dates is not None:
@@ -210,6 +216,12 @@ class CVParsingService:
                     'extracted_github_url': det_result.get('extracted_github_url', ''),
                     'extracted_portfolio_url': det_result.get('extracted_portfolio_url', ''),
                     'estimated_years_experience': det_result.get('estimated_years_experience', None),
+                    'confidence_json': {
+                        'name': det_result.get('name_confidence', 0),
+                        'email': det_result.get('email_confidence', 0),
+                        'phone': det_result.get('phone_confidence', 0),
+                        'url': det_result.get('url_confidence', 0)
+                    },
                     'warnings_json': det_result.get('warnings', []) + llm_result.get('warnings', [])
                 }
             )
@@ -229,7 +241,7 @@ class CVParsingService:
                 
                 update_fields = []
                 extracted_name = det_result.get('extracted_name')
-                if extracted_name:
+                if extracted_name and det_result.get('name_confidence', 0) >= 70:
                     if not profile.full_name:
                         profile.full_name = extracted_name
                         update_fields.append('full_name')
