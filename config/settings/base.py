@@ -195,6 +195,10 @@ CELERY_TASK_ROUTES = {
 
 from celery.schedules import crontab
 
+ADMIN_ALERT_EMAIL = os.environ.get("ADMIN_ALERT_EMAIL", "")
+ADMIN_ALERT_CHECK_ENABLED = os.environ.get("ADMIN_ALERT_CHECK_ENABLED", "False") == "True"
+ADMIN_OPS_DIGEST_ENABLED = os.environ.get("ADMIN_OPS_DIGEST_ENABLED", "False") == "True"
+
 CELERY_BEAT_SCHEDULE = {
     "celery_heartbeat": {
         "task": "apps.jobs.tasks.celery_heartbeat",
@@ -226,6 +230,18 @@ if JOB_ENRICHMENT_RETRY_ENABLED:
     CELERY_BEAT_SCHEDULE["retry_eligible_job_enrichments"] = {
         "task": "apps.llm.tasks.retry_eligible_job_enrichments",
         "schedule": crontab(minute="15", hour="*/2"),
+    }
+
+if ADMIN_ALERT_CHECK_ENABLED:
+    CELERY_BEAT_SCHEDULE["run_admin_health_alerts"] = {
+        "task": "apps.core.tasks.run_admin_health_alerts",
+        "schedule": crontab(minute="*/15"),
+    }
+
+if ADMIN_OPS_DIGEST_ENABLED:
+    CELERY_BEAT_SCHEDULE["send_admin_ops_digest"] = {
+        "task": "apps.core.tasks.send_admin_ops_digest",
+        "schedule": crontab(minute="0", hour="7"),
     }
 
 # ─────────────────────────────────────────────────────────────────────────────
