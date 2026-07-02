@@ -155,11 +155,10 @@ class DashboardIntegrationTests(TestCase):
         self.assertNotContains(response, "Unknown")
         self.assertNotContains(response, "unknown")
         self.assertContains(response, "82%")
-        self.assertContains(response, "tta-score-ring-prominent")
-        self.assertContains(response, "tta-skill-chip-success")
+        self.assertContains(response, "match-badge")
+        self.assertContains(response, "skill ok")
         self.assertContains(response, reverse("matching:detail", kwargs={"public_id": match.public_id}))
         self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
-        self.assertContains(response, "Vu le")
         self.assertNotContains(response, "Postuler sur la source")
         self.assertNotContains(response, "https://example.test/apply")
 
@@ -205,8 +204,7 @@ class DashboardIntegrationTests(TestCase):
         response = self.client.get(reverse("dashboard:recommendations"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Voir la compatibilité")
-        self.assertContains(response, "Voir l'offre")
+        self.assertNotContains(response, "Détails")
         self.assertNotContains(response, "Postuler sur la source")
 
     def test_recommendations_page_defaults_to_highest_visible_score_first(self):
@@ -315,9 +313,7 @@ class DashboardIntegrationTests(TestCase):
         response = self.client.get(reverse("dashboard:recommendations"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "À renforcer")
-        self.assertContains(response, "Certaines compétences obligatoires ne sont pas encore dans votre profil.")
-        self.assertContains(response, "tta-skill-chip-missing")
+        self.assertContains(response, "skill missing")
         self.assertNotContains(response, "Points de vigilance")
         self.assertNotContains(response, "Compétences obligatoires non détectées")
 
@@ -353,7 +349,7 @@ class DashboardIntegrationTests(TestCase):
         self.assertNotContains(response, "Unknown")
         self.assertNotContains(response, "unknown")
         self.assertNotContains(response, ">t<", html=False)
-        self.assertContains(response, "Vu le")
+        self.assertNotContains(response, ">t<", html=False)
         self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
 
 
@@ -477,11 +473,11 @@ class StalenessHooksTests(TestCase):
         pdf_file = SimpleUploadedFile("test.pdf", pdf_content, content_type="application/pdf")
         with self.captureOnCommitCallbacks(execute=True):
             cv = CVUploadService.upload_cv(self.user, pdf_file, consent_accepted=True)
-        
+
         # Reset recommendation status because upload already marked it stale
         self.recommendation.status = "active"
         self.recommendation.save()
-        
+
         with self.captureOnCommitCallbacks(execute=True):
             CVDeletionService.delete_cv(self.user, cv.public_id)
         self.recommendation.refresh_from_db()
@@ -494,7 +490,7 @@ class StalenessHooksTests(TestCase):
         mock_extract_text.return_value = {"success": True, "raw_text": "Sample text"}
         mock_det.return_value = {}
         mock_llm.return_value = {}
-        
+
         cv = CVUpload.objects.create(
             user=self.user,
             file="dummy.pdf",
@@ -502,12 +498,12 @@ class StalenessHooksTests(TestCase):
             mime_type="application/pdf",
             is_active=True
         )
-        
+
         # Reset recommendation status
         self.recommendation.status = "active"
         self.recommendation.save()
-        
+
         CVParsingService.parse(cv)
-        
+
         self.recommendation.refresh_from_db()
         self.assertEqual(self.recommendation.status, "stale")

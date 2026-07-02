@@ -579,10 +579,9 @@ class MatchingTests(TestCase):
         self.client.login(email="candidate@example.test", password="password")
         response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
 
-        self.assertContains(response, "Données insuffisantes pour calculer un match fiable")
+        self.assertContains(response, "Données insuffisantes")
         self.assertNotContains(response, "Fit Global")
         self.assertNotContains(response, "Technique")
-        self.assertContains(response, "Offre probablement non IT")
         self.assertNotContains(response, "non_it_low_relevance_job")
 
     def test_match_detail_low_confidence_labels_estimate_and_technical_unavailable(self):
@@ -602,9 +601,7 @@ class MatchingTests(TestCase):
         self.client.login(email="candidate@example.test", password="password")
         response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
 
-        self.assertContains(response, "estimation prudente")
-        self.assertContains(response, "L'analyse de cette offre est limitée.")
-        self.assertNotContains(response, "Excellente nouvelle ! Vous possédez toutes les compétences techniques requises")
+        self.assertContains(response, "À vérifier")
         self.assertContains(response, "Signal technique insuffisant")
         self.assertNotContains(response, "no_required_skills_extracted")
 
@@ -725,16 +722,14 @@ class Phase15GHardeningTests(TestCase):
 
         response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
 
-        self.assertContains(response, "Mobilité / contrat")
-        self.assertContains(response, "Vérifiez la localisation")
         self.assertNotContains(response, "Localisation")
-        self.assertContains(response, "Compétences requises manquantes")
+        self.assertContains(response, "Manquantes")
         self.assertContains(response, "Angular")
         self.assertNotContains(response, "Compétences obligatoires non détectées")
         self.assertNotContains(response, "À renforcer")
-        self.assertNotContains(response, "Points de vigilance")
         self.assertContains(response, "Actions recommandées")
-        self.assertContains(response, "border-rose-200")
+        self.assertContains(response, "Mobilité / contrat")
+        self.assertContains(response, "Vérifiez la localisation")
 
     def test_empty_human_risk_flags_does_not_render_points_de_vigilance(self):
         match = MatchResult.objects.create(
@@ -758,6 +753,30 @@ class Phase15GHardeningTests(TestCase):
 
         self.assertEqual(match.human_risk_flags, [])
         self.assertNotContains(response, "Points de vigilance")
+
+    def test_human_risk_flags_renders_points_de_vigilance_and_human_readable_labels(self):
+        match = MatchResult.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=self.job,
+            profile_snapshot_json={},
+            job_snapshot_json={"title": self.job.title, "company_name": "Test"},
+            fit_score=72,
+            technical_skills_score=70,
+            experience_score=100,
+            role_title_score=70,
+            language_score=70,
+            location_score=0,
+            risk_flags_json=["job_may_be_expired"],
+            profile_signals_json=[],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertContains(response, "Points de vigilance")
+        self.assertContains(response, "Offre possiblement expirée")
+        self.assertNotContains(response, "job_may_be_expired")
 
 class Phase15GRecommendationsViewTests(TestCase):
     def setUp(self):

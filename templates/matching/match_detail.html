@@ -3,178 +3,163 @@
 {% block title %}Analyse de compatibilité - {{ match.job_snapshot_json.title }}{% endblock %}
 
 {% block content %}
-<div class="tta-container grid grid-cols-1 gap-6 py-8 lg:grid-cols-[280px_1fr]">
-    {% include 'dashboard/sidebar.html' %}
-    <section>
-        <div class="mb-6 flex flex-col gap-2">
-            <div>
-                <span class="text-xs font-bold uppercase tracking-widest text-brand-600 dark:text-brand-400">Compatibilités</span>
-                <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Analyse de compatibilité</h1>
-                <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">{{ match.job_snapshot_json.title|default:"Offre" }} · {{ match.job_snapshot_json.company_name|default:"Entreprise inconnue" }}</p>
-            </div>
-        </div>
-
-        {% if match.is_match_unavailable %}
-        <div class="tta-card p-5 sm:p-6" style="margin-bottom:18px;">
-            <h2>Données insuffisantes pour calculer un match fiable</h2>
-            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Cette offre ne fournit pas assez de signal technique fiable pour afficher un score de compatibilité utilisateur.</p>
-            <div style="margin-top:16px;">
-                <strong>Compétences obligatoires extraites:</strong> {{ match.job_snapshot_json.required_skills_json|default:"Aucune" }}<br>
-                <strong>Compétences optionnelles extraites:</strong> {{ match.job_snapshot_json.optional_skills_json|default:"Aucune" }}<br>
-                <strong>Expérience:</strong> {{ match.job_snapshot_json.experience_level|default:"Non précisée" }}<br>
-                <strong>Langues:</strong> {{ match.job_snapshot_json.language_requirements_json|default:"Non précisées" }}
-            </div>
-        </div>
-        {% else %}
-
-        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div class="tta-card p-5 sm:p-6" style="display:flex;gap:22px;align-items:center">
-                <div class="tta-score-ring h-24 w-24 shrink-0 {% if match.fit_score >= 80 %}text-emerald-700 dark:text-emerald-300{% elif match.fit_score >= 65 %}text-brand-700 dark:text-brand-300{% elif match.fit_score >= 50 %}text-amber-700 dark:text-amber-300{% else %}text-rose-700 dark:text-rose-300{% endif %}" aria-label="Score de compatibilité {{ match.fit_score }}%">
+<main class="match-v16">
+<section class="section">
+    <div class="shell">
+        <div class="score-hero">
+            <div class="card" style="align-self:start;">
+                <div class="score-ring" style="background:conic-gradient({% if match.fit_score >= 80 %}var(--good){% elif match.fit_score >= 65 %}var(--brand){% elif match.fit_score >= 50 %}var(--warn){% else %}var(--bad){% endif %} 0 {{ match.fit_score }}%, color-mix(in srgb,var(--line) 90%,transparent) {{ match.fit_score }}% 100%)">
                     <strong>{{ match.fit_score }}%</strong>
                 </div>
-                <div>
-                    <h2>
-                        {% if match.is_match_low_confidence %}À vérifier
-                        {% elif match.fit_score >= 80 %}Très bon match
-                        {% elif match.fit_score >= 65 %}Bon potentiel
-                        {% elif match.fit_score >= 50 %}Match partiel
-                        {% else %}Match faible{% endif %}
-                    </h2>
-                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                        {% if match.is_match_low_confidence %}L'analyse de cette offre est limitée. Ce score est une estimation prudente.
-                        {% elif match.fit_score >= 80 %}Votre profil correspond bien aux compétences principales demandées.
-                        {% elif match.fit_score >= 65 %}L'offre présente un potentiel solide avec quelques points à vérifier.
-                        {% elif match.fit_score >= 50 %}L'offre est intéressante, mais certaines compétences requises manquent.
-                        {% else %}Le score est limité principalement par les compétences techniques détectées.
+                <h1 class="h2" style="text-align:center;margin-top:16px">
+                    {% if match.is_match_low_confidence %}À vérifier
+                    {% elif match.fit_score >= 80 %}Très bon match
+                    {% elif match.fit_score >= 65 %}Bon potentiel
+                    {% elif match.fit_score >= 50 %}Match partiel
+                    {% else %}Match faible{% endif %}
+                </h1>
+                <p class="small" style="text-align:center">{{ match.job_snapshot_json.title|default:"Offre" }} · {{ match.job_snapshot_json.company_name|default:"Entreprise inconnue" }}</p>
+                <div class="grid" style="margin-top:16px">
+                    {% if match.job_snapshot_json.url %}
+                        <a class="btn primary full" href="{{ match.job_snapshot_json.url }}" target="_blank" rel="noopener noreferrer">Voir l'offre originale</a>
+                    {% endif %}
+                    {% include 'jobs/partials/save_button.html' with job=match.job is_saved=match.is_saved %}
+                    <a class="btn secondary full" href="{% url 'jobs:detail' match.job.public_id %}">Retour à l'offre</a>
+                </div>
+            </div>
+
+            <div class="grid">
+                {% if match.is_match_unavailable %}
+                <div class="card">
+                    <h2 class="h2">Données insuffisantes</h2>
+                    <p class="subtitle">Cette offre ne fournit pas assez de signal technique fiable pour afficher un score de compatibilité utilisateur.</p>
+                    <div style="margin-top:16px; font-size:14px; line-height:1.6;">
+                        <strong>Compétences obligatoires:</strong> {{ match.job_snapshot_json.required_skills_json|default:"Aucune" }}<br>
+                        <strong>Compétences optionnelles:</strong> {{ match.job_snapshot_json.optional_skills_json|default:"Aucune" }}<br>
+                        <strong>Expérience:</strong> {{ match.job_snapshot_json.experience_level|default:"Non précisée" }}<br>
+                        <strong>Langues:</strong> {{ match.job_snapshot_json.language_requirements_json|default:"Non précisées" }}
+                    </div>
+                </div>
+                {% else %}
+                <div class="card">
+                    <h2 class="h2">Score détaillé</h2>
+                    <div class="grid grid-2">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Technique</b><span>{{ match.technical_skills_score }}%</span></div>
+                            <div class="bar {% if match.technical_skills_score >= 80 %}good{% elif match.technical_skills_score >= 65 %}brand{% elif match.technical_skills_score >= 50 %}warn{% else %}bad{% endif %}"><span style="width:{{ match.technical_skills_score }}%"></span></div>
+                        </div>
+                        <div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Expérience</b><span>{{ match.experience_score }}%</span></div>
+                            <div class="bar {% if match.experience_score >= 80 %}good{% elif match.experience_score >= 65 %}brand{% elif match.experience_score >= 50 %}warn{% else %}bad{% endif %}"><span style="width:{{ match.experience_score }}%"></span></div>
+                        </div>
+                        <div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Langues</b><span>{{ match.language_score }}%</span></div>
+                            <div class="bar {% if match.language_score >= 80 %}good{% elif match.language_score >= 65 %}brand{% elif match.language_score >= 50 %}warn{% else %}bad{% endif %}"><span style="width:{{ match.language_score }}%"></span></div>
+                        </div>
+                        <div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Rôle/titre</b><span>{{ match.role_title_score }}%</span></div>
+                            <div class="bar {% if match.role_title_score >= 80 %}good{% elif match.role_title_score >= 65 %}brand{% elif match.role_title_score >= 50 %}warn{% else %}bad{% endif %}"><span style="width:{{ match.role_title_score }}%"></span></div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if match.llm_explanation_status == "generated" and match.llm_explanation_text %}
+                <div class="card soft" style="border-color:color-mix(in srgb,var(--brand) 30%,var(--line))">
+                    <h2 class="h2" style="color:var(--brand)">Explication</h2>
+                    <div style="color:var(--text); font-size:14px; line-height:1.6;">
+                        {{ match.llm_explanation_text|linebreaks }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h2 class="h2">Points forts</h2>
+                        {% if match.strong_skills_json %}
+                        <div class="pill-row">
+                            {% for skill in match.strong_skills_json %}
+                            <span class="skill ok">{{ skill.name|default:skill }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="small">Aucun point fort spécifique identifié pour ce poste.</p>
                         {% endif %}
-                    </p>
+                    </div>
+                    <div class="card">
+                        <h2 class="h2">Manquantes</h2>
+                        {% if "non_it_low_relevance_job" in match.risk_flags_json %}
+                            <p class="small" style="color:var(--warn)">Analyse limitée : cette offre ne correspond pas clairement à un profil technique.</p>
+                        {% elif "insufficient_job_technical_signal" in match.risk_flags_json %}
+                            <p class="small" style="color:var(--warn)">Analyse limitée : les détails techniques sont insuffisants.</p>
+                        {% elif match.missing_required_skills_json %}
+                        <div class="pill-row">
+                            {% for skill in match.missing_required_skills_json %}
+                            <span class="skill missing">{{ skill.name|default:skill }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="small" style="color:var(--good)">Vous possédez toutes les compétences techniques requises.</p>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
 
-            <div class="tta-card p-5 sm:p-6">
-                <h2>Actions et liens</h2>
-                {% if match.job_snapshot_json.url %}
-                <a href="{{ match.job_snapshot_json.url }}" target="_blank" rel="noopener noreferrer" class="tta-btn tta-btn-primary" style="display:inline-flex;width:100%;justify-content:center;margin-bottom:12px;">Voir l'offre originale</a>
+                {% if match.missing_optional_skills_json %}
+                <div class="card">
+                    <h2 class="h2">Compétences optionnelles à renforcer</h2>
+                    <div class="pill-row">
+                        {% for skill in match.missing_optional_skills_json %}
+                        <span class="pill warn">{{ skill.name|default:skill }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endif %}
-                <p class="text-sm text-slate-600 dark:text-slate-400" style="font-size:13px; text-align:center;">Vous serez redirigé vers le site du recruteur.</p>
-            </div>
-        </div>
 
-        <div class="tta-card p-5 sm:p-6" style="margin-top:18px">
-            <h2>Score détaillé</h2>
-            <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:16px;">
-                <div>
-                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Technique</span><span>{{ match.technical_skills_score }}%</span></div>
-                    <div class="tta-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ match.technical_skills_score }}"><div class="tta-progress-bar {% if match.technical_skills_score >= 80 %}bg-emerald-600 dark:bg-emerald-400{% elif match.technical_skills_score >= 65 %}bg-brand-600 dark:bg-brand-400{% elif match.technical_skills_score >= 50 %}bg-amber-500 dark:bg-amber-400{% else %}bg-rose-600 dark:bg-rose-400{% endif %}" style="width:{{ match.technical_skills_score }}%"></div></div>
-                </div>
-                <div>
-                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Expérience</span><span>{{ match.experience_score }}%</span></div>
-                    <div class="tta-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ match.experience_score }}"><div class="tta-progress-bar {% if match.experience_score >= 80 %}bg-emerald-600 dark:bg-emerald-400{% elif match.experience_score >= 65 %}bg-brand-600 dark:bg-brand-400{% elif match.experience_score >= 50 %}bg-amber-500 dark:bg-amber-400{% else %}bg-rose-600 dark:bg-rose-400{% endif %}" style="width:{{ match.experience_score }}%"></div></div>
-                </div>
-                <div>
-                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Langues</span><span>{{ match.language_score }}%</span></div>
-                    <div class="tta-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ match.language_score }}"><div class="tta-progress-bar {% if match.language_score >= 80 %}bg-emerald-600 dark:bg-emerald-400{% elif match.language_score >= 65 %}bg-brand-600 dark:bg-brand-400{% elif match.language_score >= 50 %}bg-amber-500 dark:bg-amber-400{% else %}bg-rose-600 dark:bg-rose-400{% endif %}" style="width:{{ match.language_score }}%"></div></div>
-                </div>
+                {% if match.human_risk_flags or match.profile_signals_json %}
+                <div class="grid grid-2">
+                    {% if match.human_risk_flags %}
+                    <div class="card">
+                        <h2 class="h2">Points de vigilance</h2>
+                        {% for flag in match.human_risk_flags %}
+                        <div style="margin-top:8px; padding:10px; border-radius:12px; background:color-mix(in srgb,var(--bad) 8%,var(--panel)); border:1px solid color-mix(in srgb,var(--bad) 25%,var(--line)); font-size:13px; color:var(--bad)">{{ flag }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
 
-                <div>
-                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span>Rôle/titre</span><span>{{ match.role_title_score }}%</span></div>
-                    <div class="tta-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ match.role_title_score }}"><div class="tta-progress-bar {% if match.role_title_score >= 80 %}bg-emerald-600 dark:bg-emerald-400{% elif match.role_title_score >= 65 %}bg-brand-600 dark:bg-brand-400{% elif match.role_title_score >= 50 %}bg-amber-500 dark:bg-amber-400{% else %}bg-rose-600 dark:bg-rose-400{% endif %}" style="width:{{ match.role_title_score }}%"></div></div>
+                    {% if match.profile_signals_json %}
+                    <div class="card">
+                        <h2 class="h2">Signaux positifs</h2>
+                        {% for signal in match.human_profile_signals %}
+                        <div style="margin-top:8px; padding:10px; border-radius:12px; background:color-mix(in srgb,var(--good) 8%,var(--panel)); border:1px solid color-mix(in srgb,var(--good) 25%,var(--line)); font-size:13px; color:var(--good)">{{ signal }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
-            </div>
-
-            <div class="mt-5 pt-5 border-t border-slate-200 dark:border-slate-700/60">
-                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Mobilité / contrat</h3>
-                <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Vérifiez la localisation, la mobilité, le visa, l'alternance/PFE ou les conditions de télétravail avant de postuler.</p>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if match.llm_explanation_status == "generated" and match.llm_explanation_text %}
-        <div class="tta-card p-5 sm:p-6" style="margin-top:18px; background:var(--brand-50); border-color:var(--brand-200);">
-            <h2 style="color:var(--brand-700)">Explication générée</h2>
-            <div style="color:var(--brand-900); font-size:14px; line-height:1.6;">
-                {{ match.llm_explanation_text|linebreaks }}
-            </div>
-        </div>
-        {% endif %}
-
-        {% if match.missing_required_skills_json or match.missing_optional_skills_json or match.strong_skills_json %}
-        <div class="grid grid-cols-1 gap-5 md:grid-cols-2" style="margin-top:18px">
-            <div class="tta-card p-5 sm:p-6">
-                <h2>Points forts</h2>
-                {% if match.strong_skills_json %}
-                <div class="mt-3 flex flex-wrap gap-2">
-                    {% for skill in match.strong_skills_json %}
-                    <span class="tta-skill-chip tta-skill-chip-success">{{ skill.name|default:skill }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-sm text-slate-600 dark:text-slate-400">Aucun point fort spécifique identifié pour ce poste.</p>
                 {% endif %}
-            </div>
 
-            <div class="tta-card p-5 sm:p-6">
-                <h2>Compétences requises manquantes</h2>
-                {% if "non_it_low_relevance_job" in match.risk_flags_json %}
-                    <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">Analyse limitée : cette offre ne correspond pas clairement à un profil technique.</div>
-                {% elif "insufficient_job_technical_signal" in match.risk_flags_json %}
-                    <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">Analyse limitée : les détails techniques sont insuffisants.</div>
-                {% elif match.missing_required_skills_json %}
-                <div class="mt-3 flex flex-wrap gap-2">
-                    {% for skill in match.missing_required_skills_json %}
-                    <span class="tta-skill-chip tta-skill-chip-missing">{{ skill.name|default:skill }}</span>
-                    {% endfor %}
+                <div class="card">
+                    <h2 class="h2">Mobilité / contrat</h2>
+                    <p class="small">Vérifiez la localisation, le type de contrat, le télétravail et les conditions administratives avant de postuler.</p>
                 </div>
-                {% else %}
-                <p class="text-sm text-emerald-700 dark:text-emerald-300">Vous possédez toutes les compétences techniques requises.</p>
+
+                {% if match.recommended_actions_json %}
+                <div class="card">
+                    <h2 class="h2">Actions recommandées</h2>
+                    <div class="notice-list">
+                        {% for action in match.recommended_actions_json %}
+                        <div class="notice">
+                            <span class="dot {% if match.missing_required_skills_json %}bad{% elif match.missing_optional_skills_json %}warn{% else %}good{% endif %}"></span>
+                            <div>
+                                <b>{{ action }}</b>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
                 {% endif %}
             </div>
         </div>
-
-        {% if match.missing_optional_skills_json %}
-        <div class="tta-card p-5 sm:p-6" style="margin-top:18px">
-            <h2>Compétences optionnelles à renforcer</h2>
-            <div class="mt-3 flex flex-wrap gap-2">
-                {% for skill in match.missing_optional_skills_json %}
-                <span class="tta-skill-chip border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">{{ skill.name|default:skill }}</span>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-        {% endif %}
-
-        {% if match.human_risk_flags or match.profile_signals_json %}
-        <div class="grid grid-cols-1 gap-5 md:grid-cols-2" style="margin-top:18px">
-            {% if match.human_risk_flags %}
-            <div class="tta-card p-5 sm:p-6">
-                <h2>Points de vigilance</h2>
-                {% for flag in match.human_risk_flags %}
-                <div class="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">{{ flag }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            {% if match.profile_signals_json %}
-            <div class="tta-card p-5 sm:p-6">
-                <h2>Signaux positifs</h2>
-                {% for signal in match.human_profile_signals %}
-                <div class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">{{ signal }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        {% if match.recommended_actions_json %}
-        <div class="tta-card p-5 sm:p-6 mt-[18px] {% if match.missing_required_skills_json %}border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/30{% elif match.missing_optional_skills_json %}border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30{% else %}border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30{% endif %}">
-            <h2 class="{% if match.missing_required_skills_json %}text-rose-800 dark:text-rose-300{% elif match.missing_optional_skills_json %}text-amber-800 dark:text-amber-300{% else %}text-emerald-800 dark:text-emerald-300{% endif %}">Actions recommandées</h2>
-            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm {% if match.missing_required_skills_json %}text-rose-900 dark:text-rose-200{% elif match.missing_optional_skills_json %}text-amber-900 dark:text-amber-200{% else %}text-emerald-900 dark:text-emerald-200{% endif %}">
-                {% for action in match.recommended_actions_json %}
-                <li>{{ action }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-    </section>
-</div>
+    </div>
+</section>
+</main>
 {% endblock %}
