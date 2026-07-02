@@ -3,115 +3,72 @@
 {% block title %}Gestion du CV - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="tta-app-grid" style="margin-top: 1rem; margin-bottom: 2rem;">
-    {% include 'dashboard/sidebar.html' %}
-    <section>
-        <div class="tta-page-header">
-            <div>
-                <a href="{% url 'dashboard:home' %}" class="tta-back-link">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Retour au tableau de bord
-                </a>
-            </div>
-            <div>
-                <span class="tta-page-kicker">Mon CV</span>
-                <h1 class="tta-page-title" style="margin-top:8px">CV &amp; Compétences extraites</h1>
-                <p class="tta-muted" style="margin-top:6px">Un bon CV est la clé d’un score de compatibilité précis avec les offres.</p>
-            </div>
+<main class="profile-v16">
+  <section class="section">
+    <div class="shell">
+      <h1 class="page-title small">Profil</h1>
+
+      <div class="stepper">
+        {% if not request.user.has_usable_password %}
+        <div class="step" onclick="window.location.href='{% url 'account_set_password' %}'" style="cursor:pointer;">
+          <span class="step-num">1</span>
+          <div>
+            <b>Mot de passe</b>
+            <div class="small">Non défini</div>
+          </div>
         </div>
+        {% endif %}
+        <div class="step active">
+          <span class="step-num">{% if not request.user.has_usable_password %}2{% else %}1{% endif %}</span>
+          <div>
+            <b>CV</b>
+            <div class="small">Gérez votre CV</div>
+          </div>
+        </div>
+        <div class="step" onclick="window.location.href='{% url 'dashboard:profile' %}'" style="cursor:pointer;">
+          <span class="step-num">{% if not request.user.has_usable_password %}3{% else %}2{% endif %}</span>
+          <div>
+            <b>Profil</b>
+            <div class="small">Complétez vos infos</div>
+          </div>
+        </div>
+      </div>
 
-        <!-- Active CV Section -->
-        <div class="mb-4">
+      <div class="main-layout">
+        <section class="grid">
+          <div class="card grid">
+            <h2 class="h2">CV</h2>
+
             {% if active_cv %}
-                <div class="tta-card tta-card-body border-green-200 overflow-hidden relative">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -z-10"></div>
-
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 bg-green-100 text-green-600 rounded-xl flex items-center justify-center flex-shrink-0 border border-green-200 shadow-sm">
-                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <!-- Active CV Section -->
+                <div style="border:1px solid var(--good); background:color-mix(in srgb, var(--good) 4%, var(--panel)); border-radius:18px; padding:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <strong style="font-size:16px;">CV actif</strong>
+                                <span class="pill good" style="padding:4px 8px; font-size:10px;">En ligne</span>
                             </div>
-                            <div>
-                                <h2 class="text-xl font-bold text-slate-950 dark:text-white flex items-center gap-2">
-                                    CV actif
-                                    <span class="tta-badge tta-badge-success">En ligne</span>
-                                </h2>
-                                <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mt-1 truncate max-w-xs md:max-w-md">{{ active_cv.original_filename }}</p>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Mis en ligne le {{ active_cv.uploaded_at|date:"d M Y à H:i" }}</p>
-                            </div>
+                            <div class="small" style="margin-top:4px; font-weight:700;">{{ active_cv.original_filename }}</div>
+                            <div class="small" style="margin-top:2px;">Mis en ligne le {{ active_cv.uploaded_at|date:"d M Y à H:i" }}</div>
                         </div>
-
-                        <div x-data="{ showDeleteModal: false }">
-                            <button type="button" @click="showDeleteModal = true" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors" title="Supprimer le CV">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-
-                            <!-- Delete Confirmation Modal -->
-                            <div x-show="showDeleteModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                                    <div x-show="showDeleteModal" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showDeleteModal = false" aria-hidden="true"></div>
-                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                                    <div x-show="showDeleteModal" x-transition
-                                         @keydown.escape.window="showDeleteModal = false"
-                                         class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                            <div class="sm:flex sm:items-start">
-                                                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                    </svg>
-                                                </div>
-                                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Supprimer ce CV ?</h3>
-                                                    <div class="mt-2">
-                                                        <p class="text-sm text-gray-500">Cette action supprimera ce CV de votre compte. Vos résultats de matching liés à ce CV seront réinitialisés.</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                            <form method="post" class="m-0">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="delete_cv_id" value="{{ active_cv.public_id }}">
-                                                <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                                    Supprimer le CV
-                                                </button>
-                                            </form>
-                                            <button type="button" @click="showDeleteModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                                Annuler
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <form method="post" action="." style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_cv_id" value="{{ active_cv.public_id }}">
+                            <button type="submit" class="btn secondary" style="color:var(--bad);" onclick="return confirm('Voulez-vous vraiment supprimer ce CV ?');">Supprimer</button>
+                        </form>
                     </div>
-
                     {% include 'cvs/partials/cv_status.html' with cv=active_cv %}
-
-                    <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-sm">
-                        <div class="flex items-center text-slate-600 dark:text-slate-400 gap-1.5">
-                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                            Fichier chiffré et privé. Non partagé avec les employeurs.
-                        </div>
+                    <div class="small" style="margin-top:12px; color:var(--good); display:flex; align-items:center; gap:4px;">
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Fichier chiffré et privé. Non partagé avec les employeurs.
                     </div>
                 </div>
             {% else %}
-                <div class="rounded-xl border border-blue-200 bg-blue-50/70 p-3 dark:border-blue-900/50 dark:bg-blue-950/20">
-                    <h2 class="text-sm font-bold text-slate-950 dark:text-white">Aucun CV actif</h2>
-                    <p class="mt-1 text-sm text-slate-700 dark:text-slate-300">Ajoutez votre CV ci-dessous pour calculer la compatibilité avec les offres ciblées. Fichier privé, non partagé avec les employeurs.</p>
-                </div>
+                <div class="small" style="margin-bottom:12px;">Aucun CV actif. Ajoutez votre CV ci-dessous pour calculer la compatibilité avec les offres ciblées. Fichier privé, non partagé avec les employeurs.</div>
             {% endif %}
-        </div>
 
-        <!-- Upload Section -->
-        <div class="tta-card tta-card-body">
-            <h2 class="text-lg font-bold text-slate-950 dark:text-white mb-4 flex items-center gap-2">
-                <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                {% if active_cv %}Remplacer votre CV{% else %}Uploader un nouveau CV{% endif %}
-            </h2>
-
-            <form method="post" enctype="multipart/form-data" class="space-y-4"
+            <h3 class="h3" style="margin-top:16px;">{% if active_cv %}Remplacer votre CV{% else %}Uploader un nouveau CV{% endif %}</h3>
+            <form method="post" enctype="multipart/form-data" class="grid"
                   x-data="{
                       fileName: '',
                       fileSize: '',
@@ -129,9 +86,7 @@
                       },
                       selectFile() {
                           const fileInput = this.$el.querySelector('input[type=file]');
-                          if (fileInput) {
-                              fileInput.click();
-                          }
+                          if (fileInput) { fileInput.click(); }
                       },
                       handleDrop(event) {
                           this.isDragging = false;
@@ -140,119 +95,91 @@
                               fileInput.files = event.dataTransfer.files;
                               fileInput.dispatchEvent(new Event('change', { bubbles: true }));
                           }
-                      },
-                      init() {
-                          // Attach event listener once the component initializes
-                          const fileInput = this.$el.querySelector('input[type=file]');
-                          if (fileInput) {
-                              fileInput.addEventListener('change', (e) => this.handleFileChange(e));
-                          }
                       }
                   }"
                   @submit="if($event.target.checkValidity()) { isUploading = true; }">
                 {% csrf_token %}
 
-            {% if form.non_field_errors %}
-                    <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
-                        <p class="text-sm font-medium">{{ form.non_field_errors|join:", " }}</p>
-                    </div>
+                {% if form.non_field_errors %}
+                    <div class="field has-error"><div class="error" style="display:block;">{{ form.non_field_errors|join:", " }}</div></div>
                 {% endif %}
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                    <div class="md:col-span-2">
-                        <label class="tta-label font-bold mb-2" for="{{ form.file.id_for_label }}">Sélectionner un fichier (PDF uniquement, max 5 Mo)</label>
-                        <label for="{{ form.file.id_for_label }}"
-                               class="tta-dropzone mt-1 flex justify-center relative group"
-                               role="button"
-                               tabindex="0"
-                               @keydown.enter.prevent="selectFile()"
-                               @keydown.space.prevent="selectFile()"
-                               @dragenter.prevent="isDragging = true"
-                               @dragover.prevent="isDragging = true"
-                               @dragleave.prevent="isDragging = false"
-                               @drop.prevent="handleDrop($event)"
-                               :class="fileName ? 'border-green-400 bg-green-50 dark:bg-green-950/20' : (isDragging ? 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-950/30' : 'border-slate-300 bg-slate-50 hover:border-brand-500 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-800/40 dark:hover:border-brand-400 dark:hover:bg-brand-950/30')">
+                <label class="upload-box" for="{{ form.file.id_for_label }}"
+                       role="button" tabindex="0"
+                       @keydown.enter.prevent="selectFile()"
+                       @keydown.space.prevent="selectFile()"
+                       @dragenter.prevent="isDragging = true"
+                       @dragover.prevent="isDragging = true"
+                       @dragleave.prevent="isDragging = false"
+                       @drop.prevent="handleDrop($event)"
+                       :style="isDragging ? 'border-color:var(--brand); background:color-mix(in srgb, var(--brand) 12%, var(--panel));' : (fileName ? 'border-color:var(--good); background:color-mix(in srgb, var(--good) 8%, var(--panel));' : '')">
+                    <input type="file" name="{{ form.file.name }}" id="{{ form.file.id_for_label }}" hidden @change="handleFileChange($event)" accept="application/pdf">
+                    <div x-show="!fileName">
+                        <b>Déposez votre CV ou cliquez pour parcourir</b>
+                        <div class="small" style="margin-top:4px;">PDF jusqu'à 5 Mo</div>
+                    </div>
+                    <div x-show="fileName" style="display:none;">
+                        <b style="color:var(--good);" x-text="fileName"></b>
+                        <div class="small" style="margin-top:4px;" x-text="fileSize"></div>
+                    </div>
+                </label>
+                {% if form.file.errors %}
+                    <div class="field has-error"><div class="error" style="display:block;">{{ form.file.errors|join:", " }}</div></div>
+                {% endif %}
 
-                            <div class="space-y-1 text-center" x-show="!fileName">
-                                <svg class="mx-auto h-9 w-9 text-gray-400 group-hover:text-brand-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                                <div class="flex text-sm text-slate-700 dark:text-slate-300 justify-center">
-                                    <span class="relative cursor-pointer rounded-md font-medium text-brand-600 group-hover:text-brand-500 px-1">
-                                        <span>Parcourir</span>
-                                        {{ form.file }}
-                                    </span>
-                                    <p class="pl-1">ou glisser-déposer</p>
-                                </div>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">PDF jusqu'à 5 Mo</p>
-                            </div>
-
-                            <div class="space-y-2 text-center" x-show="fileName" style="display: none;">
-                                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                </div>
-                                <p class="text-sm font-bold text-slate-950 dark:text-white" x-text="fileName"></p>
-                                <p class="text-xs text-slate-500 dark:text-slate-400" x-text="fileSize"></p>
-                                <div class="mt-4">
-                                    <span class="text-sm font-medium text-brand-600 group-hover:text-brand-800 cursor-pointer">
-                                        Changer de fichier
-                                    </span>
-                                </div>
-                            </div>
-
-                        </label>
-                        {% if form.file.errors %}
-                            <p class="mt-2 text-sm text-red-600">{{ form.file.errors|join:", " }}</p>
+                <div style="display:flex; gap:10px; align-items:flex-start; margin-top:12px;">
+                    {{ form.consent_accepted }}
+                    <label for="{{ form.consent_accepted.id_for_label }}" class="small" style="margin:0;">
+                        <b>Consentement au traitement des données</b><br>
+                        J'accepte que mon CV soit analysé par le système pour extraire mes compétences.
+                        {% if form.consent_accepted.errors %}
+                            <div class="error" style="display:block; color:var(--bad);">{{ form.consent_accepted.errors|join:", " }}</div>
                         {% endif %}
-                    </div>
+                    </label>
                 </div>
 
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 dark:border-slate-800 dark:bg-slate-800/50">
-                    <div class="flex items-start gap-3">
-                        <div class="flex items-center h-5">
-                            {{ form.consent_accepted }}
-                        </div>
-                        <div class="text-sm">
-                            <label for="{{ form.consent_accepted.id_for_label }}" class="font-medium text-slate-950 dark:text-white">Consentement au traitement des données</label>
-                            <p class="text-slate-600 dark:text-slate-400 mt-1">J'accepte que mon CV soit analysé par le système pour extraire mes compétences et calculer mon score de compatibilité avec les offres ciblées. Mon CV ne sera jamais rendu public ni partagé avec des tiers non autorisés.</p>
-                            {% if form.consent_accepted.errors %}
-                                <p class="mt-1 text-sm text-red-600 font-medium">{{ form.consent_accepted.errors|join:", " }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
+                <div x-show="isUploading" style="display:none;" class="small">
+                    <b style="color:var(--brand);">Analyse en cours...</b> Veuillez patienter.
                 </div>
 
-                <script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        const fileInput = document.querySelector('input[type="file"]');
-                        if(fileInput) {
-                            fileInput.classList.add('sr-only');
-                        }
-                        const checkbox = document.querySelector('input[type="checkbox"]');
-                        if(checkbox) {
-                            checkbox.classList.add('focus:ring-brand-500', 'h-4', 'w-4', 'text-brand-600', 'border-gray-300', 'rounded');
-                        }
-                    });
-                </script>
-
-                <div class="flex flex-col items-end pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <div x-show="isUploading" style="display: none;" class="w-full mb-4 bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-3">
-                        <svg class="animate-spin h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        <p class="text-sm text-blue-800 font-medium">Votre CV est envoyé. L'analyse commencera après le téléversement.</p>
-                    </div>
-
-                    <button type="submit" class="tta-btn tta-btn-primary px-8"
-                            :disabled="isUploading"
-                            :class="{ 'opacity-75 cursor-not-allowed': isUploading }">
-                        <span x-show="!isUploading">Analyser mon CV</span>
-                        <span x-show="isUploading" style="display: none;" class="flex items-center">
-                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Téléversement en cours...
-                        </span>
-                    </button>
+                <div class="pill-row" style="margin-top:12px;">
+                    <button class="btn secondary" type="button" onclick="window.location.href='{% url 'dashboard:profile' %}'">Passer au profil</button>
+                    <button type="submit" class="btn primary" :disabled="isUploading">Envoyer et analyser le CV</button>
                 </div>
             </form>
-        </div>
-    </section>
-</div>
+          </div>
+        </section>
+
+        <aside class="card sticky">
+          <h2 class="h2">Progression</h2>
+          <div class="notice-list" style="margin-top:16px">
+            {% if not request.user.has_usable_password %}
+            <div class="notice">
+              <span class="dot warn"></span>
+              <div><b>Mot de passe</b><div class="small">Requis pour se connecter par email</div></div>
+            </div>
+            {% endif %}
+            <div class="notice">
+              <span class="dot {% if active_cv %}good{% else %}warn{% endif %}"></span>
+              <div>
+                <b>CV en ligne</b>
+                <div class="small">{% if active_cv %}{{ active_cv.original_filename }}{% else %}Requis pour le matching{% endif %}</div>
+              </div>
+            </div>
+            <div class="notice">
+              <span class="dot warn"></span>
+              <div><b>Profil complété</b><div class="small">Infos manuelles</div></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const checkbox = document.querySelector('input[type="checkbox"]');
+        if(checkbox) { checkbox.style.marginTop = '4px'; }
+    });
+</script>
 {% endblock %}

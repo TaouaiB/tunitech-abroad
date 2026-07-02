@@ -1,45 +1,41 @@
 {% extends 'base.html' %}
-
 {% block title %}Préférences d'emails - TuniAtlas{% endblock %}
-
 {% block content %}
-<div class="tta-app-grid" style="margin-top: 2rem; margin-bottom: 3rem;">
-    {% include 'dashboard/sidebar.html' %}
-    <section>
-        <div class="tta-section-head">
-            <div>
-                <a href="{% url 'dashboard:home' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Retour au tableau de bord
-                </a>
-                <span class="tta-eyebrow">Emails</span>
-                <h1 class="tta-page-title" style="margin-top:12px">Préférences email</h1>
-                <p class="tta-muted">Gérez les emails que vous souhaitez recevoir.</p>
-            </div>
-        </div>
+<main class="settings-v16">
+  <section class="section">
+    <div class="shell">
+      <h1 class="page-title small">Paramètres</h1>
 
-        <form method="post" class="tta-card tta-card-body">
+      <div class="settings-grid" style="margin-top:18px">
+
+        <nav class="settings-nav">
+          <a class="{% if request.resolver_match.url_name == 'account' %}active{% endif %}" href="{% url 'dashboard:account' %}">Compte & Sécurité</a>
+          <a class="{% if request.resolver_match.url_name == 'email_preferences' %}active{% endif %}" href="{% url 'dashboard:email_preferences' %}">Préférences Email</a>
+          <a class="{% if request.resolver_match.url_name == 'connections' %}active{% endif %}" href="{% url 'dashboard:connections' %}">Comptes liés</a>
+          <a class="{% if request.resolver_match.url_name == 'delete_account' %}active{% endif %}" href="{% url 'dashboard:delete_account' %}" style="color:var(--bad)">Supprimer le compte</a>
+        </nav>
+
+        <section class="grid">
+          <form method="post" class="card grid">
             {% csrf_token %}
-            
+            <h2 class="h2">Préférences email</h2>
+            <div class="small" style="margin-bottom:12px;">Gérez les emails que vous souhaitez recevoir.</div>
+
             {% if form.non_field_errors %}
-                <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200" style="margin-bottom: 16px;">
-                    <h3 class="text-sm font-medium">
-                        {{ form.non_field_errors|join:", " }}
-                    </h3>
-                </div>
+                <div class="field has-error"><div class="error" style="display:block;">{{ form.non_field_errors|join:", " }}</div></div>
             {% endif %}
 
-            <div class="space-y-4" style="margin-bottom: 16px;">
+            <div style="display:grid; gap:12px;">
                 {% for field in form %}
                     {% if not field.is_hidden %}
-                    <label style="display:flex;gap:12px;margin-bottom:16px;cursor:pointer;">
-                        {{ field }}
-                        <span>
-                            <strong>{{ field.label }}</strong><br>
+                    <label class="stat" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="display:flex; flex-direction:column; gap:2px;">
+                            <strong>{{ field.label }}</strong>
                             {% if field.help_text %}
-                                <span class="tta-muted">{{ field.help_text }}</span>
+                                <span class="small">{{ field.help_text }}</span>
                             {% endif %}
                         </span>
+                        {{ field }}
                     </label>
                     {% else %}
                         {{ field }}
@@ -51,19 +47,20 @@
                 document.addEventListener("DOMContentLoaded", function() {
                     const checkboxes = document.querySelectorAll('form input[type="checkbox"]');
                     checkboxes.forEach(cb => {
-                        cb.classList.add('h-5', 'w-5', 'text-brand-600', 'focus:ring-brand-500', 'border-gray-300', 'rounded', 'cursor-pointer');
+                        cb.style.width = '20px';
+                        cb.style.height = '20px';
+                        cb.style.accentColor = 'var(--brand)';
                     });
                 });
             </script>
 
-            <div class="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-900 dark:border-brand-900/50 dark:bg-brand-950/30 dark:text-brand-200" style="margin-bottom: 16px;">
-                Vous pouvez modifier ces préférences à tout moment. Les liens de désabonnement présents dans les emails restent actifs.
+            <div class="pill-row" style="margin-top:16px;">
+                <button type="submit" class="btn primary">Enregistrer</button>
             </div>
-
-            <button type="submit" class="tta-btn tta-btn-primary">
-                Enregistrer
-            </button>
-        </form>
-    </section>
-</div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
 {% endblock %}

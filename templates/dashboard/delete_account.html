@@ -1,60 +1,47 @@
 {% extends 'base.html' %}
-
 {% block title %}Supprimer le compte - TuniAtlas{% endblock %}
-
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="mb-8">
-        <a href="{% url 'dashboard:account' %}" class="inline-flex items-center text-sm font-medium text-brand-600 hover:text-brand-800 mb-4 transition-colors">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Retour aux paramètres
-        </a>
-    </div>
+<main class="settings-v16">
+  <section class="section">
+    <div class="shell">
+      <h1 class="page-title small">Paramètres</h1>
 
-    <div class="card p-8 bg-white border-2 border-red-200">
-        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-        </div>
-        
-        <h1 class="text-2xl font-extrabold text-red-900 text-center mb-4">Êtes-vous absolument sûr ?</h1>
-        
-        <div class="bg-red-50 p-6 rounded-lg text-red-800 mb-8 border border-red-100 text-sm">
-            <p class="mb-3 font-bold">Cette action est irréversible et entraînera :</p>
-            <ul class="list-disc list-inside space-y-2">
-                <li>La suppression de votre profil candidat et de vos données personnelles.</li>
-                <li>L'effacement complet et irrécupérable de votre CV.</li>
-                <li>La perte de toutes vos offres sauvegardées et recommandations.</li>
-                <li>L'annulation de vos abonnements aux notifications emails.</li>
-            </ul>
-        </div>
+      <div class="settings-grid" style="margin-top:18px">
 
-        {% if messages %}
-            {% for message in messages %}
-                <div class="bg-red-100 border border-red-300 text-red-800 p-3 rounded mb-6 text-sm font-bold text-center">
-                    {{ message }}
+        <nav class="settings-nav">
+          <a class="{% if request.resolver_match.url_name == 'account' %}active{% endif %}" href="{% url 'dashboard:account' %}">Compte & Sécurité</a>
+          <a class="{% if request.resolver_match.url_name == 'email_preferences' %}active{% endif %}" href="{% url 'dashboard:email_preferences' %}">Préférences Email</a>
+          <a class="{% if request.resolver_match.url_name == 'connections' %}active{% endif %}" href="{% url 'dashboard:connections' %}">Comptes liés</a>
+          <a class="{% if request.resolver_match.url_name == 'delete_account' %}active{% endif %}" href="{% url 'dashboard:delete_account' %}" style="color:var(--bad)">Supprimer le compte</a>
+        </nav>
+
+        <section class="grid">
+          <div class="card grid" style="border-color:color-mix(in srgb, var(--bad) 30%, transparent);">
+            <h2 class="h2" style="color:var(--bad);">Suppression du compte</h2>
+            <div class="small" style="margin-bottom:12px;">Action irréversible. Toutes vos données seront supprimées.</div>
+
+            <div style="border:1px solid var(--bad); background:color-mix(in srgb, var(--bad) 6%, var(--panel)); border-radius:18px; padding:18px; margin-bottom:16px;">
+                <b style="color:var(--bad);">Attention !</b>
+                <div class="small" style="margin-top:4px;">
+                    Cette action supprimera définitivement votre compte, votre profil, vos CV et vos offres sauvegardées. Elle ne peut pas être annulée après confirmation.
                 </div>
-            {% endfor %}
-        {% endif %}
-
-        <form method="post" class="space-y-6">
-            {% csrf_token %}
-            <div>
-                <label for="confirmation" class="block text-sm font-medium text-gray-700 mb-2">
-                    Pour confirmer, veuillez taper le mot <strong>DELETE</strong> ci-dessous :
-                </label>
-                <input type="text" name="confirmation" id="confirmation" required
-                    class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm text-center font-bold tracking-widest uppercase">
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-4 pt-4">
-                <a href="{% url 'dashboard:account' %}" class="w-full sm:w-1/2 btn-secondary py-3 text-center justify-center">
-                    Annuler
-                </a>
-                <button type="submit" class="w-full sm:w-1/2 btn-danger py-3 text-center justify-center">
-                    Supprimer mon compte
-                </button>
-            </div>
-        </form>
+            <form method="post" class="grid">
+                {% csrf_token %}
+                <div class="field">
+                    <label for="confirmation">Tapez DELETE pour confirmer</label>
+                    <input type="text" name="confirmation" id="confirmation" class="input" required autocomplete="off" placeholder="DELETE">
+                </div>
+                <div class="pill-row">
+                    <button type="button" class="btn secondary" onclick="window.location.href='{% url 'dashboard:account' %}'">Annuler</button>
+                    <button type="submit" class="btn danger">Supprimer définitivement mon compte</button>
+                </div>
+            </form>
+          </div>
+        </section>
+      </div>
     </div>
-</div>
+  </section>
+</main>
 {% endblock %}

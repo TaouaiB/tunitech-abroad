@@ -1,28 +1,29 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Confirmation de l'email - TuniAtlas{% endblock %}
+{% block title %}Confirmer l'email - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="min-h-[60vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="bg-white py-8 px-4 shadow-card sm:rounded-xl sm:px-10 border border-gray-100 text-center">
-            <h1 class="text-2xl font-bold text-gray-900 mb-4">Confirmez votre adresse email</h1>
-            {% if confirmation %}
-                <p class="text-gray-600 mb-6 leading-relaxed">
-                    Veuillez confirmer que <strong>{{ confirmation.email_address.email }}</strong> est bien votre adresse email.
-                </p>
-                <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-primary w-full py-2.5">
-                        Confirmer mon email
-                    </button>
-                </form>
-            {% else %}
-                <p class="text-red-600 mb-6 leading-relaxed">
-                    Ce lien de confirmation est invalide ou a expiré.
-                </p>
-            {% endif %}
+<main class="auth-v16">
+  <section class="section">
+    <div class="shell" style="max-width:540px; margin:0 auto;">
+      <div class="hero-card">
+        <h1 class="page-title small">Confirmez votre adresse email</h1>
+
+        {% if confirmation %}
+        <div class="small" style="margin-top:12px; margin-bottom:24px;">
+            <p>Veuillez confirmer que <strong>{{ confirmation.email_address.email }}</strong> est bien votre adresse email pour l'utilisateur <strong>{{ confirmation.email_address.user }}</strong>.</p>
         </div>
+        <form method="post" action="{% url 'account_confirm_email' confirmation.key %}" class="grid">
+            {% csrf_token %}
+            <button type="submit" class="btn primary full">Confirmer</button>
+        </form>
+        {% else %}
+        <div class="small" style="margin-top:12px; margin-bottom:24px; color:var(--bad);">
+            <p>Ce lien de confirmation est invalide ou a expiré. Veuillez en demander un nouveau.</p>
+        </div>
+        {% endif %}
+
+      </div>
     </div>
-</div>
-{% endblock %}
+  </section>
+</main>{% endblock %}

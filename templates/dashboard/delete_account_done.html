@@ -1,17 +1,21 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
 {% block title %}Compte supprimé - TuniAtlas{% endblock %}
-
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 py-16">
-    <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-4">Votre compte a été supprimé.</h1>
-        <p class="text-gray-700 mb-6">
-            Vos données de compte ont été supprimées ou anonymisées conformément aux règles de confidentialité de TuniAtlas.
-        </p>
-        <a href="{% url 'core:home' %}" class="btn-primary inline-flex">
-            Retour à l'accueil
-        </a>
+<main class="auth-v16">
+  <section class="section">
+    <div class="shell" style="max-width:540px;">
+      <div class="card grid" style="text-align:center; padding:32px 24px;">
+        <div style="width:64px; height:64px; border-radius:24px; background:color-mix(in srgb, var(--bad) 10%, var(--panel)); color:var(--bad); display:grid; place-items:center; margin:0 auto 16px;">
+            <svg class="icon" style="width:32px; height:32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        </div>
+        <h2 class="h2">Compte supprimé</h2>
+        <div class="small" style="margin-bottom:24px;">Votre compte a été supprimé. Toutes vos données ont été supprimées avec succès de nos serveurs.</div>
+
+        <div class="pill-row" style="justify-content:center;">
+            <a href="/" class="btn primary">Retour à l'accueil</a>
+        </div>
+      </div>
     </div>
-</div>
+  </section>
+</main>
 {% endblock %}
