@@ -13,3 +13,8 @@ def run_admin_health_alerts():
 def send_admin_ops_digest():
     AdminOpsDigestService.send_digest_email()
     return "admin_ops_digest_checked"
+
+@shared_task
+def send_contact_message_email(message_id):
+    from apps.core.services.contact import ContactService
+    ContactService.send_contact_message_email(message_id=message_id)

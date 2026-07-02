@@ -42,10 +42,10 @@
                     <a class="tta-nav-link" href="{% url 'dashboard:saved_jobs' %}">Favoris</a>
                     <a class="tta-nav-link" href="{% url 'dashboard:profile' %}">Profil</a>
                     <a class="tta-nav-link" href="{% url 'dashboard:account' %}">Paramètres</a>
-                    <a class="tta-nav-link" href="{% url 'core:home' %}#comment-ca-marche">À propos</a>
+                    <a class="tta-nav-link" href="{% url 'core:about' %}">À propos</a>
                 {% else %}
                     <a class="tta-nav-link" href="{% url 'account_login' %}?next={% url 'dashboard:recommendations' %}">Recommandations</a>
-                    <a class="tta-nav-link" href="{% url 'core:home' %}#comment-ca-marche">À propos</a>
+                    <a class="tta-nav-link" href="{% url 'core:about' %}">À propos</a>
                 {% endif %}
             </nav>
 
@@ -90,14 +90,14 @@
                 <a href="{% url 'dashboard:saved_jobs' %}" class="tta-nav-link text-left w-full justify-start py-3">Favoris</a>
                 <a href="{% url 'dashboard:profile' %}" class="tta-nav-link text-left w-full justify-start py-3">Profil</a>
                 <a href="{% url 'dashboard:account' %}" class="tta-nav-link text-left w-full justify-start py-3">Paramètres</a>
-                <a href="{% url 'core:home' %}#comment-ca-marche" class="tta-nav-link text-left w-full justify-start py-3">À propos</a>
+                <a href="{% url 'core:about' %}" class="tta-nav-link text-left w-full justify-start py-3">À propos</a>
                 <form method="post" action="{% url 'account_logout' %}" class="block w-full">
                     {% csrf_token %}
                     <button type="submit" class="tta-nav-link text-left w-full justify-start py-3 text-red-600 hover:text-red-700" role="menuitem">Déconnexion</button>
                 </form>
             {% else %}
                 <a href="{% url 'account_login' %}?next={% url 'dashboard:recommendations' %}" class="tta-nav-link text-left w-full justify-start py-3">Recommandations</a>
-                <a href="{% url 'core:home' %}#comment-ca-marche" class="tta-nav-link text-left w-full justify-start py-3">À propos</a>
+                <a href="{% url 'core:about' %}" class="tta-nav-link text-left w-full justify-start py-3">À propos</a>
                 <a href="{% url 'account_login' %}" class="tta-nav-link text-left w-full justify-start py-3 font-bold">Connexion</a>
                 <a href="{% url 'account_signup' %}" class="tta-nav-link text-left w-full justify-start py-3 font-bold text-brand-600">Créer un compte</a>
             {% endif %}
@@ -152,7 +152,7 @@
                 <div class="text-slate-500 dark:text-slate-400">Job intelligence pour profils IT tunisiens.</div>
             </div>
             <div class="flex items-center gap-4">
-                <a href="{% url 'core:home' %}#comment-ca-marche" class="font-bold hover:text-brand-600">À propos</a>
+                <a href="{% url 'core:about' %}" class="font-bold hover:text-brand-600">À propos</a>
             </div>
         </div>
     </footer>

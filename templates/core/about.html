@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}À propos — TuniAtlas{% endblock %}
+
+{% block content %}
+<section class="about-v16 section">
+  <div class="shell">
+    <h1 class="page-title small">À propos</h1>
+
+    <div class="main-layout">
+      <div class="grid">
+        <div class="card">
+          <h2 class="h2">Notre mission</h2>
+          <p class="muted">
+            TuniAtlas Jobs aide les talents IT tunisiens à trouver des opportunités à l'étranger, en commençant par la France.
+          </p>
+          <ul class="about-v16-list muted">
+            <li><strong>Recherche locale :</strong> Les offres et la recherche sont basées sur notre base de données PostgreSQL locale. Il n'y a pas d'appels API en direct à France Travail pendant votre recherche.</li>
+            <li><strong>Match personnalisé :</strong> Les données de votre CV et de votre profil aident au matching et aux recommandations.</li>
+            <li><strong>Algorithme déterministe :</strong> Le matching est basé sur des règles déterministes. Un LLM peut aider à expliquer ou suggérer des pistes, mais il ne décide pas du score final.</li>
+            <li><strong>Confidentialité :</strong> Vos fichiers CV restent strictement privés.</li>
+          </ul>
+        </div>
+
+        <form class="card grid" method="post" action="{% url 'core:about' %}" novalidate>
+          {% csrf_token %}
+          <h2 class="h2">Contact</h2>
+
+          {% if form.non_field_errors %}
+            <div class="compact-state bad">
+              <span class="dot bad"></span>
+              <div>
+                {% for error in form.non_field_errors %}
+                  <p class="small">{{ error }}</p>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="honeypot" aria-hidden="true">
+            {{ form.website }}
+          </div>
+
+          <div class="grid grid-2">
+            <div class="field{% if form.name.errors %} has-error{% endif %}">
+              <label for="{{ form.name.id_for_label }}">Nom complet</label>
+              {{ form.name }}
+              {% if form.name.errors %}
+                <p class="error">{{ form.name.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="field{% if form.email.errors %} has-error{% endif %}">
+              <label for="{{ form.email.id_for_label }}">Email</label>
+              {{ form.email }}
+              {% if form.email.errors %}
+                <p class="error">{{ form.email.errors.0 }}</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="field{% if form.subject.errors %} has-error{% endif %}">
+            <label for="{{ form.subject.id_for_label }}">Motif</label>
+            {{ form.subject }}
+            {% if form.subject.errors %}
+              <p class="error">{{ form.subject.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <div class="field{% if form.message.errors %} has-error{% endif %}">
+            <label for="{{ form.message.id_for_label }}">Message</label>
+            {{ form.message }}
+            {% if form.message.errors %}
+              <p class="error">{{ form.message.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <button type="submit" class="btn primary">Envoyer</button>
+          </div>
+        </form>
+      </div>
+
+      <aside class="card sticky">
+        <h2 class="h2">Liens</h2>
+        <div class="notice-list">
+          <div class="notice">
+            <span class="dot"></span>
+            <div>
+              <b>Contact direct</b>
+              <div class="small">Utilisez le formulaire sécurisé.</div>
+            </div>
+          </div>
+          <div class="notice">
+            <span class="dot good"></span>
+            <div>
+              <b>Offres</b>
+              <a href="{% url 'jobs:list' %}" class="small about-v16-link">Parcourir les offres</a>
+            </div>
+          </div>
+          <div class="notice">
+            <span class="dot warn"></span>
+            <div>
+              <b>Compte</b>
+              <a href="{% if user.is_authenticated %}{% url 'dashboard:account' %}{% else %}{% url 'account_login' %}{% endif %}" class="small about-v16-link">Gérer les paramètres</a>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

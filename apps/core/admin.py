@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemSetting, AdminFileAccessLog, AdminAlertEvent
+from .models import SystemSetting, AdminFileAccessLog, AdminAlertEvent, ContactMessage
 
 @admin.register(SystemSetting)
 class SystemSettingAdmin(admin.ModelAdmin):
@@ -27,3 +27,13 @@ class AdminAlertEventAdmin(admin.ModelAdmin):
     list_filter = ('severity', 'status', 'created_at')
     search_fields = ('alert_type', 'summary')
     readonly_fields = ('created_at',)
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'email', 'subject', 'status')
+    list_filter = ('status', 'created_at')
+    search_fields = ('email', 'subject', 'message')
+    readonly_fields = ('public_id', 'user', 'name', 'email', 'subject', 'message', 'source_path', 'status', 'sent_at', 'last_error_code', 'created_at', 'updated_at')
+
+    def has_add_permission(self, request):
+        return False

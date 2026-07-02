@@ -147,3 +147,96 @@ class DemoSeedCommandTests(TestCase):
             ).count(),
             first_count,
         )
+from django.test import TestCase, override_settings
+from django.urls import reverse
+from django.core import mail
+from apps.core.models import ContactMessage
+from apps.core.services.contact import ContactService
+
+class ContactTests(TestCase):
+    def test_about_page_returns_200(self):
+        response = self.client.get(reverse('core:about'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'core/about.html')
+
+    def test_contact_form_valid_post(self):
+        url = reverse('core:about')
+        data = {
+            'name': 'Test User',
+            'email': 'test@example.com',
+            'subject': 'Compte',
+            'message': 'Hello world!',
+        }
+        with override_settings(CELERY_TASK_ALWAYS_EAGER=True, CONTACT_EMAIL_RECIPIENTS=['admin@example.com']):
+            response = self.client.post(url, data)
+        self.assertRedirects(response, url)
+        self.assertEqual(ContactMessage.objects.count(), 1)
+        msg = ContactMessage.objects.first()
+        self.assertEqual(msg.name, 'Test User')
+
+    def test_contact_form_invalid_post(self):
+        url = reverse('core:about')
+        data = {
+            'name': '',
+            'email': 'invalid',
+            'subject': '',
+            'message': '',
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ContactMessage.objects.count(), 0)
+        self.assertContains(response, "Veuillez corriger")
+
+    def test_honeypot_submission_fails(self):
+        url = reverse('core:about')
+        data = {
+            'name': 'Test User',
+            'email': 'test@example.com',
+            'subject': 'Compte',
+            'message': 'Hello world!',
+            'website': 'http://spam.com',
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ContactMessage.objects.count(), 0)
+
+    @override_settings(CONTACT_EMAIL_RECIPIENTS=['admin@example.com'], DEFAULT_FROM_EMAIL='test@test.com')
+    def test_service_send_success(self):
+        msg = ContactMessage.objects.create(
+            name='A', email='a@a.com', subject='Subj', message='Msg',
+            status=ContactMessage.Status.PENDING
+        )
+        ContactService.send_contact_message_email(message_id=msg.id)
+        msg.refresh_from_db()
+        self.assertEqual(msg.status, ContactMessage.Status.SENT)
+        self.assertEqual(len(mail.outbox), 1)
+
+    @override_settings(CONTACT_EMAIL_RECIPIENTS=[])
+    def test_service_send_no_recipient(self):
+        msg = ContactMessage.objects.create(
+            name='A', email='a@a.com', subject='Subj', message='Msg',
+            status=ContactMessage.Status.PENDING
+        )
+        ContactService.send_contact_message_email(message_id=msg.id)
+        msg.refresh_from_db()
+        self.assertEqual(msg.status, ContactMessage.Status.FAILED)
+        self.assertEqual(msg.last_error_code, "recipient_not_configured")
+        self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(CONTACT_EMAIL_RECIPIENTS=['admin@example.com'], DEFAULT_FROM_EMAIL='test@test.com')
+    def test_service_send_failure_stores_safe_error_code(self):
+        msg = ContactMessage.objects.create(
+            name='A',
+            email='a@a.com',
+            subject='Subj',
+            message='Msg',
+            status=ContactMessage.Status.PENDING,
+        )
+
+        with patch('apps.core.services.contact.send_mail', side_effect=RuntimeError("provider secret")):
+            ContactService.send_contact_message_email(message_id=msg.id)
+
+        msg.refresh_from_db()
+        self.assertEqual(msg.status, ContactMessage.Status.FAILED)
+        self.assertEqual(msg.last_error_code, "email_send_failed")
+        self.assertNotIn("provider secret", msg.last_error_code)
