@@ -1,16 +1,20 @@
+from pathlib import Path
+
 from django.test import TestCase
 from django.conf import settings
 from django.core.management import call_command
 from .models import SystemSetting
 from .services.system_setting import SystemSettingService
 
+__path__ = [str(Path(__file__).with_name("tests"))]
+
 class CoreTests(TestCase):
     def test_system_setting_creation_and_lookup(self):
         SystemSetting.objects.create(key="max_upload_size", value={"mb": 5})
-        
+
         val = SystemSettingService.get_value("max_upload_size")
         self.assertEqual(val, {"mb": 5})
-        
+
         default_val = SystemSettingService.get_value("missing_key", default="fallback")
         self.assertEqual(default_val, "fallback")
 

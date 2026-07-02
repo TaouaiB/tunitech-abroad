@@ -309,12 +309,76 @@
     height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #f1f1f1; 
+    background: #f1f1f1;
 }
 ::-webkit-scrollbar-thumb {
-    background: #cbd5e1; 
+    background: #cbd5e1;
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8; 
+    background: #94a3b8;
 }
+
+/* Phase 16H V16 Prototype Components */
+.tta-brand-mark {
+    width: 36px; height: 36px; border-radius: 13px;
+    background: linear-gradient(135deg, var(--brand-600), #7c3aed 58%, #06b6d4);
+    box-shadow: 0 12px 26px color-mix(in srgb, var(--brand-600) 34%, transparent);
+    display: grid; place-items: center; color: white; font-weight: 950;
+}
+.tta-theme-toggle-v16 {
+    width: 64px; height: 34px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface-sunken);
+    position: relative; cursor: pointer; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 9px; color: var(--text-muted);
+}
+.tta-theme-knob-v16 {
+    position: absolute; width: 26px; height: 26px; left: 4px; top: 3px;
+    border-radius: 999px; background: linear-gradient(135deg, var(--brand-500), #a78bfa);
+    transition: 0.2s; box-shadow: 0 8px 20px color-mix(in srgb, var(--brand-500) 35%, transparent);
+}
+.dark .tta-theme-knob-v16 { transform: translateX(29px); }
+
+.tta-avatar-v16 {
+    width: 38px; height: 38px; border-radius: 14px; border: 1px solid var(--border);
+    background: linear-gradient(135deg, #ffffff, var(--surface-sunken));
+    display: grid; place-items: center; font-weight: 900; color: var(--brand-600);
+}
+.dark .tta-avatar-v16 { background: linear-gradient(135deg, var(--surface-sunken), #0f172a); }
+
+.tta-email-banner {
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--warning-700) 10%, #ffffff);
+    position: relative; z-index: 20;
+}
+.dark .tta-email-banner { background: color-mix(in srgb, var(--warning-700) 10%, var(--surface-sunken)); }
+.tta-email-banner-row { min-height: 48px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tta-dot-v16 { width: 10px; height: 10px; border-radius: 999px; margin-top: 2px; }
+.tta-dot-v16.warn { background: var(--warning-700); }
+.tta-dot-v16.good { background: var(--brand-600); }
+
+.tta-toast-wrap-v16 { position: fixed; right: 18px; top: 88px; display: grid; gap: 10px; z-index: 1000; pointer-events: none; }
+.tta-toast-v16 {
+    min-width: 260px; max-width: 360px; background: #ffffff; border: 1px solid var(--border);
+    box-shadow: 0 22px 60px rgba(15,23,42,.11); border-radius: 18px; padding: 13px 14px;
+    display: flex; gap: 10px; align-items: flex-start; animation: toastIn .22s ease-out; pointer-events: auto;
+}
+.dark .tta-toast-v16 { background: var(--surface-sunken); box-shadow: 0 24px 70px rgba(0,0,0,.42); }
+.tta-toast-v16.good { border-color: color-mix(in srgb, #059669 40%, var(--border)); }
+.tta-toast-v16.bad { border-color: color-mix(in srgb, var(--danger-600) 40%, var(--border)); }
+.tta-toast-v16.warn { border-color: color-mix(in srgb, var(--warning-700) 40%, var(--border)); }
+.tta-toast-v16.info { border-color: color-mix(in srgb, var(--brand-500) 40%, var(--border)); }
+
+@keyframes toastIn { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.tta-mobile-menu-v16 {
+    display: flex; position: absolute; left: 16px; right: 16px; top: 76px;
+    background: #ffffff; border: 1px solid var(--border); border-radius: 22px;
+    box-shadow: 0 22px 60px rgba(15,23,42,.11); padding: 12px;
+    flex-direction: column; align-items: stretch; z-index: 60;
+}
+.dark .tta-mobile-menu-v16 { background: var(--surface-sunken); box-shadow: 0 24px 70px rgba(0,0,0,.42); }
+.tta-dropdown-menu-proto { position: absolute; right: 0; top: 48px; width: 232px; background: #ffffff; border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 22px 60px rgba(15,23,42,.11); padding: 8px; z-index: 60; }
+.dark .tta-dropdown-menu-proto { background: var(--surface-sunken); box-shadow: 0 24px 70px rgba(0,0,0,.42); }
+.tta-dropdown-menu-proto a, .tta-dropdown-menu-proto button { width: 100%; display: flex; justify-content: space-between; align-items: center; text-decoration: none; border: 0; background: transparent; color: inherit; padding: 10px 12px; border-radius: 13px; font-weight: 700; text-align: left; cursor: pointer; }
+.tta-dropdown-menu-proto a:hover, .tta-dropdown-menu-proto button:hover { background: var(--surface-sunken); }
