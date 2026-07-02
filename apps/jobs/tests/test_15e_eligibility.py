@@ -133,7 +133,7 @@ class EligibilityTests(TestCase):
         resp_q = self.client.post(reverse("matching:quick_match", kwargs={"public_id": j_admin.public_id}), {"skills": "python"})
         self.assertEqual(resp_q.status_code, 200)
         self.assertIn("not currently eligible", resp_q.content.decode())
-        
+
     def test_badge_deduplication(self):
         j1 = self._create_job("j1", "Data Engineer", "GCP", True, "data_ai_bi", "high", "success", "strong", contract_type="CDD", job_type="CDD")
         badges = JobPresentationService.get_deduplicated_badges(j1)
@@ -150,7 +150,7 @@ class EligibilityTests(TestCase):
         jobs_in_context = list(response.context["page_obj"].object_list)
         self.assertIn(pending, jobs_in_context)
         self.assertNotIn(missing_done, jobs_in_context)
-        self.assertIn("Compétences en cours d'analyse", content)
+        self.assertIn("Analyse en cours", content)
 
     def test_generic_only_is_public_review_not_matchable(self):
         job = self._create_job("generic", "Consultant IT", "Informatique", True, "low_confidence_it", "low", "success", "generic_only")

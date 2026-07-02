@@ -9,6 +9,8 @@ from apps.jobs.services.search import JobSearchService
 from apps.jobs.services.query import JobQueryService
 from apps.jobs.services.revalidation import JobRevalidationService
 from apps.recommendations.services.saved_jobs import SavedJobService
+from apps.jobs.services.cta_context import CTAContextService
+
 from apps.jobs.services.presentation import JobPresentationService
 
 try:
@@ -39,6 +41,16 @@ def job_list(request):
         filters = form.cleaned_data
 
     result = JobSearchService.search(filters, request=request)
+    if request.user.is_authenticated:
+        jobs = list(result.page_obj.object_list)
+        saved_job_ids = set(
+            SavedJobService.get_saved_jobs(request.user)
+            .filter(job_id__in=[job.id for job in jobs])
+            .values_list("job_id", flat=True)
+        )
+        for job in jobs:
+            job.is_saved = job.id in saved_job_ids
+        result.page_obj.object_list = jobs
     effective_filters = {**result.filters, "sort": result.sort}
 
     safe_record_event("job_search", request.user, metadata={"q": filters.get("q", "")})
@@ -72,11 +84,13 @@ def job_detail(request, public_id):
         is_saved = SavedJobService.is_saved(request.user, public_id)
 
     valid_languages = JobPresentationService.get_valid_languages(job)
+    cta_context = CTAContextService.get_job_cta_context(request.user, job)
 
     return render(request, "jobs/job_detail.html", {
         "job": job,
         "is_saved": is_saved,
         "valid_languages": valid_languages,
+        "cta_context": cta_context,
     })
 
 @login_required
