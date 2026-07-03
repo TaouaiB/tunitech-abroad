@@ -14,11 +14,9 @@ class CVUploadService:
     PDF_MIME_TYPES = {"application/pdf"}
 
     @classmethod
-    def upload_cv(cls, user, uploaded_file, *, consent_accepted: bool) -> CVUpload:
+    def upload_cv(cls, user, uploaded_file) -> CVUpload:
         if not user or not getattr(user, "is_authenticated", False):
             raise ValueError("User must be authenticated")
-        if not consent_accepted:
-            raise ValueError("Consent must be accepted")
 
         cls._validate_pdf(uploaded_file)
 
@@ -41,18 +39,6 @@ class CVUploadService:
             )
             cv_upload.save()
             
-            try:
-                from apps.privacy.services.consent import ConsentService
-                ConsentService.record(
-                    user=user,
-                    consent_type="cv_processing",
-                    consent_text="Consentement au traitement du CV pour analyse et matching.",
-                    consent_version="1.0",
-                    request_meta={"source_path": "dashboard_cv_upload"},
-                )
-            except Exception as e:
-                logger.warning(f"Failed to record consent: {e}", exc_info=True)
-                
             try:
                 from apps.analytics.services.user_event import UserEventService
                 UserEventService.record_event(

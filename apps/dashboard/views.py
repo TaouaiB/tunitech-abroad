@@ -128,8 +128,7 @@ def dashboard_cv(request):
             try:
                 CVUploadService.upload_cv(
                     user,
-                    form.cleaned_data['file'],
-                    consent_accepted=form.cleaned_data['consent_accepted']
+                    form.cleaned_data['file']
                 )
                 messages.success(request, "Upload complete. Queued for analysis. Keep this page open or come back later.")
                 return redirect("dashboard:cv")

@@ -198,7 +198,7 @@ Delete action
 ### Must preserve
 
 - file upload backend
-- consent checkbox
+- No separate CV processing consent step. CV upload itself is the user action requesting private CV analysis. Privacy/Terms explain CV processing.
 - parse status polling
 - delete flow
 - private CV behavior

@@ -127,16 +127,6 @@
                     <div class="field has-error"><div class="error" style="display:block;">{{ form.file.errors|join:", " }}</div></div>
                 {% endif %}
 
-                <div style="display:flex; gap:10px; align-items:flex-start; margin-top:12px;">
-                    {{ form.consent_accepted }}
-                    <label for="{{ form.consent_accepted.id_for_label }}" class="small" style="margin:0;">
-                        <b>Consentement au traitement des données</b><br>
-                        J'accepte que mon CV soit analysé par le système pour extraire mes compétences.
-                        {% if form.consent_accepted.errors %}
-                            <div class="error" style="display:block; color:var(--bad);">{{ form.consent_accepted.errors|join:", " }}</div>
-                        {% endif %}
-                    </label>
-                </div>
 
                 <div x-show="isUploading" style="display:none;" class="small">
                     <b style="color:var(--brand);">Analyse en cours...</b> Veuillez patienter.
@@ -176,10 +166,5 @@
     </div>
   </section>
 </main>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const checkbox = document.querySelector('input[type="checkbox"]');
-        if(checkbox) { checkbox.style.marginTop = '4px'; }
-    });
-</script>
+
 {% endblock %}

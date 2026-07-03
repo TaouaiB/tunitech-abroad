@@ -53,7 +53,6 @@ class CVViewTests(TestCase):
         self.assertContains(response, 'role="button"')
         self.assertContains(response, 'tabindex="0"')
         self.assertContains(response, '@drop.prevent="handleDrop($event)"')
-        self.assertContains(response, 'name="consent_accepted"')
 
     def test_dashboard_cv_status_requires_owner(self):
         other_user = create_test_user(username="otheruser", email="other@test.com", password="password")

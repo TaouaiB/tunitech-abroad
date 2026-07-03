@@ -463,7 +463,7 @@ class StalenessHooksTests(TestCase):
         pdf_content = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n"
         pdf_file = SimpleUploadedFile("test.pdf", pdf_content, content_type="application/pdf")
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, pdf_file, consent_accepted=True)
+            cv = CVUploadService.upload_cv(self.user, pdf_file)
         self.recommendation.refresh_from_db()
         self.assertEqual(self.recommendation.status, "stale")
 
@@ -472,7 +472,7 @@ class StalenessHooksTests(TestCase):
         pdf_content = b"%PDF-1.4\n"
         pdf_file = SimpleUploadedFile("test.pdf", pdf_content, content_type="application/pdf")
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, pdf_file, consent_accepted=True)
+            cv = CVUploadService.upload_cv(self.user, pdf_file)
 
         # Reset recommendation status because upload already marked it stale
         self.recommendation.status = "active"

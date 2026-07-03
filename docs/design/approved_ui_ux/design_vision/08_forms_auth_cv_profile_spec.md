@@ -151,15 +151,10 @@ Analysez votre compatibilité sans rendre public votre CV.
 Upload card
   Dropzone
   File rules
-  Consent checkbox
   Submit button
 ```
 
-### Consent copy
 
-```text
-J'accepte que mon CV soit analysé pour extraire mes compétences et calculer mes scores de compatibilité avec les offres françaises. Mon CV ne sera jamais rendu public.
-```
 
 ### Dropzone states
 

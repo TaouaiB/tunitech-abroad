@@ -43,28 +43,23 @@ class CVServiceTests(TestCase):
         file = self._pdf_file("test content")
         file.name = "test.pdf"
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+            cv = CVUploadService.upload_cv(self.user, file)
         self.assertEqual(cv.user, self.user)
         self.assertTrue(cv.is_active)
         self.assertEqual(CVUpload.objects.count(), 1)
         mock_delay.assert_called_once_with(cv.id)
 
-    def test_upload_cv_no_consent(self):
-        file = self._pdf_file("test content")
-        file.name = "test.pdf"
-        with self.assertRaises(ValueError):
-            CVUploadService.upload_cv(self.user, file, consent_accepted=False)
 
     def test_upload_cv_rejects_non_pdf_in_service(self):
         file = SimpleUploadedFile("test.txt", b"text", content_type="text/plain")
         with self.assertRaises(ValueError):
-            CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+            CVUploadService.upload_cv(self.user, file)
 
     def test_upload_cv_rejects_fake_pdf_magic_bytes(self):
         file = SimpleUploadedFile("fake.pdf", b"not a pdf", content_type="application/pdf")
 
         with self.assertRaises(ValueError):
-            CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+            CVUploadService.upload_cv(self.user, file)
 
         self.assertEqual(file.tell(), 0)
 
@@ -72,7 +67,7 @@ class CVServiceTests(TestCase):
         file = SimpleUploadedFile("fake.pdf", b"%PDF-1.4\n", content_type="text/plain")
 
         with self.assertRaises(ValueError):
-            CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+            CVUploadService.upload_cv(self.user, file)
 
         self.assertEqual(file.tell(), 0)
 
@@ -88,7 +83,7 @@ class CVServiceTests(TestCase):
         oversize_bytes = (settings.MAX_CV_UPLOAD_SIZE_MB + 1) * 1024 * 1024
         file = SimpleUploadedFile("large.pdf", b"x" * oversize_bytes, content_type="application/pdf")
         with self.assertRaises(ValueError):
-            CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+            CVUploadService.upload_cv(self.user, file)
 
     def test_deterministic_extractor(self):
         text = "Amina Ben Ali\nLocation: Tunis\nContact me at test@test.com or +33 6 12 34 56 78.\nLinkedIn: https://linkedin.com/in/test\nGitHub: https://github.com/test\nPortfolio: https://amina.dev\nSkills:\nPython, Django, React"
@@ -209,7 +204,7 @@ class CVServiceTests(TestCase):
         pdf.name = "test_cv_junior_full_stack_aymen_ben_salah.pdf"
 
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, pdf, consent_accepted=True)
+            cv = CVUploadService.upload_cv(self.user, pdf)
         CVParsingService.parse_by_id(cv.id)
 
         cv.refresh_from_db()
@@ -266,7 +261,7 @@ class CVServiceTests(TestCase):
         pdf.name = "test_cv_junior_full_stack_aymen_ben_salah.pdf"
 
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, pdf, consent_accepted=True)
+            cv = CVUploadService.upload_cv(self.user, pdf)
         CVParsingService.parse_by_id(cv.id)
 
         profile.refresh_from_db()
