@@ -1,161 +1,132 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}TuniAtlas{% endblock %}</title>
 
     <script>
-        (function () {
-            try {
-                if (localStorage.getItem("tta-theme") === "dark") {
-                    document.documentElement.classList.add("dark");
-                } else {
-                    document.documentElement.classList.remove("dark");
-                }
-            } catch (error) {
-                document.documentElement.classList.remove("dark");
-            }
-        })();
+    (function(){
+      const pref=localStorage.getItem('ta-theme');
+      const dark=pref ? pref==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', dark);
+    })();
     </script>
 
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
 
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script defer src="{% static 'js/v16_ui.js' %}"></script>
 </head>
-<body data-project-layout="tunitech-abroad" class="tta-shell bg-slate-50 text-slate-900 font-sans antialiased selection:bg-brand-200 selection:text-brand-900 dark:bg-slate-950 dark:text-slate-50" x-data="{ mobileMenuOpen: false, theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light', toggleTheme() { this.theme = this.theme === 'dark' ? 'light' : 'dark'; document.documentElement.classList.toggle('dark', this.theme === 'dark'); try { localStorage.setItem('tta-theme', this.theme); } catch (error) {} } }" :class="{'mobile-open': mobileMenuOpen}">
-    <header class="tta-nav sticky top-0 z-50">
-        <div class="tta-container tta-nav-row flex justify-between items-center h-[72px]">
-            <a class="flex items-center gap-2 text-slate-950 dark:text-white font-black tracking-tight text-[21px] shrink-0" href="{% url 'jobs:list' %}">
-                <span class="tta-brand-mark">T</span><span>TuniAtlas</span>
+<body data-project-layout="tunitech-abroad">
+    <header class="nav">
+        <div class="shell nav-row">
+            <a class="brand" href="{% url 'jobs:list' %}">
+                <span class="brand-mark">T</span><span>TuniAtlas</span>
             </a>
 
-            <!-- Desktop Nav -->
-            <nav class="hidden md:flex items-center gap-1.5">
-                <a class="tta-nav-link" href="{% url 'jobs:list' %}">Offres</a>
-
+            <nav class="nav-links">
+                <a class="nav-link {% if request.resolver_match.view_name == 'jobs:list' %}active{% endif %}" href="{% url 'jobs:list' %}">Offres</a>
                 {% if user.is_authenticated %}
-                    <a class="tta-nav-link" href="{% url 'dashboard:recommendations' %}">Recommandations</a>
-                    <a class="tta-nav-link" href="{% url 'dashboard:saved_jobs' %}">Favoris</a>
-                    <a class="tta-nav-link" href="{% url 'dashboard:profile' %}">Profil</a>
-                    <a class="tta-nav-link" href="{% url 'dashboard:account' %}">Paramètres</a>
-                    <a class="tta-nav-link" href="{% url 'core:about' %}">À propos</a>
+                    <a class="nav-link {% if request.resolver_match.view_name == 'dashboard:recommendations' %}active{% endif %}" href="{% url 'dashboard:recommendations' %}">Recommandations</a>
+                    <a class="nav-link {% if request.resolver_match.view_name == 'dashboard:saved_jobs' %}active{% endif %}" href="{% url 'dashboard:saved_jobs' %}">Favoris</a>
+                    <a class="nav-link {% if request.resolver_match.view_name == 'dashboard:profile' %}active{% endif %}" href="{% url 'dashboard:profile' %}">Profil</a>
+                    <a class="nav-link {% if request.resolver_match.view_name == 'dashboard:account' %}active{% endif %}" href="{% url 'dashboard:account' %}">Paramètres</a>
+                    <a class="nav-link {% if request.resolver_match.view_name == 'core:about' %}active{% endif %}" href="{% url 'core:about' %}">À propos</a>
                 {% else %}
-                    <a class="tta-nav-link" href="{% url 'account_login' %}?next={% url 'dashboard:recommendations' %}">Recommandations</a>
-                    <a class="tta-nav-link" href="{% url 'core:about' %}">À propos</a>
+                    <a class="nav-link" href="{% url 'account_login' %}?next={% url 'dashboard:recommendations' %}">Recommandations</a>
+                    <a class="nav-link {% if request.resolver_match.view_name == 'core:about' %}active{% endif %}" href="{% url 'core:about' %}">À propos</a>
+                    <a class="nav-link" href="{% url 'account_login' %}">Connexion</a>
                 {% endif %}
             </nav>
 
-            <div class="flex items-center gap-2">
-                <button type="button" class="tta-theme-toggle-v16" @click="toggleTheme()" :aria-label="theme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
-                    <span class="tta-theme-knob-v16"></span>
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path></svg>
+            <div class="right-nav">
+                <button class="theme-toggle" data-theme-toggle aria-label="Switch theme">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+                    <span class="theme-knob"></span>
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path></svg>
                 </button>
-
+                <button class="lang-toggle" data-lang-toggle aria-label="Switch language">
+                    <span>EN</span>
+                    <span class="lang-knob"></span>
+                    <span>FR</span>
+                </button>
                 {% if user.is_authenticated %}
-                <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
-                    <button type="button" @click="open = !open" class="tta-avatar-v16" :aria-expanded="open.toString()" aria-haspopup="menu" aria-label="Menu">
-                        {{ user.email|make_list|first|upper }}
-                    </button>
-                    <div x-show="open" x-cloak x-transition.opacity.duration.200ms class="tta-dropdown-menu-proto" role="menu">
+                <div class="dropdown" data-dropdown>
+                    <button class="avatar" data-dropdown-btn>{{ user.email|make_list|first|upper }}</button>
+                    <div class="dropdown-menu">
                         <a href="{% url 'dashboard:profile' %}">Profil</a>
                         <a href="{% url 'dashboard:account' %}">Paramètres</a>
-                        <form method="post" action="{% url 'account_logout' %}" class="block w-full">
+                        <form method="post" style="margin:0;padding:0;display:block;" action="{% url 'account_logout' %}">
                             {% csrf_token %}
-                            <button type="submit" class="text-red-600 hover:text-red-700 w-full text-left" role="menuitem">Déconnexion</button>
+                            <button type="submit" style="color:var(--bad)">Déconnexion</button>
                         </form>
                     </div>
                 </div>
-                {% else %}
-                    <a class="tta-nav-link hidden md:inline-flex" href="{% url 'account_login' %}">Connexion</a>
-                    <a class="tta-btn tta-btn-primary !rounded-xl !min-h-9 !py-2 !px-4 text-sm hidden md:inline-flex" href="{% url 'account_signup' %}">Créer un compte</a>
                 {% endif %}
-
-                <!-- Mobile menu button -->
-                <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="md:hidden flex items-center justify-center w-9 h-9 border border-slate-200 dark:border-slate-800 rounded-xl bg-transparent dark:text-white" aria-label="Menu">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <button class="mobile-btn" data-mobile aria-label="Menu">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
             </div>
-        </div>
-
-        <!-- Mobile Menu -->
-        <div x-show="mobileMenuOpen" x-cloak class="md:hidden tta-mobile-menu-v16">
-            <a href="{% url 'jobs:list' %}" class="tta-nav-link text-left w-full justify-start py-3">Offres</a>
-            {% if user.is_authenticated %}
-                <a href="{% url 'dashboard:recommendations' %}" class="tta-nav-link text-left w-full justify-start py-3">Recommandations</a>
-                <a href="{% url 'dashboard:saved_jobs' %}" class="tta-nav-link text-left w-full justify-start py-3">Favoris</a>
-                <a href="{% url 'dashboard:profile' %}" class="tta-nav-link text-left w-full justify-start py-3">Profil</a>
-                <a href="{% url 'dashboard:account' %}" class="tta-nav-link text-left w-full justify-start py-3">Paramètres</a>
-                <a href="{% url 'core:about' %}" class="tta-nav-link text-left w-full justify-start py-3">À propos</a>
-                <form method="post" action="{% url 'account_logout' %}" class="block w-full">
-                    {% csrf_token %}
-                    <button type="submit" class="tta-nav-link text-left w-full justify-start py-3 text-red-600 hover:text-red-700" role="menuitem">Déconnexion</button>
-                </form>
-            {% else %}
-                <a href="{% url 'account_login' %}?next={% url 'dashboard:recommendations' %}" class="tta-nav-link text-left w-full justify-start py-3">Recommandations</a>
-                <a href="{% url 'core:about' %}" class="tta-nav-link text-left w-full justify-start py-3">À propos</a>
-                <a href="{% url 'account_login' %}" class="tta-nav-link text-left w-full justify-start py-3 font-bold">Connexion</a>
-                <a href="{% url 'account_signup' %}" class="tta-nav-link text-left w-full justify-start py-3 font-bold text-brand-600">Créer un compte</a>
-            {% endif %}
         </div>
     </header>
 
     {% if show_email_verification_banner %}
-    <div class="tta-email-banner">
-        <div class="tta-container tta-email-banner-row py-2 text-sm">
-            <span class="tta-dot-v16 warn"></span>
-            <b class="text-slate-900 dark:text-white">Activation du compte</b>
-            <span class="text-slate-600 dark:text-slate-300 font-semibold">Confirmez l'email envoyé dans votre boîte mail.</span>
-            <a href="{% url 'account_email' %}" class="tta-btn-secondary !rounded-xl ml-auto text-xs py-1.5 px-3">Gérer l'email</a>
+    <div class="account-alert" data-email-alert>
+        <div class="shell account-alert-row">
+            <span class="dot warn"></span>
+            <b>Activation du compte</b>
+            <span>Confirmez l'email envoyé dans votre boîte mail.</span>
+            <a href="{% url 'account_email' %}" class="btn secondary">Gérer l'email</a>
         </div>
     </div>
     {% endif %}
 
-    <main class="tta-main flex-grow" id="main-content">
-        <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-white focus:z-50">Aller au contenu principal</a>
-        <div class="tta-container relative">
-            {% if messages %}
-                <div class="tta-toast-wrap-v16" aria-live="polite">
-                    {% for message in messages %}
-                        <div x-data="{ show: true }"
-                             x-show="show"
-                             x-init="setTimeout(() => show = false, 5000)"
-                             x-transition.opacity.duration.300ms
-                             class="tta-toast-v16 {% if message.tags == 'error' or message.tags == 'danger' %}bad{% elif message.tags == 'warning' %}warn{% elif message.tags == 'success' %}good{% else %}info{% endif %}">
-
-                            <div class="flex-1">
-                                <b class="text-slate-900 dark:text-white">
-                                    {% if message.tags == 'error' or message.tags == 'danger' %}Erreur
-                                    {% elif message.tags == 'warning' %}Attention
-                                    {% elif message.tags == 'success' %}Succès
-                                    {% else %}Info{% endif %}
-                                </b>
-                                <span class="text-slate-600 dark:text-slate-300 text-sm block">{{ message }}</span>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
-            {% block content %}{% endblock %}
-        </div>
+    <main id="main-content">
+        {% block content %}{% endblock %}
     </main>
 
-    <footer class="tta-footer-proto">
-        <div class="tta-container tta-footer-row text-sm">
+    <footer class="footer">
+        <div class="shell footer-row">
             <div>
-                <b class="text-slate-900 dark:text-white text-base block mb-1">TuniAtlas</b>
-                <div class="text-slate-500 dark:text-slate-400">Job intelligence pour profils IT tunisiens.</div>
+                <b>TuniAtlas</b>
+                <div class="small">Tech jobs abroad for Tunisian talent.</div>
             </div>
-            <div class="flex items-center gap-4">
-                <a href="{% url 'core:about' %}" class="font-bold hover:text-brand-600">À propos</a>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <a href="{% url 'jobs:list' %}">Offres</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard:recommendations' %}">Recommandations</a>
+                    <a href="{% url 'dashboard:saved_jobs' %}">Favoris</a>
+                    <a href="{% url 'dashboard:profile' %}">Profil</a>
+                    <a href="{% url 'dashboard:account' %}">Paramètres</a>
+                {% else %}
+                    <a href="{% url 'account_login' %}?next={% url 'dashboard:recommendations' %}">Recommandations</a>
+                {% endif %}
+                <a href="{% url 'core:about' %}">À propos</a>
             </div>
         </div>
     </footer>
+
+    <div class="toast-wrap">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast {% if message.tags == 'error' or message.tags == 'danger' %}bad{% elif message.tags == 'warning' %}warn{% elif message.tags == 'success' %}good{% else %}info{% endif %}" data-django-toast style="animation: none;">
+                    <span class="dot {% if message.tags == 'error' or message.tags == 'danger' %}bad{% elif message.tags == 'warning' %}warn{% elif message.tags == 'success' %}good{% else %}info{% endif %}"></span>
+                    <div>
+                        <b>
+                            {% if message.tags == 'error' or message.tags == 'danger' %}Erreur
+                            {% elif message.tags == 'warning' %}Info
+                            {% elif message.tags == 'success' %}Terminé
+                            {% else %}Info{% endif %}
+                        </b>
+                        <span>{{ message }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
 
     {% block extra_scripts %}{% endblock %}
 </body>
