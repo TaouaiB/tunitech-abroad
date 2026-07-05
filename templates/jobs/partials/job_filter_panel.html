@@ -19,40 +19,25 @@
         <input type="text" name="location" id="side_location" value="{{ filters.location|default:'' }}" class="input" placeholder="Paris, Lyon...">
     </div>
 
-    <div class="filter-row">
-        <!-- Contract Type -->
-        <div class="field">
-            <label for="contract_type" data-i18n="Contract">Contrat</label>
-            <select id="contract_type" name="contract_type" class="select">
-                <option value="" data-i18n="All">Tous</option>
-                <option value="CDI" {% if filters.contract_type|upper == "CDI" %}selected{% endif %}>CDI</option>
-                <option value="CDD" {% if filters.contract_type|upper == "CDD" %}selected{% endif %}>CDD</option>
-                <option value="Stage" {% if filters.contract_type|lower == "stage" %}selected{% endif %}>Stage</option>
-                <option value="Alternance" {% if filters.contract_type|lower == "alternance" %}selected{% endif %}>Alternance</option>
-            </select>
-        </div>
-
-        <!-- Remote Type -->
-        <div class="field">
-            <label for="remote_type" data-i18n="Remote work">Télétravail</label>
-            <select id="remote_type" name="remote_type" class="select">
-                <option value="" {% if not filters.remote_type %}selected{% endif %} data-i18n="All">Tous</option>
-                <option value="remote" {% if filters.remote_type == "remote" %}selected{% endif %}>Remote</option>
-                <option value="hybrid" {% if filters.remote_type == "hybrid" %}selected{% endif %} data-i18n="Hybrid">Hybride</option>
-                <option value="on_site" {% if filters.remote_type == "on_site" %}selected{% endif %} data-i18n="On site">Sur site</option>
-            </select>
-        </div>
+    <!-- Remote Type -->
+    <div class="field">
+        <label for="remote_type" data-i18n="Remote work">Télétravail</label>
+        <select id="remote_type" name="remote_type" class="select">
+            <option value="" {% if not filters.remote_type %}selected{% endif %} data-i18n="All">Tous</option>
+            <option value="remote" {% if filters.remote_type == "remote" %}selected{% endif %}>Remote</option>
+            <option value="hybrid" {% if filters.remote_type == "hybrid" %}selected{% endif %} data-i18n="Hybrid">Hybride</option>
+            <option value="on_site" {% if filters.remote_type == "on_site" %}selected{% endif %} data-i18n="On site">Sur site</option>
+        </select>
     </div>
-
     <!-- Job Type -->
     <div class="field">
         <label for="job_type" data-i18n="Job type">Type d'emploi</label>
         <select id="job_type" name="job_type" class="select">
             <option value="" {% if not filters.job_type %}selected{% endif %} data-i18n="All">Tous</option>
-            <option value="full_time_job" {% if filters.job_type == "full_time_job" %}selected{% endif %} data-i18n="Full time">Temps plein</option>
-            <option value="internship" {% if filters.job_type == "internship" %}selected{% endif %}>Stage (PFE)</option>
-            <option value="apprenticeship" {% if filters.job_type == "apprenticeship" %}selected{% endif %}>Alternance</option>
-            <option value="contract" {% if filters.job_type == "contract" %}selected{% endif %} data-i18n="Contract freelance">Freelance / Contrat</option>
+            <option value="full_time_job" {% if filters.job_type == "full_time_job" %}selected{% endif %} data-i18n="Job">Emploi</option>
+            <option value="internship" {% if filters.job_type == "internship" %}selected{% endif %} data-i18n="Internship">Stage</option>
+            <option value="apprenticeship" {% if filters.job_type == "apprenticeship" %}selected{% endif %} data-i18n="Apprenticeship">Alternance</option>
+            <option value="contract" {% if filters.job_type == "contract" %}selected{% endif %} data-i18n="Freelance / Contract">Freelance / Mission</option>
         </select>
     </div>
 

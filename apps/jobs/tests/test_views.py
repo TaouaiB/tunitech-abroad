@@ -83,6 +83,63 @@ class JobViewTests(TestCase):
         response = self.client.get(reverse("jobs:list"), {"q": "Test", "location": "Paris"})
         self.assertEqual(response.status_code, 200)
 
+    def test_job_list_view_does_not_render_contract_type_filter(self):
+        response = self.client.get(reverse("jobs:list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'name="contract_type"')
+        self.assertNotContains(response, 'value="CDI"')
+        self.assertNotContains(response, 'value="CDD"')
+
+    def test_job_list_view_renders_simplified_job_type_filter(self):
+        response = self.client.get(reverse("jobs:list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="job_type"')
+        self.assertContains(response, 'value="full_time_job"')
+        self.assertContains(response, 'value="internship"')
+        self.assertContains(response, 'value="apprenticeship"')
+        self.assertContains(response, 'value="contract"')
+        self.assertContains(response, 'Freelance / Mission')
+
+    def test_job_card_replaces_cdi_with_job_type(self):
+        self.job.contract_type = "CDI"
+        self.job.job_type = "full_time_job"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Emploi")
+        self.assertNotContains(response, ">CDI<", html=False)
+        self.assertNotContains(response, "Full-time Job", html=False)
+
+    def test_job_card_replaces_cdd_with_job_type(self):
+        self.job.contract_type = "CDD"
+        self.job.job_type = "full_time_job"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Emploi")
+        self.assertNotContains(response, ">CDD<", html=False)
+
+    def test_job_card_displays_stage_alternance_freelance(self):
+        # Stage
+        self.job.contract_type = "Stage"
+        self.job.job_type = "internship"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Stage")
+
+        # Alternance
+        self.job.contract_type = "Alternance"
+        self.job.job_type = "apprenticeship"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Alternance")
+
+        # Freelance
+        self.job.contract_type = "Mission"
+        self.job.job_type = "contract"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Freelance / Mission")
+        self.assertNotContains(response, ">Contract<", html=False)
+
     def test_job_list_view_shows_relevance_sort_when_query_requests_it(self):
         response = self.client.get(reverse("jobs:list"), {"q": "django", "sort": "relevance"})
         self.assertEqual(response.status_code, 200)

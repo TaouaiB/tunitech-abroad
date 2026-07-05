@@ -40,8 +40,6 @@ class JobSearchService:
         published_to = filters.get("published_to", "")
         invalid_filters = dict(filters.get("_invalid_filters", {}))
 
-        if contract_type:
-            qs = qs.filter(contract_type=contract_type)
         if job_type:
             qs = qs.filter(job_type=job_type)
         if remote_type:

@@ -135,10 +135,10 @@ class EligibilityTests(TestCase):
         self.assertIn("not currently eligible", resp_q.content.decode())
 
     def test_badge_deduplication(self):
-        j1 = self._create_job("j1", "Data Engineer", "GCP", True, "data_ai_bi", "high", "success", "strong", contract_type="CDD", job_type="CDD")
+        j1 = self._create_job("j1", "Data Engineer", "GCP", True, "data_ai_bi", "high", "success", "strong", contract_type="CDI", job_type="full_time_job")
         badges = JobPresentationService.get_deduplicated_badges(j1)
         texts = [b["text"] for b in badges]
-        self.assertEqual(texts, ["CDD"])
+        self.assertEqual(texts, ["Emploi"])
 
     def test_public_list_includes_true_pending_analysis_only(self):
         pending = self._create_job("pending", "DevOps", "AWS", True, "devops_cloud_sre", "high", "pending", "unknown")

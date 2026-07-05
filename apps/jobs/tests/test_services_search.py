@@ -109,12 +109,18 @@ class JobSearchServiceTests(TestCase):
 
     def test_search_filter_contract_job_and_experience(self):
         result = JobSearchService.search({
-            "contract_type": "STAGE",
             "job_type": "internship",
             "experience_level": "internship",
         })
         self.assertEqual(result.total_count, 1)
         self.assertEqual(result.page_obj[0].id, self.job2.id)
+
+    def test_search_ignores_contract_type_param(self):
+        # Even if contract_type=CDI is passed, it should not crash,
+        # but it shouldn't filter by contract_type anymore.
+        result = JobSearchService.search({"contract_type": "CDI", "company": "Tech Corp"})
+        self.assertEqual(result.total_count, 1)
+        self.assertEqual(result.page_obj[0].id, self.job1.id)
 
     def test_search_filter_remote_type(self):
         result = JobSearchService.search({"remote_type": "remote"})
