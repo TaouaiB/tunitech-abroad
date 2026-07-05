@@ -42,7 +42,7 @@ class WeeklyDigestService:
             
             for user in active_users:
                 # 1. verified email
-                email_address = EmailAddress.objects.filter(user=user, verified=True).first()
+                email_address = EmailAddress.objects.filter(user=user, verified=True).order_by("-primary", "id").first()
                 if not email_address:
                     skipped_count += 1
                     continue
@@ -93,7 +93,12 @@ class WeeklyDigestService:
                 
                 try:
                     from django.template.loader import render_to_string
-                    subject = render_to_string("notifications/email/weekly_digest_subject.txt", context).strip()
+                    try:
+                        subject = render_to_string("notifications/email/weekly_digest_subject.txt", context)
+                        subject = subject.replace("\n", " ").replace("\r", " ").strip()
+                    except Exception:
+                        subject = "Your TuniAtlas weekly job picks"
+
                     event = EmailSenderService.send(
                         to=email_address.email,
                         subject=subject,
@@ -110,8 +115,8 @@ class WeeklyDigestService:
                         failed_count += 1
                     else:
                         skipped_count += 1
-                except Exception as e:
-                    logger.error(f"Error sending digest to {user.id}: {e}")
+                except Exception:
+                    logger.exception("Error sending digest to user_id=%s", user.id)
                     failed_count += 1
             
             batch.total_recipients = sent_count + skipped_count + failed_count
@@ -120,10 +125,10 @@ class WeeklyDigestService:
             batch.failed_count = failed_count
             batch.status = "completed" if failed_count == 0 else "partial_success"
             
-        except Exception as e:
-            logger.error(f"Error running weekly digest batch: {e}")
+        except Exception:
+            logger.exception("Error running weekly digest batch_id=%s", batch.id)
             batch.status = "failed"
-            batch.error_message = str(e)
+            batch.error_message = "weekly_digest_failed"
             
         batch.finished_at = timezone.now()
         batch.save()

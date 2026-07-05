@@ -73,11 +73,17 @@ class EmailSenderService:
             event.sent_at = timezone.now()
             event.save(update_fields=["status", "sent_at"])
             
-        except Exception as e:
-            logger.error(f"Failed to send email to {to}: {str(e)}")
+        except TemplateDoesNotExist:
             event.status = "failed"
-            event.error_message = str(e)
+            event.error_message = "template_render_failed"
             event.failed_at = timezone.now()
             event.save(update_fields=["status", "error_message", "failed_at"])
+            logger.warning("Email template missing: %s", template_name)
+        except Exception:
+            event.status = "failed"
+            event.error_message = "email_send_failed"
+            event.failed_at = timezone.now()
+            event.save(update_fields=["status", "error_message", "failed_at"])
+            logger.exception("Failed to send notification email event_id=%s", event.pk)
 
         return event

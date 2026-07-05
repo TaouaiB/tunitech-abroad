@@ -19,8 +19,6 @@ def email_preferences_view(request):
     else:
         form = EmailPreferenceForm(initial={
             "weekly_digest_enabled": pref.weekly_digest_enabled,
-            "product_updates_enabled": pref.product_updates_enabled,
-            "cv_analysis_email_enabled": pref.cv_analysis_email_enabled,
         })
         
     return render(request, "dashboard/email_preferences.html", {"form": form, "settings_active": "email"})
