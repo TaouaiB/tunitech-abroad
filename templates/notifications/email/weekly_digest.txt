@@ -6,6 +6,8 @@ Here are your top recommended jobs for the week:
 - {{ rec.job.title }} at {{ rec.job.company_name }} ({{ rec.job.location }})
   Fit Score: {{ rec.fit_score }}%
   Link: {{ site_url }}/jobs/{{ rec.job.public_id }}/
+{% empty %}
+No new recommendations this week. Check back soon!
 {% endfor %}
 
 Please note: These recommendations do not guarantee employment, visa, relocation, or legal outcome.
@@ -15,3 +17,5 @@ Manage your recommendations:
 
 To unsubscribe from the weekly digest, visit:
 {{ unsubscribe_url }}
+
+The TuniAtlas Team

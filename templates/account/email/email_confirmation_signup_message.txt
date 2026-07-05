@@ -1,0 +1,12 @@
+{% load account %}
+{% user_display user as user_display %}
+Hello {{ user_display }},
+
+Please confirm your TuniAtlas account by clicking the link below:
+
+{{ activate_url }}
+
+If you did not sign up for a TuniAtlas account, you can safely ignore this email.
+
+Best regards,
+The TuniAtlas Team

@@ -1,21 +1,38 @@
-<p>Hello {{ user.username|default:"there" }},</p>
+{% extends "email/base_user_email.html" %}
 
+{% block content %}
+<p style="margin-top: 0;">Hello {{ user.username|default:"there" }},</p>
 <p>Here are your top recommended jobs for the week:</p>
 
-<ul>
 {% for rec in recommendations %}
-  <li>
-    <strong>{{ rec.job.title }}</strong> at {{ rec.job.company_name }} ({{ rec.job.location }})<br>
-    Fit Score: {{ rec.fit_score }}%<br>
-    <a href="{{ site_url }}/jobs/{{ rec.job.public_id }}/">View Job Details</a>
-  </li>
+<div style="background-color: #142641; border: 1px solid #284263; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+  <h3 style="margin: 0 0 8px 0; font-size: 18px; color: #f8fafc;">{{ rec.job.title }}</h3>
+  <p style="margin: 0 0 12px 0; color: #b8c4d6; font-size: 14px;">
+    <strong>{{ rec.job.company_name }}</strong> &bull; {{ rec.job.location }}<br>
+    <span style="color: #60a5fa;">Fit Score: {{ rec.fit_score }}%</span>
+  </p>
+
+  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="left" style="padding-top: 12px;">
+        <a href="{{ site_url }}/jobs/{{ rec.job.public_id }}/" style="display: inline-block; background: linear-gradient(135deg, #60a5fa, #a78bfa); background-color: #60a5fa; color: #ffffff; border-radius: 14px; font-weight: 800; padding: 10px 20px; text-decoration: none; font-size: 14px;">
+          View Job Details
+        </a>
+      </td>
+    </tr>
+  </table>
+</div>
+{% empty %}
+<p style="color: #b8c4d6; font-style: italic;">No new recommendations this week. Check back soon!</p>
 {% endfor %}
-</ul>
 
-<p><em>Please note: These recommendations do not guarantee employment, visa, relocation, or legal outcome.</em></p>
-
-<p>
-  <small>
-    <a href="{{ recommendations_url }}">Manage your recommendations</a> or <a href="{{ unsubscribe_url }}">unsubscribe from the weekly digest</a>.
-  </small>
-</p>
+<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #284263;">
+  <p style="margin: 0 0 16px 0; font-size: 14px; color: #b8c4d6;">
+    <em>Please note: These recommendations do not guarantee employment, visa, relocation, or legal outcome.</em>
+  </p>
+  <p style="margin: 0; font-size: 14px;">
+    <a href="{{ recommendations_url }}" style="color: #60a5fa; text-decoration: none;">Manage recommendations</a> &bull;
+    <a href="{{ unsubscribe_url }}" style="color: #a78bfa; text-decoration: none;">Unsubscribe</a>
+  </p>
+</div>
+{% endblock %}

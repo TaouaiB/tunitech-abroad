@@ -1,1 +1,1 @@
-{% load i18n %}Confirmez votre adresse email - TuniAtlas
+Confirm your email for TuniAtlas

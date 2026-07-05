@@ -1,13 +1,12 @@
-{% autoescape off %}
-Bonjour,
+{% load account %}
+{% user_display user as user_display %}
+Hello {{ user_display }},
 
-Bienvenue sur TuniAtlas !
-
-Pour activer votre compte et confirmer votre adresse email, veuillez cliquer sur le lien ci-dessous :
+Please confirm your email address for TuniAtlas by clicking the link below:
 
 {{ activate_url }}
 
-Si vous n'avez pas créé de compte, vous pouvez ignorer cet email.
+If you did not request this, you can safely ignore this email.
 
-L'équipe TuniAtlas
-{% endautoescape %}
+Best regards,
+The TuniAtlas Team

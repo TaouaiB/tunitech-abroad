@@ -27,7 +27,7 @@ class UserModelTests(TestCase):
     def test_custom_user_model(self):
         self.assertEqual(User.__name__, 'User')
         self.assertEqual(User._meta.app_label, 'accounts')
-    
+
     def test_user_creation(self):
         user = create_test_user(username="testuser", email="test@example.test", password="password123")
         self.assertEqual(user.email, "test@example.test")
@@ -48,15 +48,15 @@ class UserModelTests(TestCase):
 class AccountProvisioningServiceTests(TestCase):
     def test_idempotent_provisioning(self):
         user = create_test_user(username="provuser", email="prov@example.test", password="password123")
-        
+
         # Test Phase 2: Creates CandidateProfile and EmailPreference idempotently
         from apps.profiles.models import CandidateProfile
         from apps.notifications.models import EmailPreference
-        
+
         AccountProvisioningService.provision_new_user(user)
         self.assertTrue(CandidateProfile.objects.filter(user=user).exists())
         self.assertTrue(EmailPreference.objects.filter(user=user).exists())
-        
+
         # Call again to test idempotency
         AccountProvisioningService.provision_new_user(user)
         self.assertEqual(CandidateProfile.objects.filter(user=user).count(), 1)
@@ -67,15 +67,15 @@ class AccountProvisioningServiceTests(TestCase):
         try:
             from allauth.socialaccount.models import SocialAccount
             SocialAccount.objects.create(
-                user=user, 
-                provider='github', 
+                user=user,
+                provider='github',
                 uid='12345',
                 extra_data={'name': 'Github User', 'html_url': 'https://github.com/ghuser', 'location': 'Tunis'}
             )
-            
+
             from apps.profiles.models import CandidateProfile
             AccountProvisioningService.provision_new_user(user)
-            
+
             profile = CandidateProfile.objects.get(user=user)
             self.assertEqual(profile.full_name, 'Github User')
             self.assertEqual(profile.github_url, 'https://github.com/ghuser')
@@ -357,3 +357,51 @@ class AuthViewsTests(TestCase):
         self.assertIn('data-project-layout="tunitech-abroad"', html)
         self.assertIn("TuniAtlas", html)
         self.assertNotIn("<h1>Verify Your Email Address</h1>", html)
+
+from django.template.loader import render_to_string
+
+class AccountEmailTemplateTests(TestCase):
+    def setUp(self):
+        self.user = create_test_user("emailtester", "emailtester@example.com")
+
+    def test_password_reset_email_renders_with_branded_content(self):
+        context = {
+            "user": self.user,
+            "password_reset_url": "http://example.com/reset/xyz"
+        }
+
+        # Test subject
+        subject = render_to_string("account/email/password_reset_key_subject.txt", context).strip("\n")
+        self.assertEqual(subject, "Reset your TuniAtlas password")
+        self.assertNotIn("\n", subject)
+
+        # Test text message
+        txt_body = render_to_string("account/email/password_reset_key_message.txt", context)
+        self.assertIn("TuniAtlas", txt_body)
+        self.assertIn("http://example.com/reset/xyz", txt_body)
+
+        # Test html message
+        html_body = render_to_string("account/email/password_reset_key_message.html", context)
+        self.assertIn("TuniAtlas", html_body)
+        self.assertIn("http://example.com/reset/xyz", html_body)
+
+    def test_confirmation_email_renders_with_branded_content(self):
+        context = {
+            "user": self.user,
+            "activate_url": "http://example.com/activate/xyz"
+        }
+
+        # Test subject
+        subject = render_to_string("account/email/email_confirmation_signup_subject.txt", context).strip("\n")
+        self.assertEqual(subject, "Confirm your TuniAtlas account")
+        self.assertNotIn("\n", subject)
+
+        # Test text message
+        txt_body = render_to_string("account/email/email_confirmation_signup_message.txt", context)
+        self.assertIn("TuniAtlas", txt_body)
+        self.assertIn("http://example.com/activate/xyz", txt_body)
+
+        # Test html message
+        html_body = render_to_string("account/email/email_confirmation_signup_message.html", context)
+        self.assertIn("TuniAtlas", html_body)
+        self.assertIn("http://example.com/activate/xyz", html_body)

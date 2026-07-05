@@ -92,9 +92,11 @@ class WeeklyDigestService:
                 }
                 
                 try:
+                    from django.template.loader import render_to_string
+                    subject = render_to_string("notifications/email/weekly_digest_subject.txt", context).strip()
                     event = EmailSenderService.send(
                         to=email_address.email,
-                        subject="Your Weekly Job Recommendations",
+                        subject=subject,
                         template_name="weekly_digest",
                         context=context,
                         idempotency_key=idempotency_key,

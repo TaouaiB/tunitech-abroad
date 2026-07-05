@@ -1,0 +1,17 @@
+{% extends "email/base_user_email.html" %}
+{% load account %}
+
+{% block content %}
+{% user_display user as user_display %}
+<p style="margin-top: 0;">Hello {{ user_display }},</p>
+<p>Thank you for signing up for TuniAtlas! Please confirm your account to get started.</p>
+
+{% include "email/_button.html" with url=activate_url text="Confirm your account" %}
+
+<p style="font-size: 14px; color: #b8c4d6; word-break: break-all;">
+  If the button doesn't work, copy and paste this link into your browser:<br>
+  <a href="{{ activate_url }}" style="color: #60a5fa;">{{ activate_url }}</a>
+</p>
+
+<p style="margin-bottom: 0;">If you did not sign up for a TuniAtlas account, you can safely ignore this email.</p>
+{% endblock %}
