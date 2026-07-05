@@ -4,9 +4,9 @@
 <div class="recommendations-v16">
 <section class="section">
     <div class="shell">
-        <h1 class="page-title small" style="margin-bottom:6px;">Recommandations</h1>
-        <p class="subtitle">Offres sélectionnées spécialement pour votre profil technique.</p>
-        <form method="post" action="{% url 'recommendations:refresh' %}" style="margin-top:12px;">{% csrf_token %}<button type="submit" class="btn secondary">Actualiser mes recommandations</button></form>
+        <h1 class="page-title small" style="margin-bottom:6px;" data-i18n="Recommendations">Recommandations</h1>
+        <p class="subtitle" data-fr="Offres sélectionnées spécialement pour votre profil technique." data-en="Jobs selected specifically for your technical profile.">Offres sélectionnées spécialement pour votre profil technique.</p>
+        <form method="post" action="{% url 'recommendations:refresh' %}" style="margin-top:12px;">{% csrf_token %}<button type="submit" class="btn secondary" data-i18n="Refresh my recommendations">Actualiser mes recommandations</button></form>
         <div id="recommendation-panel" style="margin-top:18px;">{% include 'recommendations/partials/recommendation_list.html' with result=result %}</div>
     </div>
 </section>

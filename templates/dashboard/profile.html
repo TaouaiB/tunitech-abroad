@@ -6,15 +6,15 @@
 <main class="profile-v16">
   <section class="section">
     <div class="shell">
-      <h1 class="page-title small">Profil</h1>
+      <h1 class="page-title small" data-i18n="Profile">Profil</h1>
 
       <div class="stepper">
         {% if not request.user.has_usable_password %}
         <div class="step" onclick="window.location.href='{% url 'account_set_password' %}'" style="cursor:pointer;">
           <span class="step-num">1</span>
           <div>
-            <b>Mot de passe</b>
-            <div class="small">Non défini</div>
+            <b data-i18n="Password">Mot de passe</b>
+            <div class="small" data-i18n="Not set">Non défini</div>
           </div>
         </div>
         {% endif %}
@@ -22,14 +22,14 @@
           <span class="step-num">{% if not request.user.has_usable_password %}2{% else %}1{% endif %}</span>
           <div>
             <b>CV</b>
-            <div class="small">Gérez votre CV</div>
+            <div class="small" data-i18n="Manage your CV">Gérez votre CV</div>
           </div>
         </div>
         <div class="step active">
           <span class="step-num">{% if not request.user.has_usable_password %}3{% else %}2{% endif %}</span>
           <div>
-            <b>Profil</b>
-            <div class="small">Complétez vos infos</div>
+            <b data-i18n="Profile">Profil</b>
+            <div class="small" data-i18n="Complete your info">Complétez vos infos</div>
           </div>
         </div>
       </div>
@@ -38,7 +38,7 @@
         <section class="grid">
           <form method="post" class="card grid" style="padding:18px;">
             {% csrf_token %}
-            <h2 class="h2">Profil Candidat</h2>
+            <h2 class="h2" data-i18n="Candidate profile">Profil Candidat</h2>
 
             {% if not is_complete_enough and missing_fields %}
             <div style="border:1px solid var(--warn); background:color-mix(in srgb, var(--warn) 6%, var(--panel)); border-radius:18px; padding:18px; margin-bottom:12px;">
@@ -64,22 +64,22 @@
             {% for field in form %}
                 {% if not field.is_hidden %}
                     {% if field.name == 'full_name' %}
-                    <h3 class="h3" style="margin-top:16px;">Identité</h3>
+                    <h3 class="h3" style="margin-top:16px;" data-i18n="Identity">Identité</h3>
                     <div class="account-box">
                     {% elif field.name == 'linkedin_url' %}
-                    </div><h3 class="h3" style="margin-top:16px;">Liens professionnels</h3>
+                    </div><h3 class="h3" style="margin-top:16px;" data-i18n="Professional links">Liens professionnels</h3>
                     <div class="account-box">
                     {% elif field.name == 'current_level' %}
-                    </div><h3 class="h3" style="margin-top:16px;">Expérience</h3>
+                    </div><h3 class="h3" style="margin-top:16px;" data-i18n="Experience">Expérience</h3>
                     <div class="account-box">
                     {% elif field.name == 'target_roles' %}
-                    </div><h3 class="h3" style="margin-top:16px;">Vos objectifs</h3>
+                    </div><h3 class="h3" style="margin-top:16px;" data-i18n="Your goals">Vos objectifs</h3>
                     <div class="account-box">
                     {% elif field.name == 'french_level' %}
-                    </div><h3 class="h3" style="margin-top:16px;">Langues</h3>
+                    </div><h3 class="h3" style="margin-top:16px;" data-i18n="Languages">Langues</h3>
                     <div class="account-box">
                     {% elif field.name == 'relocation_preference' %}
-                    </div><h3 class="h3" style="margin-top:16px;">Préférences</h3>
+                    </div><h3 class="h3" style="margin-top:16px;" data-i18n="Preferences">Préférences</h3>
                     <div class="account-box">
                     {% endif %}
 
@@ -94,7 +94,7 @@
                             {% if key == field.name %}
                                 <div class="small" style="margin-top:4px; color:var(--brand); display:flex; gap:4px; align-items:center;">
                                     <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Détecté sur votre CV : <strong>{{ val }}</strong>
+                                    <span data-i18n="Detected on your CV:">Détecté sur votre CV :</span> <strong>{{ val }}</strong>
                                 </div>
                             {% endif %}
                         {% endfor %}
@@ -109,8 +109,8 @@
                 {% if forloop.last %}</div>{% endif %}
             {% endfor %}
 
-            <h3 class="h3" style="margin-top:16px;">Compétences</h3>
-            <div class="small" style="margin-bottom:8px;">Compétences confirmées et détectées depuis votre CV, utilisées par le matching.</div>
+            <h3 class="h3" style="margin-top:16px;" data-i18n="Confirmed skills">Compétences</h3>
+            <div class="small" style="margin-bottom:8px;" data-fr="Compétences confirmées et détectées depuis votre CV, utilisées par le matching." data-en="Confirmed and CV-detected skills used for matching.">Compétences confirmées et détectées depuis votre CV, utilisées par le matching.</div>
             {% if profile_skills %}
                 <div class="pill-row">
                     {% for skill in profile_skills %}
@@ -121,44 +121,44 @@
                 </div>
             {% else %}
                 <div class="small" style="border:1px dashed var(--line); padding:12px; border-radius:12px;">
-                    Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section.
+                    <span data-i18n="No skills detected yet. Upload or replace your CV to fill this section.">Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section.</span>
                 </div>
             {% endif %}
             <div class="pill-row" style="margin-top:16px; border-top:1px solid var(--line); padding-top:16px;">
-                <button class="btn secondary" type="button" onclick="window.location.href='{% url 'dashboard:cv' %}'">Retour au CV</button>
-                <button type="submit" class="btn primary">Enregistrer le profil</button>
+                <button class="btn secondary" type="button" onclick="window.location.href='{% url 'dashboard:cv' %}'" data-i18n="Back to CV">Retour au CV</button>
+                <button type="submit" class="btn primary" data-i18n="Save profile">Enregistrer le profil</button>
             </div>
           </form>
         </section>
 
         <aside class="card sticky">
-          <h2 class="h2">Progression</h2>
+          <h2 class="h2" data-i18n="Completion">Progression</h2>
 
           <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px;">
             <strong style="font-size:24px; letter-spacing:-.04em;">{{ profile.profile_completion_score|default:0 }}%</strong>
             <span class="pill {% if profile.profile_completion_score|default:0 >= 80 %}good{% elif profile.profile_completion_score|default:0 >= 50 %}brand{% else %}warn{% endif %}" style="padding:4px 8px; font-size:10px;">
-                {% if profile.profile_completion_score|default:0 >= 80 %}Fort{% elif profile.profile_completion_score|default:0 >= 50 %}Utilisable{% else %}Incomplet{% endif %}
+                <span data-i18n="{% if profile.profile_completion_score|default:0 >= 80 %}Strong{% elif profile.profile_completion_score|default:0 >= 50 %}Usable{% else %}Incomplete{% endif %}">{% if profile.profile_completion_score|default:0 >= 80 %}Fort{% elif profile.profile_completion_score|default:0 >= 50 %}Utilisable{% else %}Incomplet{% endif %}</span>
             </span>
           </div>
           <div class="bar {% if profile.profile_completion_score|default:0 >= 80 %}good{% elif profile.profile_completion_score|default:0 >= 50 %}brand{% else %}warn{% endif %}">
               <span style="width: {{ profile.profile_completion_score|default:0 }}%;"></span>
           </div>
-          <div class="small" style="margin-top:8px;">Plus votre profil est complet, plus le matching est précis.</div>
+          <div class="small" style="margin-top:8px;" data-i18n="The more complete your profile is, the more accurate matching becomes.">Plus votre profil est complet, plus le matching est précis.</div>
 
           <div class="notice-list" style="margin-top:16px">
             {% if not request.user.has_usable_password %}
             <div class="notice">
               <span class="dot warn"></span>
-              <div><b>Mot de passe</b></div>
+              <div><b data-i18n="Password">Mot de passe</b></div>
             </div>
             {% endif %}
             <div class="notice">
               <span class="dot {% if profile.user.cvs.exists %}good{% else %}warn{% endif %}"></span>
-              <div><b>CV en ligne</b></div>
+              <div><b data-i18n="Online CV">CV en ligne</b></div>
             </div>
             <div class="notice">
               <span class="dot {% if is_complete_enough %}good{% else %}warn{% endif %}"></span>
-              <div><b>Profil complété</b></div>
+              <div><b data-i18n="Profile completed">Profil complété</b></div>
             </div>
           </div>
         </aside>

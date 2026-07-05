@@ -5,8 +5,8 @@
 <div class="saved-v16">
 <section class="section">
     <div class="shell">
-        <h1 class="page-title small" style="margin-bottom:6px;">Offres sauvegardées</h1>
-        <p class="subtitle" style="margin-bottom:18px;">Retrouvez les annonces que vous avez mises de côté.</p>
+        <h1 class="page-title small" style="margin-bottom:6px;" data-i18n="Saved jobs">Offres sauvegardées</h1>
+        <p class="subtitle" style="margin-bottom:18px;" data-i18n="Find your saved jobs here.">Retrouvez les annonces que vous avez mises de côté.</p>
         <div class="grid" id="saved-jobs-grid" data-saved-jobs-grid>
             {% for saved_job in saved_jobs %}
             <article class="job-card" id="saved-job-card-{{ saved_job.job.public_id }}">
@@ -54,9 +54,9 @@
                 <div class="empty-ill" style="margin:0 auto 16px auto;">
                     <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                 </div>
-                <h2 class="h2">Aucune offre sauvegardée</h2>
-                <p class="subtitle" style="margin:0 auto 24px auto;max-width:500px;">Sauvegardez les offres intéressantes pour les comparer plus tard.</p>
-                <a href="{% url 'jobs:list' %}" class="btn primary">Explorer les offres</a>
+                <h2 class="h2" data-i18n="No saved jobs">Aucune offre sauvegardée</h2>
+                <p class="subtitle" style="margin:0 auto 24px auto;max-width:500px;" data-fr="Sauvegardez les offres intéressantes pour les comparer plus tard." data-en="Save interesting jobs to compare them later.">Sauvegardez les offres intéressantes pour les comparer plus tard.</p>
+                <a href="{% url 'jobs:list' %}" class="btn primary" data-i18n="Explore jobs">Explorer les offres</a>
             </div>
             {% endfor %}
         </div>

@@ -118,6 +118,29 @@ class JobViewTests(TestCase):
     def test_job_detail_view_success(self):
         response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
         self.assertEqual(response.status_code, 200)
+
+    def test_job_apply_buttons_use_source_url_only(self):
+        self.job.source_url = "https://example.test/apply/job"
+        self.job.save(update_fields=["source_url"])
+
+        list_response = self.client.get(reverse("jobs:list"))
+        detail_response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+
+        self.assertContains(list_response, 'href="https://example.test/apply/job"', html=False)
+        self.assertContains(list_response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertContains(list_response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertContains(detail_response, 'href="https://example.test/apply/job"', html=False)
+        self.assertContains(detail_response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertContains(detail_response, 'data-i18n="Apply">Postuler</a>', html=False)
+
+    def test_job_apply_button_hidden_without_source_url(self):
+        self.job.source_url = ""
+        self.job.save(update_fields=["source_url"])
+
+        response = self.client.get(reverse("jobs:list"))
+
+        self.assertNotContains(response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertNotContains(response, f'href="{reverse("jobs:detail", args=[self.job.public_id])}" target="_blank"', html=False)
         self.assertContains(response, "Test View Job")
         self.assertContains(response, "Test Company")
 

@@ -605,6 +605,41 @@ class MatchingTests(TestCase):
         self.assertContains(response, "Signal technique insuffisant")
         self.assertNotContains(response, "no_required_skills_extracted")
 
+    def test_match_detail_action_buttons_use_external_apply_once(self):
+        self.job.source_url = "https://example.test/external-apply"
+        self.job.save(update_fields=["source_url"])
+        match = MatchResultService.create_match_result(self.user, self.job)
+
+        self.client.login(email="candidate@example.test", password="password")
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="https://example.test/external-apply"', html=False)
+        self.assertContains(response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertEqual(response.content.decode().count('data-i18n="Apply">Postuler</a>'), 1)
+        self.assertContains(response, 'class="grid match-actions"', html=False)
+        self.assertContains(response, 'class="btn save full"', html=False)
+        self.assertContains(response, 'data-i18n="Save"', html=False)
+        self.assertContains(response, 'data-i18n="Back to job">Retour à l\'offre</a>', html=False)
+        self.assertContains(response, 'data-i18n="Fit summary">Résumé du fit</h2>', html=False)
+        self.assertContains(response, 'data-i18n="Strong">Fort</b>', html=False)
+        self.assertContains(response, 'data-i18n="Gap">Écart</b>', html=False)
+        summary_html = response.content.decode().split('data-i18n="Fit summary"', 1)[1]
+        self.assertNotIn('data-i18n="Apply">Postuler</a>', summary_html)
+        self.assertNotContains(response, "Voir l'offre")
+
+    def test_match_detail_hides_apply_without_source_url(self):
+        self.job.source_url = ""
+        self.job.save(update_fields=["source_url"])
+        match = MatchResultService.create_match_result(self.user, self.job)
+
+        self.client.login(email="candidate@example.test", password="password")
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertNotContains(response, "Voir l'offre")
+
 
 class Phase15GHardeningTests(TestCase):
     def _skill(self, name, category):

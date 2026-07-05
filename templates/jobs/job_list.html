@@ -7,8 +7,8 @@
 <section class="mobile-index-tools">
   <div class="shell">
     <div class="tool-row">
-      <button class="btn primary full" type="button" onclick="document.body.classList.toggle('index-search-open');document.body.classList.remove('index-stats-open');">Rechercher</button>
-      <button class="btn secondary full" type="button" onclick="document.body.classList.toggle('filters-open');document.body.classList.remove('mobile-open');">Filtres</button>
+      <button class="btn primary full" type="button" onclick="document.body.classList.toggle('index-search-open');document.body.classList.remove('index-stats-open');" data-i18n="Search">Rechercher</button>
+      <button class="btn secondary full" type="button" onclick="document.body.classList.toggle('filters-open');document.body.classList.remove('mobile-open');" data-i18n="Filters">Filtres</button>
     </div>
   </div>
 </section>
@@ -29,24 +29,24 @@
 <section class="section">
   <div class="shell layout">
     <button class="btn secondary mobile-filter-trigger full" type="button" onclick="document.body.classList.toggle('filters-open');document.body.classList.remove('mobile-open')">
-      <span>Filtres</span><span>▾</span>
+      <span data-i18n="Filters">Filtres</span><span>▾</span>
     </button>
 
     <aside id="mobileFiltres" class="card sticky">
-      <button class="btn secondary mobile-filter-close" type="button" onclick="document.body.classList.remove('filters-open')">Fermer</button>
-      <h2 class="h3">Filtres</h2>
+      <button class="btn secondary mobile-filter-close" type="button" onclick="document.body.classList.remove('filters-open')" data-i18n="Close">Fermer</button>
+      <h2 class="h3" data-i18n="Filters">Filtres</h2>
       {% include "jobs/partials/job_filter_panel.html" %}
     </aside>
 
     <section>
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
         <div>
-          <h2 class="h2">Dernières opportunités</h2>
+          <h2 class="h2" data-i18n="Latest opportunities">Dernières opportunités</h2>
           <p class="small">
             {% if filters.q %}
                 Résultats pour {{ filters.q }}
             {% else %}
-                Triées par nouveauté.
+                <span data-i18n="Sorted by newness.">Triées par nouveauté.</span>
             {% endif %}
           </p>
         </div>

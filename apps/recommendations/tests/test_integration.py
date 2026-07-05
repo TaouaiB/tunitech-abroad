@@ -160,7 +160,26 @@ class DashboardIntegrationTests(TestCase):
         self.assertNotContains(response, reverse("matching:detail", kwargs={"public_id": match.public_id}))
         self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
         self.assertNotContains(response, "Postuler sur la source")
-        self.assertContains(response, "https://example.test/apply")
+        self.assertContains(response, 'href="https://example.test/apply"', html=False)
+        self.assertContains(response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertContains(response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertNotContains(response, "Voir l'offre")
+        self.assertNotContains(response, "Details")
+        self.assertNotContains(response, "Détails")
+
+    def test_saved_jobs_page_uses_external_apply_and_keeps_unsave(self):
+        self.client.force_login(self.user)
+        self.job.source_url = "https://example.test/saved-apply"
+        self.job.save(update_fields=["source_url"])
+        SavedJob.objects.create(user=self.user, job=self.job)
+
+        response = self.client.get(reverse("dashboard:saved_jobs"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="https://example.test/saved-apply"', html=False)
+        self.assertContains(response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertContains(response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertContains(response, 'data-i18n="Saved"', html=False)
 
     def test_recommendation_card_hides_match_cta_when_no_match_exists(self):
         self.client.force_login(self.user)

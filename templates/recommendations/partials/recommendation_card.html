@@ -49,8 +49,6 @@
         <div style="display:flex;gap:8px;">
             {% if rec.job.source_url %}
             <a class="btn primary" href="{{ rec.job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>
-            {% else %}
-            <a class="btn primary" href="{% url 'jobs:detail' rec.job.public_id %}" data-i18n="See offer">Voir l'offre</a>
             {% endif %}
             {% include 'jobs/partials/save_button.html' with job=rec.job is_saved=rec.is_saved %}
         </div>

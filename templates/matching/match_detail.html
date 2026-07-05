@@ -18,11 +18,9 @@
                     {% else %}Match faible{% endif %}
                 </h1>
                 <p class="small" style="text-align:center">{{ match.job_snapshot_json.title|default:"Offre" }} · {{ match.job_snapshot_json.company_name|default:"Entreprise inconnue" }}</p>
-                    <div class="grid" style="margin-top:16px">
+                    <div class="grid match-actions" style="margin-top:16px">
                         {% if match.job.source_url %}
                             <a class="btn primary full" href="{{ match.job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>
-                        {% else %}
-                            <a class="btn primary full" href="{% url 'jobs:detail' match.job.public_id %}" data-i18n="See offer">Voir l'offre</a>
                         {% endif %}
                         {% if user.is_authenticated %}{% include 'jobs/partials/save_button.html' with job=match.job is_saved=match.is_saved extra_classes="full" %}{% endif %}
                         <a class="btn secondary full" href="{% url 'jobs:detail' match.job.public_id %}" data-i18n="Back to job">Retour à l'offre</a>
@@ -36,12 +34,12 @@
                 </div>
                 {% else %}
                 <div class="card">
-                    <h2 class="h2">Fit summary</h2>
+                    <h2 class="h2" data-i18n="Fit summary">Résumé du fit</h2>
                     <div class="notice-list">
                         <div class="notice">
                             <span class="dot good"></span>
                             <div>
-                                <b>Strong</b>
+                                <b data-i18n="Strong">Fort</b>
                                 <div class="small">
                                     {% if match.strong_skills_json %}
                                         {% for skill in match.strong_skills_json|slice:":4" %}{{ skill.name|default:skill }}{% if not forloop.last %}, {% endif %}{% endfor %}
@@ -54,7 +52,7 @@
                         <div class="notice">
                             <span class="dot {% if match.missing_required_skills_json %}bad{% else %}good{% endif %}"></span>
                             <div>
-                                <b>Gap</b>
+                                <b data-i18n="Gap">Écart</b>
                                 <div class="small">
                                     {% if match.missing_required_skills_json %}
                                         {% for skill in match.missing_required_skills_json|slice:":4" %}{{ skill.name|default:skill }}{% if not forloop.last %}, {% endif %}{% endfor %}
@@ -66,11 +64,11 @@
                         </div>
                         <div class="notice">
                             <span class="dot {% if match.language_score >= 60 %}good{% else %}warn{% endif %}"></span>
-                            <div><b>Good language fit</b><div class="small">Signal langues: {{ match.language_score }}%.</div></div>
+                            <div><b data-i18n="Good language fit">Bon niveau langues</b><div class="small">Signal langues: {{ match.language_score }}%.</div></div>
                         </div>
                         <div class="notice">
                             <span class="dot {% if match.technical_skills_score >= 65 %}good{% else %}warn{% endif %}"></span>
-                            <div><b>Backend gap</b><div class="small">{% if match.technical_skills_score >= 65 %}Signal technique exploitable pour cette offre.{% else %}Renforcez les preuves techniques dans le CV avant candidature.{% endif %}</div></div>
+                            <div><b data-i18n="Backend gap">Écart backend</b><div class="small">{% if match.technical_skills_score >= 65 %}Signal technique exploitable pour cette offre.{% else %}Renforcez les preuves techniques dans le CV avant candidature.{% endif %}</div></div>
                         </div>
                     </div>
                 </div>

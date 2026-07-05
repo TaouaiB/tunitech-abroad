@@ -11,24 +11,24 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
          </div>
-        <h3 class="h2">Analyse en cours...</h3>
-        <p class="subtitle" style="margin:0 auto 16px auto; max-width:400px;">Nous générons de nouvelles recommandations personnalisées basées sur votre profil et votre CV.</p>
-        <a href="{% url 'dashboard:recommendations' %}" class="btn secondary">Actualiser maintenant</a>
+        <h3 class="h2" data-i18n="Analysis in progress...">Analyse en cours...</h3>
+        <p class="subtitle" style="margin:0 auto 16px auto; max-width:400px;" data-fr="Nous générons de nouvelles recommandations personnalisées basées sur votre profil et votre CV." data-en="We are generating new personalized recommendations based on your profile and CV.">Nous générons de nouvelles recommandations personnalisées basées sur votre profil et votre CV.</p>
+        <a href="{% url 'dashboard:recommendations' %}" class="btn secondary" data-i18n="Refresh">Actualiser maintenant</a>
     </div>
 {% elif result.is_stale %}
     <div class="compact-state warn" style="margin-bottom:18px">
         <svg class="icon" style="color:var(--warn); margin-top:2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <div>
-            <b>Vos recommandations peuvent être anciennes</b>
-            <div class="small">Nous les mettons à jour en arrière-plan. Les résultats actuels restent visibles.</div>
+            <b data-fr="Vos recommandations peuvent être anciennes" data-en="Your recommendations may be outdated">Vos recommandations peuvent être anciennes</b>
+            <div class="small" data-fr="Nous les mettons à jour en arrière-plan. Les résultats actuels restent visibles." data-en="We are updating them in the background. Current results remain visible.">Nous les mettons à jour en arrière-plan. Les résultats actuels restent visibles.</div>
         </div>
     </div>
 {% elif result.latest_run and result.latest_run.status == 'failed' %}
     <div class="compact-state bad" style="margin-bottom:18px">
         <svg class="icon" style="color:var(--bad); margin-top:2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <div>
-            <b>Échec de la génération</b>
-            <div class="small">Une erreur s'est produite lors du calcul de vos recommandations. Veuillez réessayer plus tard.</div>
+            <b data-fr="Échec de la génération" data-en="Generation failed">Échec de la génération</b>
+            <div class="small" data-fr="Une erreur s'est produite lors du calcul de vos recommandations. Veuillez réessayer plus tard." data-en="An error occurred while calculating your recommendations. Please try again later.">Une erreur s'est produite lors du calcul de vos recommandations. Veuillez réessayer plus tard.</div>
         </div>
     </div>
 {% endif %}
@@ -43,11 +43,11 @@
                     <div class="empty-ill" style="margin:0 auto 16px auto;">
                         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                     </div>
-                    <h3 class="h2">Recommandations bloquées</h3>
+                    <h3 class="h2" data-i18n="Recommendations blocked">Recommandations bloquées</h3>
                     <p class="subtitle" style="margin:0 auto 24px auto; max-width:500px;">{{ result.blocked_reason }}</p>
                     <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                        <a href="{% url 'dashboard:profile' %}" class="btn primary">Compléter le profil</a>
-                        <a href="{% url 'dashboard:cv' %}" class="btn secondary">Gérer mon CV</a>
+                        <a href="{% url 'dashboard:profile' %}" class="btn primary" data-i18n="Complete profile">Compléter le profil</a>
+                        <a href="{% url 'dashboard:cv' %}" class="btn secondary" data-i18n="Manage your CV">Gérer mon CV</a>
                     </div>
                 </div>
             {% elif result.latest_run and result.latest_run.status == 'success' and result.latest_run.candidate_jobs_count == 0 %}
@@ -55,20 +55,20 @@
                     <div class="empty-ill" style="margin:0 auto 16px auto; background:var(--panel2); color:var(--muted);">
                         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <h3 class="h2">Aucune offre ne correspond</h3>
-                    <p class="subtitle" style="margin:0 auto 24px auto; max-width:450px;">Il n'y a actuellement aucune offre active correspondant à vos critères spécifiques.</p>
-                    <a href="{% url 'jobs:list' %}" class="btn primary">Parcourir toutes les offres</a>
+                    <h3 class="h2" data-i18n="No matching jobs">Aucune offre ne correspond</h3>
+                    <p class="subtitle" style="margin:0 auto 24px auto; max-width:450px;" data-fr="Il n'y a actuellement aucune offre active correspondant à vos critères spécifiques." data-en="There are currently no active jobs matching your specific criteria.">Il n'y a actuellement aucune offre active correspondant à vos critères spécifiques.</p>
+                    <a href="{% url 'jobs:list' %}" class="btn primary" data-i18n="Browse every job">Parcourir toutes les offres</a>
                 </div>
             {% else %}
                 <div class="empty-state" style="border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow:var(--shadow2);">
                     <div class="empty-ill" style="margin:0 auto 16px auto;">
                         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     </div>
-                    <h3 class="h2">Aucune recommandation disponible</h3>
-                    <p class="subtitle" style="margin:0 auto 24px auto; max-width:500px;">Ajoutez un CV ou complétez votre profil pour recevoir des offres adaptées.</p>
+                    <h3 class="h2" data-i18n="No recommendations available">Aucune recommandation disponible</h3>
+                    <p class="subtitle" style="margin:0 auto 24px auto; max-width:500px;" data-fr="Ajoutez un CV ou complétez votre profil pour recevoir des offres adaptées." data-en="Add a CV or complete your profile to receive tailored jobs.">Ajoutez un CV ou complétez votre profil pour recevoir des offres adaptées.</p>
                     <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                        <a href="{% url 'dashboard:cv' %}" class="btn primary">Ajouter mon CV</a>
-                        <a href="{% url 'dashboard:profile' %}" class="btn secondary">Compléter mon profil</a>
+                        <a href="{% url 'dashboard:cv' %}" class="btn primary" data-i18n="Add CV">Ajouter mon CV</a>
+                        <a href="{% url 'dashboard:profile' %}" class="btn secondary" data-i18n="Complete profile">Compléter mon profil</a>
                     </div>
                 </div>
             {% endif %}

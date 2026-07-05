@@ -31,10 +31,10 @@
     <div class="tta-empty-icon" style="margin-bottom:16px;">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:auto; opacity:0.5;"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
     </div>
-    <h3 class="tta-empty-title" style="margin-bottom:8px; font-weight:600;">Aucune offre trouvée</h3>
-    <p class="tta-empty-text tta-muted" style="margin-bottom:24px;">Essayez d'élargir vos filtres ou de chercher une autre technologie.</p>
+    <h3 class="tta-empty-title" style="margin-bottom:8px; font-weight:600;" data-i18n="No jobs found">Aucune offre trouvée</h3>
+    <p class="tta-empty-text tta-muted" style="margin-bottom:24px;" data-fr="Essayez d'élargir vos filtres ou de chercher une autre technologie." data-en="Try broadening your filters or searching for another technology.">Essayez d'élargir vos filtres ou de chercher une autre technologie.</p>
     <div class="tta-empty-actions">
-        <a href="{% url 'jobs:list' %}" class="tta-btn tta-btn-secondary">Réinitialiser les filtres</a>
+        <a href="{% url 'jobs:list' %}" class="tta-btn tta-btn-secondary" data-i18n="Clear filters">Réinitialiser les filtres</a>
     </div>
 </div>
 {% endif %}

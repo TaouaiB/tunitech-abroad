@@ -5,37 +5,37 @@
 <main class="settings-v16">
   <section class="section">
     <div class="shell">
-      <h1 class="page-title small">Paramètres</h1>
+      <h1 class="page-title small" data-i18n="Settings">Paramètres</h1>
       <div class="settings-grid" style="margin-top:18px">
         <nav class="settings-nav">
-          <a class="{% if settings_active == 'account' %}active{% endif %}" href="#account" data-settings-anchor="account">Compte & Sécurité</a>
-          <a class="{% if settings_active == 'email' %}active{% endif %}" href="#email" data-settings-anchor="email">Préférences Email</a>
-          <a class="{% if settings_active == 'connections' %}active{% endif %}" href="#connections" data-settings-anchor="connections">Comptes liés</a>
-          <a class="{% if settings_active == 'danger' %}active{% endif %}" href="#danger" data-settings-anchor="danger" style="color:var(--bad)">Supprimer le compte</a>
+          <a class="{% if settings_active == 'account' %}active{% endif %}" href="#account" data-settings-anchor="account" data-i18n="Account & Security">Compte & Sécurité</a>
+          <a class="{% if settings_active == 'email' %}active{% endif %}" href="#email" data-settings-anchor="email" data-i18n="Email preferences">Préférences Email</a>
+          <a class="{% if settings_active == 'connections' %}active{% endif %}" href="#connections" data-settings-anchor="connections" data-i18n="Connected accounts">Comptes liés</a>
+          <a class="{% if settings_active == 'danger' %}active{% endif %}" href="#danger" data-settings-anchor="danger" style="color:var(--bad)" data-i18n="Delete account">Supprimer le compte</a>
         </nav>
 
         <section class="grid">
-          <button type="button" class="settings-mobile-toggle active" data-settings-toggle="account"><span>Compte & Sécurité</span><span>▾</span></button>
+          <button type="button" class="settings-mobile-toggle active" data-settings-toggle="account"><span data-i18n="Account & Security">Compte & Sécurité</span><span>▾</span></button>
           <div id="account" class="card grid settings-mobile-section {% if settings_active == 'account' %}mobile-section-open{% endif %}">
-            <h2 class="h2">Compte & Sécurité</h2>
+            <h2 class="h2" data-i18n="Account & Security">Compte & Sécurité</h2>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
               <div style="width:56px;height:56px;border-radius:18px;background:var(--panel2);color:var(--brand);display:grid;place-items:center;font-weight:900;font-size:20px;border:1px solid var(--line);">{{ user.email|make_list|first|upper }}</div>
               <div><strong style="font-size:18px;display:block;">{{ user.candidate_profile.full_name|default:user.email }}</strong><span class="small">{{ user.email }}</span></div>
             </div>
             <div class="account-box">
-              <div class="field"><label>Prénom</label><div class="input">{{ user.first_name|default:'-' }}</div></div>
-              <div class="field"><label>Nom</label><div class="input">{{ user.last_name|default:'-' }}</div></div>
+              <div class="field"><label data-i18n="First name">Prénom</label><div class="input">{{ user.first_name|default:'-' }}</div></div>
+              <div class="field"><label data-i18n="Last name">Nom</label><div class="input">{{ user.last_name|default:'-' }}</div></div>
               <div class="field"><label>Email</label><div class="input">{{ user.email }}</div></div>
             </div>
             <div class="pill-row" style="margin-top:12px;">
-              <a class="btn secondary" href="{% if user.has_usable_password %}{% url 'account_change_password' %}{% else %}{% url 'account_set_password' %}{% endif %}">{% if user.has_usable_password %}Changer mon mot de passe{% else %}Ajouter un mot de passe{% endif %}</a>
+              <a class="btn secondary" href="{% if user.has_usable_password %}{% url 'account_change_password' %}{% else %}{% url 'account_set_password' %}{% endif %}" data-i18n="{% if user.has_usable_password %}Change my password{% else %}Add a password{% endif %}">{% if user.has_usable_password %}Changer mon mot de passe{% else %}Ajouter un mot de passe{% endif %}</a>
             </div>
           </div>
 
-          <button type="button" class="settings-mobile-toggle {% if settings_active == 'email' %}active{% endif %}" data-settings-toggle="email"><span>Préférences Email</span><span>▾</span></button>
+          <button type="button" class="settings-mobile-toggle {% if settings_active == 'email' %}active{% endif %}" data-settings-toggle="email"><span data-i18n="Email preferences">Préférences Email</span><span>▾</span></button>
           <form method="post" action="{% url 'dashboard:email_preferences' %}" id="email" class="card grid settings-mobile-section {% if settings_active == 'email' %}mobile-section-open{% endif %}">
             {% csrf_token %}
-            <h2 class="h2">Préférences Email</h2>
+            <h2 class="h2" data-i18n="Email preferences">Préférences Email</h2>
             {% if form.non_field_errors %}
               <div class="field has-error"><div class="error" style="display:block;">{{ form.non_field_errors }}</div></div>
             {% endif %}
@@ -49,47 +49,47 @@
                 {% else %}{{ field }}{% endif %}
               {% endfor %}
             </div>
-            <div class="pill-row" style="margin-top:12px"><button type="submit" class="btn primary">Enregistrer</button></div>
+            <div class="pill-row" style="margin-top:12px"><button type="submit" class="btn primary" data-i18n="Save settings">Enregistrer</button></div>
           </form>
 
-          <button type="button" class="settings-mobile-toggle {% if settings_active == 'connections' %}active{% endif %}" data-settings-toggle="connections"><span>Comptes liés</span><span>▾</span></button>
+          <button type="button" class="settings-mobile-toggle {% if settings_active == 'connections' %}active{% endif %}" data-settings-toggle="connections"><span data-i18n="Connected accounts">Comptes liés</span><span>▾</span></button>
           <div id="connections" class="card grid settings-mobile-section {% if settings_active == 'connections' %}mobile-section-open{% endif %}">
-            <h2 class="h2">Comptes liés</h2>
+            <h2 class="h2" data-i18n="Connected accounts">Comptes liés</h2>
             <div class="connection">
               <div class="pill-row">
                 <svg class="logo-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h6c-.3 1.3-1 2.4-2.1 3.1v2.6h3.4c2-1.8 3.3-4.5 3.3-7.6z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-3.2l-3.4-2.6c-.9.6-2.2 1-3.9 1-3 0-5.5-2-6.4-4.7H2.1v2.7C3.9 20.2 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.6 13.5c-.2-.7-.4-1.4-.4-2.2s.1-1.5.4-2.2V6.4H2.1C1.4 7.9 1 9.5 1 11.3s.4 3.4 1.1 4.9l3.5-2.7z"/><path fill="#EA4335" d="M12 4.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1C17.5 1.1 15 0 12 0 7.7 0 3.9 2.8 2.1 6.4l3.5 2.7C6.5 6.4 9 4.4 12 4.4z"/></svg>
-                <div><b>Google</b><div class="small">{% if providers.google %}Connecté{% else %}Non connecté{% endif %}</div></div>
+                <div><b>Google</b><div class="small" data-i18n="{% if providers.google %}Connected{% else %}Not connected{% endif %}">{% if providers.google %}Connecté{% else %}Non connecté{% endif %}</div></div>
               </div>
               {% if providers.google %}
-                <form method="post" action="{% url 'dashboard:connections' %}" style="margin:0;">{% csrf_token %}<input type="hidden" name="disconnect_token" value="{{ providers.google.disconnect_token }}"><button type="submit" class="btn secondary" style="color:var(--bad)">Déconnecter</button></form>
+                <form method="post" action="{% url 'dashboard:connections' %}" style="margin:0;">{% csrf_token %}<input type="hidden" name="disconnect_token" value="{{ providers.google.disconnect_token }}"><button type="submit" class="btn secondary" style="color:var(--bad)" data-i18n="Disconnect">Déconnecter</button></form>
               {% else %}
-                <form method="post" action="{% provider_login_url 'google' process='connect' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn primary">Connecter</button></form>
+                <form method="post" action="{% provider_login_url 'google' process='connect' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn primary" data-i18n="Connect">Connecter</button></form>
               {% endif %}
             </div>
             <div class="connection">
               <div class="pill-row">
                 <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A12 12 0 0 0 8.2 23.9c.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.4-4-1.4-.5-1.2-1.2-1.5-1.2-1.5-1-.7.1-.7.1-.7 1.1.1 1.7 1.1 1.7 1.1 1 .1.6 2.5 3.5 1.8.1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2A11.3 11.3 0 0 1 12 6.4c1 0 2 .1 2.9.4 2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A12 12 0 0 0 12 .5Z"/></svg>
-                <div><b>GitHub</b><div class="small">{% if providers.github %}Connecté{% else %}Non connecté{% endif %}</div></div>
+                <div><b>GitHub</b><div class="small" data-i18n="{% if providers.github %}Connected{% else %}Not connected{% endif %}">{% if providers.github %}Connecté{% else %}Non connecté{% endif %}</div></div>
               </div>
               {% if providers.github %}
-                <form method="post" action="{% url 'dashboard:connections' %}" style="margin:0;">{% csrf_token %}<input type="hidden" name="disconnect_token" value="{{ providers.github.disconnect_token }}"><button type="submit" class="btn secondary" style="color:var(--bad)">Déconnecter</button></form>
+                <form method="post" action="{% url 'dashboard:connections' %}" style="margin:0;">{% csrf_token %}<input type="hidden" name="disconnect_token" value="{{ providers.github.disconnect_token }}"><button type="submit" class="btn secondary" style="color:var(--bad)" data-i18n="Disconnect">Déconnecter</button></form>
               {% else %}
-                <form method="post" action="{% provider_login_url 'github' process='connect' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn primary">Connecter</button></form>
+                <form method="post" action="{% provider_login_url 'github' process='connect' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn primary" data-i18n="Connect">Connecter</button></form>
               {% endif %}
             </div>
           </div>
 
-          <button type="button" class="settings-mobile-toggle {% if settings_active == 'danger' %}active{% endif %}" data-settings-toggle="danger"><span>Supprimer le compte</span><span>▾</span></button>
+          <button type="button" class="settings-mobile-toggle {% if settings_active == 'danger' %}active{% endif %}" data-settings-toggle="danger"><span data-i18n="Delete account">Supprimer le compte</span><span>▾</span></button>
           <form method="post" action="{% url 'dashboard:delete_account' %}" id="danger" class="card grid settings-mobile-section {% if settings_active == 'danger' %}mobile-section-open{% endif %}">
             {% csrf_token %}
-            <h2 class="h2" style="color:var(--bad)">Supprimer le compte</h2>
+            <h2 class="h2" style="color:var(--bad)" data-i18n="Delete account">Supprimer le compte</h2>
             <div class="field">
-              <label for="confirmation">Tapez DELETE pour confirmer</label>
+              <label for="confirmation" data-i18n="Type DELETE to confirm">Tapez DELETE pour confirmer</label>
               <input type="text" name="confirmation" id="confirmation" class="input" required autocomplete="off" placeholder="DELETE">
             </div>
             <div class="pill-row">
-              <a class="btn secondary" href="{% url 'dashboard:account' %}">Annuler</a>
-              <button type="submit" class="btn danger">Supprimer définitivement</button>
+              <a class="btn secondary" href="{% url 'dashboard:account' %}" data-i18n="Cancel">Annuler</a>
+              <button type="submit" class="btn danger" data-i18n="Permanently delete">Supprimer définitivement</button>
             </div>
           </form>
         </section>

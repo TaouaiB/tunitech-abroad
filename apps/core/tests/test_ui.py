@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.template import Context, Template
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
 
 from apps.core.context_processors import email_verification_banner
 
@@ -20,13 +21,8 @@ class UIHeaderTests(TestCase):
 
         self.assertIn("Offres", rendered)
         self.assertIn("Recommandations", rendered)
-        self.assertIn('<a class="tta-nav-link" href="/#comment-ca-marche">À propos</a>', rendered)
-        self.assertIn(
-            '<a href="/#comment-ca-marche" class="tta-nav-link text-left w-full justify-start py-3">À propos</a>',
-            rendered,
-        )
+        self.assertIn('href="/about/">À propos</a>', rendered)
         self.assertIn("Connexion", rendered)
-        self.assertIn("Créer un compte", rendered)
         self.assertIn("next=/dashboard/recommendations/", rendered)
         self.assertNotIn("Favoris", rendered)
         self.assertNotIn("Profil</a>", rendered)
@@ -44,11 +40,7 @@ class UIHeaderTests(TestCase):
         self.assertIn("Favoris", rendered)
         self.assertIn("Profil", rendered)
         self.assertIn("Paramètres", rendered)
-        self.assertIn('<a class="tta-nav-link" href="/#comment-ca-marche">À propos</a>', rendered)
-        self.assertIn(
-            '<a href="/#comment-ca-marche" class="tta-nav-link text-left w-full justify-start py-3">À propos</a>',
-            rendered,
-        )
+        self.assertIn('href="/about/">À propos</a>', rendered)
         self.assertIn("Déconnexion", rendered)
         self.assertNotIn("Tableau de bord", rendered)
 
@@ -84,12 +76,31 @@ class UIMessagesTests(TestCase):
 
         rendered = template.render(context)
 
-        self.assertIn("tta-toast-wrap-v16", rendered)
-        self.assertIn("setTimeout(() => show = false, 5000)", rendered)
+        self.assertIn("toast-wrap", rendered)
+        self.assertIn("data-django-toast", rendered)
         self.assertIn("Test success toast", rendered)
         self.assertIn("Test error toast", rendered)
         self.assertIn("good", rendered)
         self.assertIn("bad", rendered)
+
+
+class AboutModalTests(TestCase):
+    def test_privacy_and_terms_modals_are_overlay_dialogs(self):
+        response = self.client.get(reverse("core:about"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-modal-open="privacy-modal"', html=False)
+        self.assertContains(response, 'data-modal-open="terms-modal"', html=False)
+        self.assertContains(response, 'class="modal-backdrop" id="privacy-modal" data-modal="privacy-modal" hidden', html=False)
+        self.assertContains(response, 'class="modal-backdrop" id="terms-modal" data-modal="terms-modal" hidden', html=False)
+        self.assertContains(response, 'role="dialog"', html=False)
+        self.assertContains(response, 'aria-modal="true"', html=False)
+        self.assertContains(response, 'data-modal-close', html=False)
+        self.assertContains(response, 'data-en="Privacy"', html=False)
+        self.assertContains(response, 'data-en="Terms"', html=False)
+        self.assertContains(response, "CV files stay private and are not publicly exposed.")
+        self.assertContains(response, "Matching scores and recommendations are guidance only.")
+        self.assertNotContains(response, "onclick=\"var m=document.getElementById")
 
 
 class EmailBannerContextProcessorTests(TestCase):

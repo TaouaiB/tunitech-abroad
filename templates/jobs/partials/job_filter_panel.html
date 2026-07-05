@@ -1,7 +1,7 @@
 <form method="get" action="{% url 'jobs:list' %}" class="filters" id="jobFilterForm">
     <!-- Country: Locked to France -->
     <div class="field">
-        <label>Country</label>
+        <label data-i18n="Country">Pays</label>
         <label class="stat" style="justify-content:flex-start">
             <input type="checkbox" checked disabled> France
         </label>
@@ -9,22 +9,22 @@
 
     <!-- Keyword query -->
     <div class="field">
-        <label for="side_q">Mots-clés</label>
+        <label for="side_q" data-i18n="Keywords">Mots-clés</label>
         <input type="text" name="q" id="side_q" value="{{ filters.q|default:'' }}" class="input" placeholder="ex: Python, Django, React">
     </div>
 
     <!-- Location -->
     <div class="field">
-        <label for="side_location">Ville</label>
+        <label for="side_location" data-i18n="City">Ville</label>
         <input type="text" name="location" id="side_location" value="{{ filters.location|default:'' }}" class="input" placeholder="Paris, Lyon...">
     </div>
 
     <div class="filter-row">
         <!-- Contract Type -->
         <div class="field">
-            <label for="contract_type">Contrat</label>
+            <label for="contract_type" data-i18n="Contract">Contrat</label>
             <select id="contract_type" name="contract_type" class="select">
-                <option value="">Tous</option>
+                <option value="" data-i18n="All">Tous</option>
                 <option value="CDI" {% if filters.contract_type|upper == "CDI" %}selected{% endif %}>CDI</option>
                 <option value="CDD" {% if filters.contract_type|upper == "CDD" %}selected{% endif %}>CDD</option>
                 <option value="Stage" {% if filters.contract_type|lower == "stage" %}selected{% endif %}>Stage</option>
@@ -34,33 +34,33 @@
 
         <!-- Remote Type -->
         <div class="field">
-            <label for="remote_type">Télétravail</label>
+            <label for="remote_type" data-i18n="Remote work">Télétravail</label>
             <select id="remote_type" name="remote_type" class="select">
-                <option value="" {% if not filters.remote_type %}selected{% endif %}>Tous</option>
+                <option value="" {% if not filters.remote_type %}selected{% endif %} data-i18n="All">Tous</option>
                 <option value="remote" {% if filters.remote_type == "remote" %}selected{% endif %}>Remote</option>
-                <option value="hybrid" {% if filters.remote_type == "hybrid" %}selected{% endif %}>Hybride</option>
-                <option value="on_site" {% if filters.remote_type == "on_site" %}selected{% endif %}>Sur site</option>
+                <option value="hybrid" {% if filters.remote_type == "hybrid" %}selected{% endif %} data-i18n="Hybrid">Hybride</option>
+                <option value="on_site" {% if filters.remote_type == "on_site" %}selected{% endif %} data-i18n="On site">Sur site</option>
             </select>
         </div>
     </div>
 
     <!-- Job Type -->
     <div class="field">
-        <label for="job_type">Type d'emploi</label>
+        <label for="job_type" data-i18n="Job type">Type d'emploi</label>
         <select id="job_type" name="job_type" class="select">
-            <option value="" {% if not filters.job_type %}selected{% endif %}>Tous</option>
-            <option value="full_time_job" {% if filters.job_type == "full_time_job" %}selected{% endif %}>Temps plein</option>
+            <option value="" {% if not filters.job_type %}selected{% endif %} data-i18n="All">Tous</option>
+            <option value="full_time_job" {% if filters.job_type == "full_time_job" %}selected{% endif %} data-i18n="Full time">Temps plein</option>
             <option value="internship" {% if filters.job_type == "internship" %}selected{% endif %}>Stage (PFE)</option>
             <option value="apprenticeship" {% if filters.job_type == "apprenticeship" %}selected{% endif %}>Alternance</option>
-            <option value="contract" {% if filters.job_type == "contract" %}selected{% endif %}>Freelance / Contrat</option>
+            <option value="contract" {% if filters.job_type == "contract" %}selected{% endif %} data-i18n="Contract freelance">Freelance / Contrat</option>
         </select>
     </div>
 
     <!-- Experience Level -->
     <div class="field">
-        <label for="experience_level">Expérience</label>
+        <label for="experience_level" data-i18n="Experience">Expérience</label>
         <select id="experience_level" name="experience_level" class="select">
-            <option value="" {% if not filters.experience_level %}selected{% endif %}>Tous niveaux</option>
+            <option value="" {% if not filters.experience_level %}selected{% endif %} data-i18n="All levels">Tous niveaux</option>
             <option value="internship" {% if filters.experience_level == "internship" %}selected{% endif %}>Stage</option>
             <option value="junior" {% if filters.experience_level == "junior" %}selected{% endif %}>Junior</option>
             <option value="mid_level" {% if filters.experience_level == "mid_level" %}selected{% endif %}>Confirmé</option>
@@ -73,6 +73,6 @@
     <input type="hidden" name="sort" value="{{ sort }}">
     {% endif %}
 
-    <button type="submit" class="btn primary full">Appliquer les filtres</button>
-    <a href="{% url 'jobs:list' %}" class="btn secondary full" style="text-align:center">Réinitialiser</a>
+    <button type="submit" class="btn primary full" data-i18n="Apply filters">Appliquer les filtres</button>
+    <a href="{% url 'jobs:list' %}" class="btn secondary full" style="text-align:center" data-i18n="Reset">Réinitialiser</a>
 </form>

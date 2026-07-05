@@ -48,7 +48,10 @@
         </div>
         {% endwith %}
     </div>
-    <div style="display:flex;align-items:flex-start;justify-content:flex-end">
+    <div style="display:flex;align-items:flex-start;justify-content:flex-end;gap:10px">
+        {% if job.source_url %}
+            <a class="btn primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>
+        {% endif %}
         {% if user.is_authenticated %}
             {% include 'jobs/partials/save_button.html' with job=job is_saved=job.is_saved %}
         {% endif %}
