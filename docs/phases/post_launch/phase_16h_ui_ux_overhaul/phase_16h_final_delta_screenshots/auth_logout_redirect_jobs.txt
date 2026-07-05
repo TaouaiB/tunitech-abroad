@@ -1,0 +1,2 @@
+After logout URL: http://127.0.0.1:8028/jobs/
+Anonymous header contains Connexion: True

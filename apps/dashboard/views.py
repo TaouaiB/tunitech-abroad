@@ -14,6 +14,40 @@ from apps.recommendations.services.query import RecommendationQueryService
 from apps.recommendations.services.saved_jobs import SavedJobService
 from apps.privacy.services.account_deletion import AccountDeletionService
 from allauth.socialaccount.models import SocialAccount
+from apps.notifications.forms import EmailPreferenceForm
+from apps.notifications.models import EmailPreference
+
+
+def _settings_context(request, **extra):
+    social_accounts = SocialAccount.objects.filter(user=request.user)
+    providers = {}
+    for acc in social_accounts:
+        acc.disconnect_token = signing.dumps(
+            {"account_id": acc.id},
+            salt=SOCIAL_DISCONNECT_SIGNING_SALT,
+        )
+        providers[acc.provider] = acc
+
+    try:
+        deletion_request = request.user.deletion_requests.filter(status__in=['pending', 'processing']).first()
+    except Exception:
+        deletion_request = None
+
+    context = {
+        "providers": providers,
+        "deletion_request": deletion_request,
+        "has_usable_password": request.user.has_usable_password(),
+        "settings_active": extra.pop("settings_active", "account"),
+    }
+    if "form" not in extra:
+        pref, _ = EmailPreference.objects.get_or_create(user=request.user)
+        context["form"] = EmailPreferenceForm(initial={
+            "weekly_digest_enabled": pref.weekly_digest_enabled,
+            "product_updates_enabled": pref.product_updates_enabled,
+            "cv_analysis_email_enabled": pref.cv_analysis_email_enabled,
+        })
+    context.update(extra)
+    return context
 
 @login_required
 def dashboard_recommendations(request):
@@ -153,15 +187,7 @@ def dashboard_cv_status(request, public_id):
 
 @login_required
 def dashboard_account(request):
-    try:
-        deletion_request = request.user.deletion_requests.filter(status__in=['pending', 'processing']).first()
-    except Exception:
-        deletion_request = None
-
-    return render(request, "dashboard/account.html", {
-        "deletion_request": deletion_request,
-        "has_usable_password": request.user.has_usable_password(),
-    })
+    return render(request, "dashboard/account.html", _settings_context(request, settings_active="account"))
 
 @login_required
 def dashboard_delete_account(request):
@@ -174,12 +200,12 @@ def dashboard_delete_account(request):
                 return redirect("dashboard:delete_account")
             from django.contrib.auth import logout
             logout(request)
-            return redirect("dashboard:delete_account_done")
+            return redirect("jobs:list")
         else:
             messages.error(request, "Please type DELETE to confirm.")
             return redirect("dashboard:delete_account")
 
-    return render(request, "dashboard/delete_account.html")
+    return render(request, "dashboard/delete_account.html", _settings_context(request, settings_active="danger"))
 
 @require_GET
 def dashboard_delete_account_done(request):
@@ -206,15 +232,4 @@ def dashboard_connections(request):
 
         return redirect("dashboard:connections")
 
-    social_accounts = SocialAccount.objects.filter(user=request.user)
-    providers = {}
-    for acc in social_accounts:
-        acc.disconnect_token = signing.dumps(
-            {"account_id": acc.id},
-            salt=SOCIAL_DISCONNECT_SIGNING_SALT,
-        )
-        providers[acc.provider] = acc
-
-    return render(request, "dashboard/connections.html", {
-        "providers": providers
-    })
+    return render(request, "dashboard/connections.html", _settings_context(request, settings_active="connections"))

@@ -116,11 +116,6 @@
                     {% for skill in profile_skills %}
                         <span class="skill {% if skill.is_confirmed %}ok{% else %}pill brand{% endif %}">
                             {{ skill.raw_name|default:skill.normalized_name }}
-                            {% if skill.is_confirmed %}
-                                <span style="font-size:9px; padding:2px 4px; background:white; color:var(--text); border-radius:4px; margin-left:4px;">Confirmée</span>
-                            {% elif skill.source %}
-                                <span style="font-size:9px; padding:2px 4px; background:var(--panel); color:var(--brand); border-radius:4px; margin-left:4px;">CV{% if skill.confidence %} {{ skill.confidence }}%{% endif %}</span>
-                            {% endif %}
                         </span>
                     {% endfor %}
                 </div>
@@ -129,7 +124,6 @@
                     Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section.
                 </div>
             {% endif %}
-
             <div class="pill-row" style="margin-top:16px; border-top:1px solid var(--line); padding-top:16px;">
                 <button class="btn secondary" type="button" onclick="window.location.href='{% url 'dashboard:cv' %}'">Retour au CV</button>
                 <button type="submit" class="btn primary">Enregistrer le profil</button>

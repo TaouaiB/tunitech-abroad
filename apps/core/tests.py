@@ -159,6 +159,15 @@ class ContactTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'core/about.html')
 
+    def test_anonymous_about_has_privacy_terms_modals_without_account_cta(self):
+        response = self.client.get(reverse('core:about'))
+
+        self.assertContains(response, 'data-modal-open="privacy-modal"')
+        self.assertContains(response, 'data-modal-open="terms-modal"')
+        self.assertContains(response, 'id="privacy-modal"')
+        self.assertContains(response, 'id="terms-modal"')
+        self.assertNotContains(response, "Gérer les paramètres")
+
     def test_contact_form_valid_post(self):
         url = reverse('core:about')
         data = {

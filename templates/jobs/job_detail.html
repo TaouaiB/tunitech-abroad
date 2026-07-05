@@ -26,7 +26,7 @@
                 <p class="subtitle">{{ job.company_name|default:"Entreprise non précisée" }} · {{ job.location|default:job.city|default:"Lieu non précisé" }} · {{ job.source.name|default:"Source non précisée" }}</p>
                 <div class="pill-row" style="margin-top:16px">
                     {% if job.status != 'expired' and job.source_url %}
-                        <a class="btn primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">Postuler sur la source</a>
+                        <a class="btn primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>
                     {% endif %}
                     {% if user.is_authenticated and job.status != 'expired' %}
                         {% include "jobs/partials/save_button.html" with job=job is_saved=is_saved %}
@@ -87,9 +87,6 @@
                         <div class="score-ring" style="width:140px;height:140px;margin-bottom:16px;"><strong>{{ cta_context.match.fit_score }}%</strong></div>
                         <a class="btn primary full" href="{% url 'matching:detail' public_id=cta_context.match.public_id %}">Voir le score</a>
                     {% endif %}
-                    {% if user.is_authenticated and job.status != 'expired' %}
-                        <div style="text-align:center;margin-top:8px">{% include "jobs/partials/save_button.html" with job=job is_saved=is_saved %}</div>
-                    {% endif %}
                     <a class="btn secondary full" href="{% url 'jobs:list' %}">Retour aux offres</a>
                 </div>
             {% endif %}
@@ -100,8 +97,7 @@
 </section>
 {% if job.status != 'expired' %}
 <div class="mobile-action-bar">
-    {% if job.source_url %}<a class="btn primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">Postuler</a>{% endif %}
-    {% if user.is_authenticated %}{% include "jobs/partials/save_button.html" with job=job is_saved=is_saved %}{% endif %}
+    {% if job.source_url %}<a class="btn primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>{% endif %}
 </div>
 {% endif %}
 </div>

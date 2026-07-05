@@ -63,11 +63,8 @@ def health(request):
 
 def signup_redirect_wrapper(request, *args, **kwargs):
     """
-    Redirect GET/HEAD requests to login with signup panel.
-    Delegate POST/others to allauth signup view.
+    Delegate to allauth signup view.
     """
-    if request.method in ["GET", "HEAD"]:
-        return redirect("/accounts/login/?panel=signup")
     return allauth_views.signup(request, *args, **kwargs)
 
 urlpatterns = [

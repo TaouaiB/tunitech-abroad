@@ -55,7 +55,11 @@
                 <div class="dropdown" data-dropdown>
                     <button class="avatar" data-dropdown-btn>{{ user.email|make_list|first|upper }}</button>
                     <div class="dropdown-menu">
-                        <a href="{% url 'dashboard:profile' %}">Profil</a>
+                        {% if user.has_usable_password %}
+                        <a href="{% url 'dashboard:cv' %}">Profil</a>
+                        {% else %}
+                        <a href="{% url 'account_set_password' %}">Profil</a>
+                        {% endif %}
                         <a href="{% url 'dashboard:account' %}">Paramètres</a>
                         <form method="post" style="margin:0;padding:0;display:block;" action="{% url 'account_logout' %}">
                             {% csrf_token %}

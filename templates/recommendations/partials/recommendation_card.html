@@ -42,11 +42,16 @@
             {% endfor %}
         </div>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:14px;min-width:102px">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:14px;min-width:102px">
         <div class="match-badge" style="background:conic-gradient({% if rec.fit_score >= 80 %}var(--good){% elif rec.fit_score >= 65 %}var(--brand){% elif rec.fit_score >= 50 %}var(--warn){% else %}var(--bad){% endif %} 0 {{ rec.fit_score }}%, color-mix(in srgb,var(--line) 85%,transparent) {{ rec.fit_score }}% 100%)">
             <strong>{{ rec.fit_score }}%</strong>
         </div>
         <div style="display:flex;gap:8px;">
+            {% if rec.job.source_url %}
+            <a class="btn primary" href="{{ rec.job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>
+            {% else %}
+            <a class="btn primary" href="{% url 'jobs:detail' rec.job.public_id %}" data-i18n="See offer">Voir l'offre</a>
+            {% endif %}
             {% include 'jobs/partials/save_button.html' with job=rec.job is_saved=rec.is_saved %}
         </div>
     </div>

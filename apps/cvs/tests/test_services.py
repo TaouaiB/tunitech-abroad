@@ -288,7 +288,7 @@ class CVServiceTests(TestCase):
         html = response.content.decode()
         self.assertContains(response, "Compétences")
         self.assertContains(response, "React")
-        self.assertContains(response, "CV 80%")
+        self.assertNotContains(response, "CV 80%")
         self.assertNotIn("test_cv_junior_full_stack_aymen_ben_salah.pdf", html)
         self.assertNotIn("raw_text", html)
         self.assertNotIn("September 2024 - August 2025", html)

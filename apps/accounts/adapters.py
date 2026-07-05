@@ -48,3 +48,20 @@ class TuniTechSocialAccountAdapter(DefaultSocialAccountAdapter):
                 "Connexion sociale non liée automatiquement : vérifiez d'abord votre adresse email locale.",
             )
             raise ImmediateHttpResponse(redirect("account_login"))
+
+
+from django.urls import reverse
+from allauth.account.adapter import DefaultAccountAdapter
+
+
+class TuniTechAccountAdapter(DefaultAccountAdapter):
+    """
+    Redirect users without a usable password to the password set page after login.
+    Otherwise, respect the standard LOGIN_REDIRECT_URL.
+    """
+
+    def get_login_redirect_url(self, request):
+        user = getattr(request, "user", None)
+        if user is not None and not user.has_usable_password():
+            return reverse("account_set_password")
+        return super().get_login_redirect_url(request)

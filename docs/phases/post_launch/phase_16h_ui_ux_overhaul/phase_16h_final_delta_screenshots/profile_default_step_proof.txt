@@ -1,0 +1,1 @@
+Password user dropdown Profil link points to /dashboard/cv/. Users without usable password are routed by template condition to /accounts/password/set/. Existing backend has ProfileSkill storage but no user-facing add/remove route/form in current scope, so no add/remove UI was invented.

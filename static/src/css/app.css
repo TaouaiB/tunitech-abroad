@@ -1510,6 +1510,11 @@ html.dark{
   .settings-mobile-toggle,.profile-step-toggle{padding:12px 13px;border-radius:15px}
 }
 
+.modal-backdrop{position:fixed;inset:0;z-index:900;background:rgba(2,6,23,.48);display:grid;place-items:center;padding:18px;backdrop-filter:blur(10px)}
+.modal-backdrop[hidden]{display:none}
+.modal-card{width:min(620px,100%);max-height:min(78vh,720px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:20px}
+body.modal-open{overflow:hidden}
+
 .mobile-filter-trigger{display:none}
 @media(max-width:920px){
   .shell{width:min(100% - 20px,1180px)}

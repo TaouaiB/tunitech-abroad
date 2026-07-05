@@ -8,38 +8,20 @@
   <div class="shell">
     <div class="tool-row">
       <button class="btn primary full" type="button" onclick="document.body.classList.toggle('index-search-open');document.body.classList.remove('index-stats-open');">Rechercher</button>
-      <button class="btn secondary full" type="button" onclick="document.body.classList.toggle('index-stats-open');document.body.classList.remove('index-search-open');">Statistiques</button>
       <button class="btn secondary full" type="button" onclick="document.body.classList.toggle('filters-open');document.body.classList.remove('mobile-open');">Filtres</button>
     </div>
   </div>
 </section>
 
 <section class="hero">
-  <div class="shell hero-grid">
+  <div class="shell">
     <div class="hero-card mobile-search-panel">
-      <h1 class="page-title">Trouvez plus vite des offres tech en France</h1>
-      <p class="subtitle">Jobs, stages et alternance au même endroit.</p>
-      <form method="get" action="{% url 'jobs:list' %}" class="toolbar" style="margin-top:18px">
-        <input name="q" class="input" placeholder="Rôle, entreprise, compétence" value="{{ filters.q|default:'' }}">
-        <input name="location" class="input" placeholder="Ville : Paris, Nantes, Lyon" value="{{ filters.location|default:'' }}">
-        <button type="submit" class="btn primary">Rechercher</button>
+      <h1 class="page-title" data-fr="Trouvez plus vite des offres tech en France" data-en="Find tech jobs in France faster">Trouvez plus vite des offres tech en France</h1>
+      <form method="get" action="{% url 'jobs:list' %}" class="toolbar" style="margin-top:28px;gap:18px">
+        <input name="q" class="input" placeholder="Rôle, entreprise, compétence" data-fr-placeholder="Rôle, entreprise, compétence" data-en-placeholder="Role, company, skill" value="{{ filters.q|default:'' }}">
+        <input name="location" class="input" placeholder="Ville : Paris, Nantes, Lyon" data-fr-placeholder="Ville : Paris, Nantes, Lyon" data-en-placeholder="City: Paris, Nantes, Lyon" value="{{ filters.location|default:'' }}">
+        <button type="submit" class="btn primary" data-i18n="Search">Rechercher</button>
       </form>
-    </div>
-    <div class="hero-card soft mobile-stats-panel">
-      <div class="grid grid-3">
-        <div class="stat"><span>Offres</span><strong>{{ total_count|default:"0" }}</strong></div>
-        <div class="stat"><span>Aujourd'hui</span><strong>+</strong></div>
-        {% if user.is_authenticated %}
-          <div class="stat"><span>Sauvegardées</span><strong>-</strong></div>
-        {% else %}
-          <div class="stat"><span>Pays</span><strong>FR</strong></div>
-        {% endif %}
-      </div>
-      <div class="pill-row" style="margin-top:16px">
-        <span class="pill brand">France uniquement</span>
-        <span class="pill good">Matching CV prêt</span>
-        <span class="pill">Télétravail + hybride</span>
-      </div>
     </div>
   </div>
 </section>

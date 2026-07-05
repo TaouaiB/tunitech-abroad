@@ -192,7 +192,11 @@ class Phase14ISecurityTests(TestCase):
         for url in public_urls:
             with self.subTest(url=url):
                 response = self.client_anon.get(url)
-                self.assertEqual(response.status_code, 200)
+                if url == reverse("core:home"):
+                    self.assertEqual(response.status_code, 302)
+                    self.assertEqual(response["Location"], reverse("jobs:list"))
+                else:
+                    self.assertEqual(response.status_code, 200)
 
     def test_anonymous_blocked_from_save_job(self):
         response = self.client_anon.post(reverse("jobs:save", kwargs={"public_id": self.job.public_id}))

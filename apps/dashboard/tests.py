@@ -65,4 +65,8 @@ class DashboardViewsTests(TestCase):
         response = self.client.get("/dashboard/account/")
 
         self.assertContains(response, "Supprimer définitivement")
+        self.assertContains(response, "Compte & Sécurité")
+        self.assertContains(response, "Préférences Email")
+        self.assertContains(response, "Comptes liés")
         self.assertNotContains(response, "Zone Dangereuse")
+        self.assertNotContains(response, "Action irréversible. Toutes vos données seront supprimées.")

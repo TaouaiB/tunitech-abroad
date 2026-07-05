@@ -262,8 +262,7 @@ class AuthViewsTests(TestCase):
 
     def test_signup_page_status_code(self):
         response = self.client.get('/accounts/signup/')
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, '/accounts/login/?panel=signup')
+        self.assertEqual(response.status_code, 200)
 
     def test_auth_templates_do_not_include_fake_success_toasts(self):
         login_response = self.client.get("/accounts/login/")
@@ -273,6 +272,20 @@ class AuthViewsTests(TestCase):
         self.assertEqual(signup_response.status_code, 200)
         self.assertNotContains(login_response, "data-success")
         self.assertNotContains(signup_response, "data-success")
+        self.assertContains(login_response, 'data-auth-form="true"')
+        self.assertContains(signup_response, 'data-auth-form="true"')
+
+    def test_login_and_signup_pages_are_split(self):
+        login_response = self.client.get("/accounts/login/")
+        signup_response = self.client.get("/accounts/signup/")
+
+        self.assertContains(login_response, 'action="/accounts/login/"', html=False)
+        self.assertNotContains(login_response, 'action="/accounts/signup/"', html=False)
+        self.assertContains(login_response, "Pas encore de compte ? Créer un compte")
+
+        self.assertContains(signup_response, 'action="/accounts/signup/"', html=False)
+        self.assertNotContains(signup_response, 'action="/accounts/login/"', html=False)
+        self.assertContains(signup_response, "Déjà un compte ? Connexion")
 
     def test_wrong_email_password_login_does_not_authenticate(self):
         user = create_test_user(username="wrong-login", email="wrong-login@example.test", password="password123")
@@ -286,7 +299,9 @@ class AuthViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("_auth_user_id", self.client.session)
         self.assertNotContains(response, "Signed in")
+        self.assertNotContains(response, "Connecté")
         self.assertContains(response, "has-error")
+        self.assertContains(response, "toast bad")
 
     def test_existing_normal_email_password_login_still_works(self):
         user = create_test_user(username="normal-login", email="normal-login@example.test", password="password123")

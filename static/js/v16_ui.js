@@ -1,7 +1,7 @@
 const TA_TRANSLATIONS={
 'Jobs':'Offres','Recommendations':'Recommandations','Saved':'Favoris','Profile':'Profil','Settings':'Paramètres','Sign out':'Déconnexion','About us':'À propos','Notifications':'Notifications',
-'Find tech jobs abroad faster':'Trouvez des offres tech à l’étranger plus vite','Jobs, stages and alternance in one place.':'Offres, stages et alternance au même endroit.','Open jobs':'Offres ouvertes','New today':'Nouvelles aujourd’hui','France only':'France seulement','CV matching ready':'Matching CV prêt','Remote + hybrid':'Remote + hybride','Role, company, skill':'Poste, entreprise, compétence','City: Paris, Nantes, Lyon':'Ville : Paris, Nantes, Lyon','Search':'Rechercher','Filters':'Filtres','Country':'Pays','France':'France','City':'Ville','All cities':'Toutes les villes','Company':'Entreprise','All companies':'Toutes les entreprises','Contract':'Contrat','Work type':'Mode de travail','Experience':'Expérience','All levels':'Tous niveaux','Stage':'Stage','Alternance':'Alternance','Reset':'Réinitialiser','Latest opportunities':'Dernières offres','Sorted by freshness.':'Triées par fraîcheur.','Newest':'Plus récentes','Best match':'Meilleur match','Save':'Sauvegarder','Saved':'Sauvegardé','Today':'Aujourd’hui','1 day ago':'Il y a 1 jour','2 days ago':'Il y a 2 jours','3 days ago':'Il y a 3 jours',
-'Sign in':'Connexion','Create account':'Créer un compte','Continue with Google':'Continuer avec Google','Continue with GitHub':'Continuer avec GitHub','or email':'ou email','Email':'Email','Password':'Mot de passe','Verify password':'Confirmer le mot de passe','Repeat password':'Répéter le mot de passe','Passwords do not match.':'Les mots de passe ne correspondent pas.','Passwords match.':'Mots de passe identiques.','Minimum 6 characters.':'Minimum 6 caractères.','6+ characters':'6+ caractères','Valid email required.':'Email valide requis.','Required.':'Requis.','First name':'Prénom','Last name':'Nom','Create password':'Créer un mot de passe','Account activation':'Activation du compte','Resend email':'Renvoyer l’email','Confirmation email sent':'Email de confirmation envoyé','Account created':'Compte créé','Postulate':'Postuler','Back to jobs':'Retour aux offres','Back to job':'Retour à l’offre','Source':'Source','Posted':'Publiée','Published':'Publiée','Missing':'Manquantes','Next actions':'Actions suivantes','Fit summary':'Résumé du fit','Strong':'Fort','Gap':'Écart','Good language fit':'Bon niveau langues','Backend gap':'Écart backend','Apply with updated CV':'Postuler avec CV à jour','Add NestJS evidence':'Ajoutez une preuve NestJS','Project, course, or real task in your CV.':'Projet, cours ou tâche réelle dans votre CV.','Keep React and TypeScript visible':'Gardez React et TypeScript visibles','They carry the strongest match here.':'Ce sont vos meilleurs points ici.','View score':'Voir score','Match':'Compatibilité','Match partiel':'Match partiel','Développeur Fullstack JS · Externatic':'Développeur Fullstack JS · Externatic','External application':'Candidature externe','You will leave TuniAtlas.':'Vous quitterez TuniAtlas.','Confirm the email sent to your mailbox.':'Confirmez l’email envoyé dans votre boîte mail.',
+'Find tech jobs abroad faster':'Trouvez des offres tech à l’étranger plus vite','Role, company, skill':'Poste, entreprise, compétence','City: Paris, Nantes, Lyon':'Ville : Paris, Nantes, Lyon','Search':'Rechercher','Filters':'Filtres','Country':'Pays','France':'France','City':'Ville','All cities':'Toutes les villes','Company':'Entreprise','All companies':'Toutes les entreprises','Contract':'Contrat','Work type':'Mode de travail','Experience':'Expérience','All levels':'Tous niveaux','Stage':'Stage','Alternance':'Alternance','Reset':'Réinitialiser','Latest opportunities':'Dernières offres','Sorted by freshness.':'Triées par fraîcheur.','Newest':'Plus récentes','Best match':'Meilleur match','Save':'Sauvegarder','Saved':'Sauvegardé','Today':'Aujourd’hui','1 day ago':'Il y a 1 jour','2 days ago':'Il y a 2 jours','3 days ago':'Il y a 3 jours',
+'Sign in':'Connexion','Create account':'Créer un compte','Continue with Google':'Continuer avec Google','Continue with GitHub':'Continuer avec GitHub','or email':'ou email','Email':'Email','Password':'Mot de passe','Verify password':'Confirmer le mot de passe','Repeat password':'Répéter le mot de passe','Passwords do not match.':'Les mots de passe ne correspondent pas.','Passwords match.':'Mots de passe identiques.','Minimum 6 characters.':'Minimum 6 caractères.','6+ characters':'6+ caractères','Valid email required.':'Email valide requis.','Required.':'Requis.','First name':'Prénom','Last name':'Nom','Create password':'Créer un mot de passe','Account activation':'Activation du compte','Resend email':'Renvoyer l’email','Confirmation email sent':'Email de confirmation envoyé','Account created':'Compte créé','Postulate':'Postuler','Back to jobs':'Retour aux offres','Back to job':'Retour à l’offre','Source':'Source','Posted':'Publiée','Published':'Publiée','Missing':'Manquantes','Next actions':'Actions suivantes','Add NestJS evidence':'Ajoutez une preuve NestJS','Project, course, or real task in your CV.':'Projet, cours ou tâche réelle dans votre CV.','Keep React and TypeScript visible':'Gardez React et TypeScript visibles','They carry the strongest match here.':'Ce sont vos meilleurs points ici.','View score':'Voir score','Match':'Compatibilité','Match partiel':'Match partiel','Développeur Fullstack JS · Externatic':'Développeur Fullstack JS · Externatic','External application':'Candidature externe','You will leave TuniAtlas.':'Vous quitterez TuniAtlas.','Confirm the email sent to your mailbox.':'Confirmez l’email envoyé dans votre boîte mail.',
 'Profile setup':'Profil','Set password':'Créer un mot de passe','Password saved':'Mot de passe sauvegardé','Next: CV':'Suivant : CV','CV':'CV','Upload or replace file.':'Ajouter ou remplacer le fichier.','Drop CV or click to upload':'Déposez le CV ou cliquez pour importer','PDF or DOCX':'PDF ou DOCX','Remove':'Supprimer','CV uploaded':'CV importé','CV saved':'CV sauvegardé','Next: fill profile':'Suivant : remplir le profil','Check extracted data.':'Vérifier les données extraites.','Phone':'Téléphone','Current location':'Localisation actuelle','Target city':'Ville cible','Current title':'Poste actuel','Experience level':'Niveau d’expérience','LinkedIn':'LinkedIn','Portfolio':'Portfolio','Languages':'Langues','Skills':'Compétences','Back':'Retour','Back to CV':'Retour au CV','Save profile':'Sauvegarder le profil','See recommendations':'Voir recommandations','Progress':'Progression','Portfolio missing':'Portfolio manquant','Optional.':'Optionnel.',
 'Job detail':'Détail de l’offre','Apply on France Travail':'Postuler sur France Travail','Description':'Description','Required skills':'Compétences requises','Source':'Source','Published':'Publiée','External application':'Candidature externe','You will leave TuniAtlas.':'Vous quitterez TuniAtlas.',
 'Match score':'Score de compatibilité','Back to job':'Retour à l’offre','Apply':'Postuler','Strengths':'Points forts','Missing skills':'Compétences manquantes','Recommended actions':'Actions recommandées',
@@ -114,12 +114,54 @@ function initUI(){
   });
   });
   initDjangoToasts();
+  initModals();
+  initSavedJobsEmptyState();
 }
 function validateField(el,show){ if(!el || !el.matches('input,textarea,select')) return true; let bad=false, success=false; if(el.required && !el.value.trim()) bad=true; if(el.type==='email' && el.value && !/^\S+@\S+\.\S+$/.test(el.value)) bad=true; if(el.type==='password' && el.value && el.value.length<6) bad=true; if(el.classList.contains('confirm-password')){ const form=el.closest('form'); const main=form&&form.querySelector('.main-password'); if(el.value){ bad=!main||el.value!==main.value; success=!bad&&main&&main.value.length>=6; }} const live=show || el.type==='email' || el.type==='password' || el.classList.contains('confirm-password'); const field=el.closest('.field'); if(field){field.classList.toggle('has-error',bad && live); field.classList.toggle('has-success',success && live); el.classList.toggle('invalid',bad && live); el.classList.toggle('valid',success && live);} return !bad; }
 function dismissToast(el){ el.style.opacity='0'; el.style.transform='translateY(-6px)'; el.style.transition='all 0.18s ease-out'; setTimeout(()=>el.remove(),180); }
 function initDjangoToasts(){ document.querySelectorAll('[data-django-toast]').forEach(el=>{ if(el.dataset.boundToastDismiss) return; el.dataset.boundToastDismiss='true'; setTimeout(()=>dismissToast(el),3200); }); }
 window.taToast = function toast(message,type='good'){ const wrap=document.querySelector('.toast-wrap')||document.body.appendChild(Object.assign(document.createElement('div'),{className:'toast-wrap'})); const el=document.createElement('div'); el.className='toast '+type; const label=type==='bad'?'Error':type==='warn'?'Notice':'Done'; el.innerHTML=`<span class="dot ${type}"></span><div><b>${label}</b><span>${message}</span></div>`; wrap.appendChild(el); setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(-6px)';setTimeout(()=>el.remove(),180)},3200); }
 function toast(message,type='good') { window.taToast(message, type); }
+function initModals(){
+  if(document.documentElement.dataset.boundModal) return;
+  document.documentElement.dataset.boundModal='true';
+  document.addEventListener('click',function(e){
+    var openBtn=e.target.closest('[data-modal-open]');
+    if(openBtn){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var modal=document.getElementById(openBtn.dataset.modalOpen);
+      if(modal){ modal.hidden=false; document.body.classList.add('modal-open'); }
+      return;
+    }
+    var closeBtn=e.target.closest('[data-modal-close]');
+    if(closeBtn){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var modal=closeBtn.closest('[data-modal]');
+      if(modal) closeModal(modal);
+      return;
+    }
+    var backdrop=e.target.closest('[data-modal]');
+    if(backdrop && e.target===backdrop){
+      closeModal(backdrop);
+    }
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){
+      var open=document.querySelectorAll('[data-modal]:not([hidden])');
+      for(var i=0;i<open.length;i++) closeModal(open[i]);
+    }
+  });
+}
+function closeModal(modal){ modal.hidden=true; if(!document.querySelector('[data-modal]:not([hidden])')) document.body.classList.remove('modal-open'); }
+function initSavedJobsEmptyState(){
+  const grid=document.querySelector('[data-saved-jobs-grid]');
+  if(!grid || grid.querySelector('.job-card')) return;
+  if(grid.dataset.emptyRendered) return;
+  grid.dataset.emptyRendered='true';
+  grid.innerHTML=`<div class="empty-state" style="border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow2);padding:52px 22px;"><div class="empty-ill" style="margin:0 auto 16px auto;">✓</div><h2 class="h2">Aucune offre sauvegardée</h2><p class="subtitle" style="margin:0 auto 24px auto;max-width:500px;">Sauvegardez les offres intéressantes pour les comparer plus tard.</p><a href="/jobs/" class="btn primary">Explorer les offres</a></div>`;
+}
 
 function initV15Mobile(){
   const q=(s,root=document)=>root.querySelector(s);

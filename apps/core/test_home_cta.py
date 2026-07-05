@@ -33,12 +33,8 @@ class HomeCTATests(TestCase):
     def test_anonymous_homepage_shows_signup_cta(self):
         response = self.client.get(reverse("core:home"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Find Your Ideal Tech Role in France")
-        self.assertContains(response, "Keyword, title, or company")
-        self.assertNotContains(response, "Aller au tableau de bord")
-        self.assertNotContains(response, "Voir mes recommandations")
-        self.assertNotContains(response, "Gérer mon CV")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("jobs:list"))
 
     def test_authenticated_homepage_shows_candidate_ctas(self):
         user = get_user_model().objects.create_user(
@@ -50,11 +46,8 @@ class HomeCTATests(TestCase):
 
         response = self.client.get(reverse("core:home"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Find Your Ideal Tech Role in France")
-        self.assertNotContains(response, "Créer un compte")
-        self.assertNotContains(response, "créez un compte")
-        self.assertContains(response, "Remote, Paris, Lyon")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("jobs:list"))
 
     def test_homepage_shows_real_latest_jobs_not_static_coming_soon(self):
         self._job("Old Active Job", published_at=timezone.now() - timezone.timedelta(days=2))
@@ -63,16 +56,14 @@ class HomeCTATests(TestCase):
 
         response = self.client.get(reverse("core:home"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Latest Active Job")
-        self.assertContains(response, "Old Active Job")
-        self.assertNotContains(response, "Expired Job")
-        self.assertNotContains(response, "Les offres seront bientôt disponibles.")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("jobs:list"))
 
     def test_homepage_shows_honest_empty_state_without_jobs(self):
         response = self.client.get(reverse("core:home"))
 
-        self.assertContains(response, "No jobs found right now")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("jobs:list"))
 
 
 class PublicSEORouteTests(TestCase):

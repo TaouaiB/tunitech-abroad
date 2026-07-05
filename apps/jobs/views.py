@@ -3,6 +3,7 @@ import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.http import HttpResponse
 
 from apps.jobs.forms import JobSearchForm
 from apps.jobs.services.search import JobSearchService
@@ -107,6 +108,8 @@ def save_job(request, public_id):
 def unsave_job(request, public_id):
     SavedJobService.remove_saved_job(request.user, public_id)
     if request.headers.get("HX-Request") == "true":
+        if request.POST.get("remove_card") == "1":
+            return HttpResponse("")
         job = JobQueryService.get_public_job(public_id)
         return render(request, "jobs/partials/save_button.html", {"job": job, "is_saved": False})
     return redirect("jobs:detail", public_id=public_id)

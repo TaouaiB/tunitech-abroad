@@ -160,7 +160,7 @@ class DashboardIntegrationTests(TestCase):
         self.assertNotContains(response, reverse("matching:detail", kwargs={"public_id": match.public_id}))
         self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
         self.assertNotContains(response, "Postuler sur la source")
-        self.assertNotContains(response, "https://example.test/apply")
+        self.assertContains(response, "https://example.test/apply")
 
     def test_recommendation_card_hides_match_cta_when_no_match_exists(self):
         self.client.force_login(self.user)
@@ -408,7 +408,25 @@ class JobDetailSaveIntegrationTests(TestCase):
         response = self.client.post(url, HTTP_HX_REQUEST="true")
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "jobs/partials/save_button.html")
-        self.assertFalse(response.context["is_saved"])
+        self.assertFalse(SavedJob.objects.filter(user=self.user, job=self.job).exists())
+
+    def test_saved_page_unsave_htmx_removes_card_response_and_backend_state(self):
+        self.client.force_login(self.user)
+        SavedJob.objects.create(user=self.user, job=self.job)
+
+        page = self.client.get(reverse("dashboard:saved_jobs"))
+        self.assertContains(page, f'id="saved-job-card-{self.job.public_id}"')
+        self.assertContains(page, 'name="remove_card" value="1"', html=False)
+
+        response = self.client.post(
+            reverse("jobs:unsave", kwargs={"public_id": self.job.public_id}),
+            {"remove_card": "1"},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+        self.assertFalse(SavedJob.objects.filter(user=self.user, job=self.job).exists())
 
     def test_save_inactive_job(self):
         self.client.force_login(self.user)

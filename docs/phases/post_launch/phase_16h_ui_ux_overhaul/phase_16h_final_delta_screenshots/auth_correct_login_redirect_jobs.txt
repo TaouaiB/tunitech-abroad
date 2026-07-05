@@ -1,0 +1,2 @@
+After correct login URL: http://127.0.0.1:8028/jobs/
+Authenticated header contains Favoris: True

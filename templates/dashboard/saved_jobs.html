@@ -7,9 +7,9 @@
     <div class="shell">
         <h1 class="page-title small" style="margin-bottom:6px;">Offres sauvegardées</h1>
         <p class="subtitle" style="margin-bottom:18px;">Retrouvez les annonces que vous avez mises de côté.</p>
-        <div class="grid">
+        <div class="grid" id="saved-jobs-grid" data-saved-jobs-grid>
             {% for saved_job in saved_jobs %}
-            <article class="job-card">
+            <article class="job-card" id="saved-job-card-{{ saved_job.job.public_id }}">
                 <div>
                     <div class="pill-row">
                         {% for badge in saved_job.job|job_badges %}<span class="pill {{ badge.css_class }}">{{ badge.text }}</span>{% endfor %}
@@ -43,6 +43,9 @@
                     {% endwith %}
                 </div>
                 <div style="display:flex;align-items:flex-start;justify-content:flex-end;gap:10px;">
+                    {% if saved_job.job.source_url %}
+                    <a class="btn primary" href="{{ saved_job.job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>
+                    {% endif %}
                     {% include 'jobs/partials/save_button.html' with job=saved_job.job is_saved=True remove_card=True %}
                 </div>
             </article>
