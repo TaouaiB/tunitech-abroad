@@ -34,8 +34,8 @@ class HomeCTATests(TestCase):
         response = self.client.get(reverse("core:home"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Créer un compte")
-        self.assertContains(response, "créez un compte")
+        self.assertContains(response, "Find Your Ideal Tech Role in France")
+        self.assertContains(response, "Keyword, title, or company")
         self.assertNotContains(response, "Aller au tableau de bord")
         self.assertNotContains(response, "Voir mes recommandations")
         self.assertNotContains(response, "Gérer mon CV")
@@ -51,11 +51,10 @@ class HomeCTATests(TestCase):
         response = self.client.get(reverse("core:home"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Find Your Ideal Tech Role in France")
         self.assertNotContains(response, "Créer un compte")
         self.assertNotContains(response, "créez un compte")
-        self.assertContains(response, "Aller au tableau de bord")
-        self.assertContains(response, "Voir mes recommandations")
-        self.assertContains(response, "Gérer mon CV")
+        self.assertContains(response, "Remote, Paris, Lyon")
 
     def test_homepage_shows_real_latest_jobs_not_static_coming_soon(self):
         self._job("Old Active Job", published_at=timezone.now() - timezone.timedelta(days=2))
@@ -73,7 +72,7 @@ class HomeCTATests(TestCase):
     def test_homepage_shows_honest_empty_state_without_jobs(self):
         response = self.client.get(reverse("core:home"))
 
-        self.assertContains(response, "Il n'y a pas d'offres récentes pour le moment.")
+        self.assertContains(response, "No jobs found right now")
 
 
 class PublicSEORouteTests(TestCase):

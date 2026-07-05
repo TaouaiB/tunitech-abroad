@@ -11,6 +11,8 @@ from django.http import JsonResponse
 from django.urls import path, include
 from django.utils import timezone
 from django.views.generic import TemplateView
+from django.shortcuts import redirect
+from allauth.account import views as allauth_views
 
 from apps.core.services.health import HealthCheckService
 from apps.analytics.admin_views import admin_operations_view, data_quality_dashboard_view
@@ -59,6 +61,15 @@ def health(request):
     return JsonResponse(health_data, status=status_code)
 
 
+def signup_redirect_wrapper(request, *args, **kwargs):
+    """
+    Redirect GET/HEAD requests to login with signup panel.
+    Delegate POST/others to allauth signup view.
+    """
+    if request.method in ["GET", "HEAD"]:
+        return redirect("/accounts/login/?panel=signup")
+    return allauth_views.signup(request, *args, **kwargs)
+
 urlpatterns = [
     path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
     path("sitemap.xml", TemplateView.as_view(template_name="sitemap.xml", content_type="application/xml")),
@@ -67,6 +78,7 @@ urlpatterns = [
     path(f"{settings.ADMIN_URL}cv-download/<uuid:public_id>/", admin_cv_download, name="admin_cv_download"),
     path(settings.ADMIN_URL, admin.site.urls),
     path("health/", health, name="health"),
+    path("accounts/signup/", signup_redirect_wrapper, name="account_signup"),
     path("accounts/", include("allauth.urls")),
     path("dashboard/", include("apps.dashboard.urls")),
     path("dashboard/recommendations/", include("apps.recommendations.urls")),

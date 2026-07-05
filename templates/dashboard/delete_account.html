@@ -2,46 +2,36 @@
 {% block title %}Supprimer le compte - TuniAtlas{% endblock %}
 {% block content %}
 <main class="settings-v16">
-  <section class="section">
-    <div class="shell">
-      <h1 class="page-title small">Paramètres</h1>
-
-      <div class="settings-grid" style="margin-top:18px">
-
-        <nav class="settings-nav">
-          <a class="{% if request.resolver_match.url_name == 'account' %}active{% endif %}" href="{% url 'dashboard:account' %}">Compte & Sécurité</a>
-          <a class="{% if request.resolver_match.url_name == 'email_preferences' %}active{% endif %}" href="{% url 'dashboard:email_preferences' %}">Préférences Email</a>
-          <a class="{% if request.resolver_match.url_name == 'connections' %}active{% endif %}" href="{% url 'dashboard:connections' %}">Comptes liés</a>
-          <a class="{% if request.resolver_match.url_name == 'delete_account' %}active{% endif %}" href="{% url 'dashboard:delete_account' %}" style="color:var(--bad)">Supprimer le compte</a>
-        </nav>
-
-        <section class="grid">
-          <div class="card grid" style="border-color:color-mix(in srgb, var(--bad) 30%, transparent);">
-            <h2 class="h2" style="color:var(--bad);">Suppression du compte</h2>
-            <div class="small" style="margin-bottom:12px;">Action irréversible. Toutes vos données seront supprimées.</div>
-
-            <div style="border:1px solid var(--bad); background:color-mix(in srgb, var(--bad) 6%, var(--panel)); border-radius:18px; padding:18px; margin-bottom:16px;">
-                <b style="color:var(--bad);">Attention !</b>
-                <div class="small" style="margin-top:4px;">
-                    Cette action supprimera définitivement votre compte, votre profil, vos CV et vos offres sauvegardées. Elle ne peut pas être annulée après confirmation.
-                </div>
-            </div>
-
-            <form method="post" class="grid">
-                {% csrf_token %}
-                <div class="field">
-                    <label for="confirmation">Tapez DELETE pour confirmer</label>
-                    <input type="text" name="confirmation" id="confirmation" class="input" required autocomplete="off" placeholder="DELETE">
-                </div>
-                <div class="pill-row">
-                    <button type="button" class="btn secondary" onclick="window.location.href='{% url 'dashboard:account' %}'">Annuler</button>
-                    <button type="submit" class="btn danger">Supprimer définitivement mon compte</button>
-                </div>
-            </form>
+  <section class="section"><div class="shell"><h1 class="page-title small">Paramètres</h1>
+    <div class="settings-grid" style="margin-top:18px">
+      <nav class="settings-nav">
+        <a href="{% url 'dashboard:account' %}">Compte</a>
+        <a href="{% url 'dashboard:email_preferences' %}">Email</a>
+        <a href="{% url 'account_change_password' %}">Sécurité</a>
+        <a href="{% url 'dashboard:connections' %}">Connexions</a>
+        <a class="active" href="{% url 'dashboard:delete_account' %}" style="color:var(--bad)">Supprimer</a>
+      </nav>
+      <section class="grid">
+        <button type="button" class="settings-mobile-toggle active" data-settings-toggle="danger"><span>Supprimer</span><span>▾</span></button>
+        <form method="post" action="." id="danger" class="card grid settings-mobile-section mobile-section-open">
+          {% csrf_token %}
+          <h2 class="h2" style="color:var(--bad)">Supprimer le compte</h2>
+          <p class="muted">Action irréversible. Toutes vos données seront supprimées.</p>
+          <div style="border:1px solid var(--bad);background:color-mix(in srgb,var(--bad) 6%,var(--panel));border-radius:18px;padding:18px;margin-bottom:16px;">
+            <b style="color:var(--bad)">Attention !</b>
+            <div class="small" style="margin-top:4px;">Cette action supprimera votre compte, votre profil, vos CV et vos offres sauvegardées. Elle ne peut pas être annulée.</div>
           </div>
-        </section>
-      </div>
+          <div class="field">
+            <label for="confirmation">Tapez DELETE pour confirmer</label>
+            <input type="text" name="confirmation" id="confirmation" class="input" required autocomplete="off" placeholder="DELETE">
+          </div>
+          <div class="pill-row">
+            <button type="button" class="btn secondary" onclick="window.location.href='{% url 'dashboard:account' %}'">Annuler</button>
+            <button type="submit" class="btn danger">Supprimer définitivement</button>
+          </div>
+        </form>
+      </section>
     </div>
-  </section>
+  </div></section>
 </main>
 {% endblock %}

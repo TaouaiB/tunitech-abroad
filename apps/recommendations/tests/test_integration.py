@@ -157,7 +157,7 @@ class DashboardIntegrationTests(TestCase):
         self.assertContains(response, "82%")
         self.assertContains(response, "match-badge")
         self.assertContains(response, "skill ok")
-        self.assertContains(response, reverse("matching:detail", kwargs={"public_id": match.public_id}))
+        self.assertNotContains(response, reverse("matching:detail", kwargs={"public_id": match.public_id}))
         self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
         self.assertNotContains(response, "Postuler sur la source")
         self.assertNotContains(response, "https://example.test/apply")

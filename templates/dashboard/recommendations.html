@@ -1,26 +1,14 @@
 {% extends 'base.html' %}
-
 {% block title %}Recommandations - TuniAtlas{% endblock %}
-
 {% block content %}
-<main class="recommendations-v16">
-    <section class="section">
-        <div class="shell">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:18px; flex-wrap:wrap;">
-                <div>
-                    <h1 class="page-title small" style="margin-bottom:6px;">Recommandations</h1>
-                    <p class="subtitle">Offres sélectionnées spécialement pour votre profil technique.</p>
-                </div>
-                <form method="post" action="{% url 'recommendations:refresh' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn secondary">Actualiser mes recommandations</button>
-                </form>
-            </div>
-
-            <div id="recommendation-panel">
-                {% include 'recommendations/partials/recommendation_list.html' with result=result %}
-            </div>
-        </div>
-    </section>
-</main>
+<div class="recommendations-v16">
+<section class="section">
+    <div class="shell">
+        <h1 class="page-title small" style="margin-bottom:6px;">Recommandations</h1>
+        <p class="subtitle">Offres sélectionnées spécialement pour votre profil technique.</p>
+        <form method="post" action="{% url 'recommendations:refresh' %}" style="margin-top:12px;">{% csrf_token %}<button type="submit" class="btn secondary">Actualiser mes recommandations</button></form>
+        <div id="recommendation-panel" style="margin-top:18px;">{% include 'recommendations/partials/recommendation_list.html' with result=result %}</div>
+    </div>
+</section>
+</div>
 {% endblock %}

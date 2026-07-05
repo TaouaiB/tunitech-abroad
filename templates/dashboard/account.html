@@ -1,56 +1,38 @@
 {% extends 'base.html' %}
-{% block title %}Sécurité & Compte - TuniAtlas{% endblock %}
+{% block title %}Compte - TuniAtlas{% endblock %}
 {% block content %}
 <main class="settings-v16">
   <section class="section">
-    <div class="shell">
-      <h1 class="page-title small">Paramètres</h1>
-
+    <div class="shell"><h1 class="page-title small">Paramètres</h1>
       <div class="settings-grid" style="margin-top:18px">
-
         <nav class="settings-nav">
-          <a class="{% if request.resolver_match.url_name == 'account' %}active{% endif %}" href="{% url 'dashboard:account' %}">Compte & Sécurité</a>
-          <a class="{% if request.resolver_match.url_name == 'email_preferences' %}active{% endif %}" href="{% url 'dashboard:email_preferences' %}">Préférences Email</a>
-          <a class="{% if request.resolver_match.url_name == 'connections' %}active{% endif %}" href="{% url 'dashboard:connections' %}">Comptes liés</a>
-          <a class="{% if request.resolver_match.url_name == 'delete_account' %}active{% endif %}" href="{% url 'dashboard:delete_account' %}" style="color:var(--bad)">Supprimer le compte</a>
+          <a class="active" href="{% url 'dashboard:account' %}">Compte</a>
+          <a href="{% url 'dashboard:email_preferences' %}">Email</a>
+          <a href="{% url 'account_change_password' %}">Sécurité</a>
+          <a href="{% url 'dashboard:connections' %}">Connexions</a>
+          <a href="{% url 'dashboard:delete_account' %}" style="color:var(--bad)">Supprimer</a>
         </nav>
-
         <section class="grid">
-          <div class="card grid">
-            <h2 class="h2">Compte et sécurité</h2>
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-                {% if user.candidate_profile.avatar_url %}
-                    <img src="{{ user.candidate_profile.avatar_url }}" alt="" style="width:56px; height:56px; border-radius:18px; object-fit:cover;">
-                {% else %}
-                    <div style="width:56px; height:56px; border-radius:18px; background:var(--panel2); color:var(--brand); display:grid; place-items:center; font-weight:900; font-size:20px; border:1px solid var(--line);">
-                        {{ user.email|make_list|first|upper }}
-                    </div>
-                {% endif %}
-                <div>
-                    <strong style="font-size:18px; display:block;">{{ user.candidate_profile.full_name|default:user.email }}</strong>
-                    <span class="small">{{ user.email }}</span>
-                </div>
+          <button type="button" class="settings-mobile-toggle active" data-settings-toggle="account"><span>Compte</span><span>▾</span></button>
+          <div id="account" class="card grid settings-mobile-section mobile-section-open">
+            <h2 class="h2">Compte</h2>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <div style="width:56px;height:56px;border-radius:18px;background:var(--panel2);color:var(--brand);display:grid;place-items:center;font-weight:900;font-size:20px;border:1px solid var(--line);">{{ user.email|make_list|first|upper }}</div>
+              <div><strong style="font-size:18px;display:block;">{{ user.candidate_profile.full_name|default:user.email }}</strong><span class="small">{{ user.email }}</span></div>
             </div>
-
-            <h3 class="h3" style="margin-top:16px;">Mot de passe</h3>
-            <div class="small" style="margin-bottom:12px;">Mettez à jour votre mot de passe régulièrement pour plus de sécurité.</div>
-
-            <div class="pill-row">
-                {% if has_usable_password %}
-                    <button class="btn secondary" onclick="window.location.href='{% url 'account_change_password' %}'">Changer mon mot de passe</button>
-                {% else %}
-                    <button class="btn primary" onclick="window.location.href='{% url 'account_set_password' %}'">Ajouter un mot de passe</button>
-                {% endif %}
+            <div class="account-box">
+              <div class="field"><label>Prénom</label>
+                <div style="padding:12px 13px;border:1px solid var(--line);border-radius:15px;background:var(--panel);">{{ user.first_name|default:'-' }}</div></div>
+              <div class="field"><label>Nom</label>
+                <div style="padding:12px 13px;border:1px solid var(--line);border-radius:15px;background:var(--panel);">{{ user.last_name|default:'-' }}</div></div>
+              <div class="field"><label>Email</label>
+                <div style="padding:12px 13px;border:1px solid var(--line);border-radius:15px;background:var(--panel);">{{ user.email }}</div></div>
             </div>
-
-            <h3 class="h3" style="margin-top:24px; color:var(--bad);">Suppression du compte</h3>
-            <div class="small" style="margin-bottom:12px;">Action irréversible. Pour supprimer votre compte, rendez-vous sur la page dédiée.</div>
-
-            <div class="pill-row">
-                <button class="btn secondary" style="color:var(--bad); border-color:color-mix(in srgb, var(--bad) 30%, var(--line));" onclick="window.location.href='{% url 'dashboard:delete_account' %}'">Supprimer définitivement mon compte</button>
+            <div class="pill-row" style="margin-top:12px;">
+              <button class="btn secondary" onclick="window.location.href='{% url 'account_change_password' %}'">{% if user.has_usable_password %}Changer mon mot de passe{% else %}Ajouter un mot de passe{% endif %}</button>
+              <a href="{% url 'dashboard:delete_account' %}" class="btn danger" style="margin-left:auto;">Supprimer définitivement</a>
             </div>
           </div>
-
         </section>
       </div>
     </div>

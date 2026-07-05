@@ -1,9 +1,8 @@
 {% extends "base.html" %}
-
-{% block title %}Analyse de compatibilité - {{ match.job_snapshot_json.title }}{% endblock %}
-
+{% load job_presentation %}
+{% block title %}Analyse - {{ match.job_snapshot_json.title|default:"Offre" }} - TuniAtlas{% endblock %}
 {% block content %}
-<main class="match-v16">
+<div class="match-v16">
 <section class="section">
     <div class="shell">
         <div class="score-hero">
@@ -23,124 +22,74 @@
                     {% if match.job_snapshot_json.url %}
                         <a class="btn primary full" href="{{ match.job_snapshot_json.url }}" target="_blank" rel="noopener noreferrer">Voir l'offre originale</a>
                     {% endif %}
-                    {% include 'jobs/partials/save_button.html' with job=match.job is_saved=match.is_saved %}
+                    {% if user.is_authenticated %}{% include 'jobs/partials/save_button.html' with job=match.job is_saved=match.is_saved %}{% endif %}
                     <a class="btn secondary full" href="{% url 'jobs:detail' match.job.public_id %}">Retour à l'offre</a>
                 </div>
             </div>
-
             <div class="grid">
                 {% if match.is_match_unavailable %}
                 <div class="card">
                     <h2 class="h2">Données insuffisantes</h2>
-                    <p class="subtitle">Cette offre ne fournit pas assez de signal technique fiable pour afficher un score de compatibilité utilisateur.</p>
-                    <div style="margin-top:16px; font-size:14px; line-height:1.6;">
-                        <strong>Compétences obligatoires:</strong> {{ match.job_snapshot_json.required_skills_json|default:"Aucune" }}<br>
-                        <strong>Compétences optionnelles:</strong> {{ match.job_snapshot_json.optional_skills_json|default:"Aucune" }}<br>
-                        <strong>Expérience:</strong> {{ match.job_snapshot_json.experience_level|default:"Non précisée" }}<br>
-                        <strong>Langues:</strong> {{ match.job_snapshot_json.language_requirements_json|default:"Non précisées" }}
-                    </div>
+                    <p class="subtitle">Cette offre ne fournit pas assez de signal technique fiable pour afficher un score.</p>
                 </div>
                 {% else %}
                 <div class="card">
                     <h2 class="h2">Score détaillé</h2>
                     <div class="grid grid-2">
                         <div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Technique</b><span>{{ match.technical_skills_score }}%</span></div>
-                            <div class="bar {% if match.technical_skills_score >= 80 %}good{% elif match.technical_skills_score >= 65 %}brand{% elif match.technical_skills_score >= 50 %}warn{% else %}bad{% endif %}"><span style="width:{{ match.technical_skills_score }}%"></span></div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Technique</b><span>{{ match.technical_skills_score }}%</span></div>
+                            <div class="bar {{ match.technical_skills_score|score_bar_class }}"><span style="width:{{ match.technical_skills_score }}%"></span></div>
                         </div>
                         <div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Expérience</b><span>{{ match.experience_score }}%</span></div>
-                            <div class="bar {% if match.experience_score >= 80 %}good{% elif match.experience_score >= 65 %}brand{% elif match.experience_score >= 50 %}warn{% else %}bad{% endif %}"><span style="width:{{ match.experience_score }}%"></span></div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Expérience</b><span>{{ match.experience_score }}%</span></div>
+                            <div class="bar {{ match.experience_score|score_bar_class }}"><span style="width:{{ match.experience_score }}%"></span></div>
                         </div>
                         <div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Langues</b><span>{{ match.language_score }}%</span></div>
-                            <div class="bar {% if match.language_score >= 80 %}good{% elif match.language_score >= 65 %}brand{% elif match.language_score >= 50 %}warn{% else %}bad{% endif %}"><span style="width:{{ match.language_score }}%"></span></div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Langues</b><span>{{ match.language_score }}%</span></div>
+                            <div class="bar {{ match.language_score|score_bar_class }}"><span style="width:{{ match.language_score }}%"></span></div>
                         </div>
                         <div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><b>Rôle/titre</b><span>{{ match.role_title_score }}%</span></div>
-                            <div class="bar {% if match.role_title_score >= 80 %}good{% elif match.role_title_score >= 65 %}brand{% elif match.role_title_score >= 50 %}warn{% else %}bad{% endif %}"><span style="width:{{ match.role_title_score }}%"></span></div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><b>Rôle/titre</b><span>{{ match.role_title_score }}%</span></div>
+                            <div class="bar {{ match.role_title_score|score_bar_class }}"><span style="width:{{ match.role_title_score }}%"></span></div>
                         </div>
                     </div>
                 </div>
-
-                {% if match.llm_explanation_status == "generated" and match.llm_explanation_text %}
-                <div class="card soft" style="border-color:color-mix(in srgb,var(--brand) 30%,var(--line))">
-                    <h2 class="h2" style="color:var(--brand)">Explication</h2>
-                    <div style="color:var(--text); font-size:14px; line-height:1.6;">
-                        {{ match.llm_explanation_text|linebreaks }}
-                    </div>
-                </div>
-                {% endif %}
-
                 <div class="grid grid-2">
                     <div class="card">
                         <h2 class="h2">Points forts</h2>
                         {% if match.strong_skills_json %}
                         <div class="pill-row">
                             {% for skill in match.strong_skills_json %}
-                            <span class="skill ok">{{ skill.name|default:skill }}</span>
+                                <span class="skill ok">{{ skill.name|default:skill }}</span>
                             {% endfor %}
                         </div>
                         {% else %}
-                        <p class="small">Aucun point fort spécifique identifié pour ce poste.</p>
+                        <p class="small">Aucun point fort identifié.</p>
                         {% endif %}
                     </div>
                     <div class="card">
                         <h2 class="h2">Manquantes</h2>
-                        {% if "non_it_low_relevance_job" in match.risk_flags_json %}
-                            <p class="small" style="color:var(--warn)">Analyse limitée : cette offre ne correspond pas clairement à un profil technique.</p>
-                        {% elif "insufficient_job_technical_signal" in match.risk_flags_json %}
-                            <p class="small" style="color:var(--warn)">Analyse limitée : les détails techniques sont insuffisants.</p>
-                        {% elif match.missing_required_skills_json %}
+                        {% if match.missing_required_skills_json %}
                         <div class="pill-row">
                             {% for skill in match.missing_required_skills_json %}
-                            <span class="skill missing">{{ skill.name|default:skill }}</span>
+                                <span class="skill missing">{{ skill.name|default:skill }}</span>
                             {% endfor %}
                         </div>
                         {% else %}
-                        <p class="small" style="color:var(--good)">Vous possédez toutes les compétences techniques requises.</p>
+                        <p class="small" style="color:var(--good)">Vous possédez toutes les compétences requises.</p>
                         {% endif %}
                     </div>
                 </div>
-
                 {% if match.missing_optional_skills_json %}
                 <div class="card">
                     <h2 class="h2">Compétences optionnelles à renforcer</h2>
                     <div class="pill-row">
                         {% for skill in match.missing_optional_skills_json %}
-                        <span class="pill warn">{{ skill.name|default:skill }}</span>
+                            <span class="pill warn">{{ skill.name|default:skill }}</span>
                         {% endfor %}
                     </div>
                 </div>
                 {% endif %}
-
-                {% if match.human_risk_flags or match.profile_signals_json %}
-                <div class="grid grid-2">
-                    {% if match.human_risk_flags %}
-                    <div class="card">
-                        <h2 class="h2">Points de vigilance</h2>
-                        {% for flag in match.human_risk_flags %}
-                        <div style="margin-top:8px; padding:10px; border-radius:12px; background:color-mix(in srgb,var(--bad) 8%,var(--panel)); border:1px solid color-mix(in srgb,var(--bad) 25%,var(--line)); font-size:13px; color:var(--bad)">{{ flag }}</div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    {% if match.profile_signals_json %}
-                    <div class="card">
-                        <h2 class="h2">Signaux positifs</h2>
-                        {% for signal in match.human_profile_signals %}
-                        <div style="margin-top:8px; padding:10px; border-radius:12px; background:color-mix(in srgb,var(--good) 8%,var(--panel)); border:1px solid color-mix(in srgb,var(--good) 25%,var(--line)); font-size:13px; color:var(--good)">{{ signal }}</div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <div class="card">
-                    <h2 class="h2">Mobilité / contrat</h2>
-                    <p class="small">Vérifiez la localisation, le type de contrat, le télétravail et les conditions administratives avant de postuler.</p>
-                </div>
-
                 {% if match.recommended_actions_json %}
                 <div class="card">
                     <h2 class="h2">Actions recommandées</h2>
@@ -148,11 +97,33 @@
                         {% for action in match.recommended_actions_json %}
                         <div class="notice">
                             <span class="dot {% if match.missing_required_skills_json %}bad{% elif match.missing_optional_skills_json %}warn{% else %}good{% endif %}"></span>
-                            <div>
-                                <b>{{ action }}</b>
-                            </div>
+                            <div><b>{{ action }}</b></div>
                         </div>
                         {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if match.human_risk_flags %}
+                <div class="card">
+                    <h2 class="h2">Points de vigilance</h2>
+                    <div class="notice-list">
+                        {% for flag in match.human_risk_flags %}
+                        <div class="notice">
+                            <span class="dot warn"></span>
+                            <div><b>{{ flag }}</b></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if match.location_score == 0 %}
+                <div class="card">
+                    <h2 class="h2">Mobilité / contrat</h2>
+                    <div class="notice-list">
+                        <div class="notice">
+                            <span class="dot warn"></span>
+                            <div><b>Vérifiez la localisation</b></div>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
@@ -161,5 +132,5 @@
         </div>
     </div>
 </section>
-</main>
+</div>
 {% endblock %}

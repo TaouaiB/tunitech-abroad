@@ -1,0 +1,58 @@
+- generic [active] [ref=f50e1]:
+  - banner [ref=f50e2]:
+    - generic [ref=f50e3]:
+      - link "T TuniAtlas" [ref=f50e4] [cursor=pointer]:
+        - /url: /jobs/
+        - generic [ref=f50e5]: T
+        - generic [ref=f50e6]: TuniAtlas
+      - navigation [ref=f50e7]:
+        - link "Offres" [ref=f50e8] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f50e9] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f50e10] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f50e11] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f50e12] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f50e13] [cursor=pointer]:
+          - /url: /about/
+      - generic [ref=f50e14]:
+        - button "Switch theme" [ref=f50e15] [cursor=pointer]:
+          - img [ref=f50e16]
+          - img [ref=f50e20]
+        - button "Switch language" [ref=f50e22] [cursor=pointer]:
+          - generic [ref=f50e23]: EN
+          - generic [ref=f50e25]: FR
+        - button "T" [ref=f50e27] [cursor=pointer]
+        - button "Menu" [ref=f50e28] [cursor=pointer]:
+          - img [ref=f50e29]
+  - main [ref=f50e31]:
+    - generic [ref=f50e32]:
+      - generic [ref=f50e33]:
+        - img [ref=f50e35]
+        - heading "Déconnexion" [level=2] [ref=f50e37]
+        - paragraph [ref=f50e38]: Êtes-vous sûr de vouloir vous déconnecter ?
+      - generic [ref=f50e41]:
+        - button "Se déconnecter" [ref=f50e42] [cursor=pointer]
+        - link "Annuler" [ref=f50e43] [cursor=pointer]:
+          - /url: /dashboard/
+  - contentinfo [ref=f50e44]:
+    - generic [ref=f50e45]:
+      - generic [ref=f50e46]:
+        - text: TuniAtlas
+        - generic [ref=f50e47]: Tech jobs abroad for Tunisian talent.
+      - generic [ref=f50e48]:
+        - link "Offres" [ref=f50e49] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f50e50] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f50e51] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f50e52] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f50e53] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f50e54] [cursor=pointer]:
+          - /url: /about/

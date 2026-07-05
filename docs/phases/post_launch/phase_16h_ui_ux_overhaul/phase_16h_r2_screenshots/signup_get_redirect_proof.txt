@@ -1,0 +1,3 @@
+GET /accounts/signup/
+Status: 302
+Location: /accounts/login/?panel=signup

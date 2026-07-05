@@ -1,7 +1,7 @@
 {% if user.is_authenticated %}
 <div id="save-button-{{ job.public_id }}" style="display:inline-block">
     {% if is_saved %}
-        <form method="POST" action="{% url 'jobs:unsave' job.public_id %}" hx-post="{% url 'jobs:unsave' job.public_id %}" hx-target="#save-button-{{ job.public_id }}" hx-swap="outerHTML" style="margin:0;">
+        <form method="POST" action="{% url 'jobs:unsave' job.public_id %}" hx-post="{% url 'jobs:unsave' job.public_id %}" hx-target="#save-button-{{ job.public_id }}" hx-swap="outerHTML" style="margin:0;" {% if remove_card %}hx-on::after-request="if(event.detail.xhr.status < 400){const c=this.closest('article.job-card');if(c)c.remove();}"{% endif %}>
             {% csrf_token %}
             <button type="submit" class="btn save saved">
                 Sauvegardé

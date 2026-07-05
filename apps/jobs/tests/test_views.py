@@ -164,7 +164,7 @@ class JobViewTests(TestCase):
         self.assertNotContains(response, "Sauvegardé")
         self.assertNotContains(response, "quick-match-container")
         self.assertNotContains(response, "Test rapide")
-        self.assertContains(response, "Se connecter pour tester")
+        self.assertContains(response, "Se connecter")
         self.assertContains(response, f"?next={reverse('jobs:detail', args=[self.job.public_id])}", html=False)
 
     def test_logged_in_not_ready_job_detail_shows_profile_cv_cta(self):

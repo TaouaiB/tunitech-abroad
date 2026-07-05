@@ -262,7 +262,31 @@ class AuthViewsTests(TestCase):
 
     def test_signup_page_status_code(self):
         response = self.client.get('/accounts/signup/')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/accounts/login/?panel=signup')
+
+    def test_auth_templates_do_not_include_fake_success_toasts(self):
+        login_response = self.client.get("/accounts/login/")
+        signup_response = self.client.get("/accounts/signup/", follow=True)
+
+        self.assertEqual(login_response.status_code, 200)
+        self.assertEqual(signup_response.status_code, 200)
+        self.assertNotContains(login_response, "data-success")
+        self.assertNotContains(signup_response, "data-success")
+
+    def test_wrong_email_password_login_does_not_authenticate(self):
+        user = create_test_user(username="wrong-login", email="wrong-login@example.test", password="password123")
+        EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+
+        response = self.client.post(
+            "/accounts/login/",
+            {"login": "wrong-login@example.test", "password": "not-the-password"},
+        )
+
         self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertNotContains(response, "Signed in")
+        self.assertContains(response, "has-error")
 
     def test_existing_normal_email_password_login_still_works(self):
         user = create_test_user(username="normal-login", email="normal-login@example.test", password="password123")
@@ -274,7 +298,24 @@ class AuthViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response["Location"], "/dashboard/")
+        self.assertEqual(response["Location"], "/jobs/")
+
+    def test_invalid_signup_post_reaches_allauth_without_fake_success(self):
+        response = self.client.post(
+            "/accounts/signup/",
+            {
+                "email": "bad-email",
+                "password1": "short",
+                "password2": "different",
+                "first_name": "Bad",
+                "last_name": "Signup",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "data-success")
+        self.assertNotContains(response, "Account created")
+        self.assertContains(response, "has-error")
 
     def test_normal_email_signup_still_requires_email_confirmation(self):
         response = self.client.post(

@@ -1,0 +1,112 @@
+- generic [active] [ref=f44e1]:
+  - banner [ref=f44e2]:
+    - generic [ref=f44e3]:
+      - link "T TuniAtlas" [ref=f44e4] [cursor=pointer]:
+        - /url: /jobs/
+        - generic [ref=f44e5]: T
+        - generic [ref=f44e6]: TuniAtlas
+      - navigation [ref=f44e7]:
+        - link "Offres" [ref=f44e8] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f44e9] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f44e10] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f44e11] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f44e12] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f44e13] [cursor=pointer]:
+          - /url: /about/
+      - generic [ref=f44e14]:
+        - button "Switch theme" [ref=f44e15] [cursor=pointer]:
+          - img [ref=f44e16]
+          - img [ref=f44e20]
+        - button "Switch language" [ref=f44e22] [cursor=pointer]:
+          - generic [ref=f44e23]: EN
+          - generic [ref=f44e25]: FR
+        - button "T" [ref=f44e27] [cursor=pointer]
+  - main [ref=f44e28]:
+    - generic [ref=f44e29]:
+      - complementary [ref=f44e30]:
+        - link "Tableau de bord ›" [ref=f44e31] [cursor=pointer]:
+          - /url: /dashboard/
+          - generic [ref=f44e32]: Tableau de bord
+          - generic [ref=f44e33]: ›
+        - link "Recommandations ›" [ref=f44e34] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+          - generic [ref=f44e35]: Recommandations
+          - generic [ref=f44e36]: ›
+        - link "Mon CV ›" [ref=f44e37] [cursor=pointer]:
+          - /url: /dashboard/cv/
+          - generic [ref=f44e38]: Mon CV
+          - generic [ref=f44e39]: ›
+        - link "Mon profil ›" [ref=f44e40] [cursor=pointer]:
+          - /url: /dashboard/profile/
+          - generic [ref=f44e41]: Mon profil
+          - generic [ref=f44e42]: ›
+        - link "Favoris ›" [ref=f44e43] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+          - generic [ref=f44e44]: Favoris
+          - generic [ref=f44e45]: ›
+        - link "Préférences email ›" [ref=f44e46] [cursor=pointer]:
+          - /url: /dashboard/email-preferences/
+          - generic [ref=f44e47]: Préférences email
+          - generic [ref=f44e48]: ›
+        - link "Sécurité & compte ›" [ref=f44e49] [cursor=pointer]:
+          - /url: /dashboard/account/
+          - generic [ref=f44e50]: Sécurité & compte
+          - generic [ref=f44e51]: ›
+      - generic [ref=f44e52]:
+        - generic [ref=f44e53]:
+          - generic [ref=f44e54]:
+            - text: Espace candidat
+            - heading "Bonjour, testuser1@tunitech.local !" [level=1] [ref=f44e55]
+            - paragraph [ref=f44e56]: Bienvenue sur votre espace candidat TuniAtlas.
+          - link "Explorer les offres" [ref=f44e58] [cursor=pointer]:
+            - /url: /jobs/
+        - generic [ref=f44e59]:
+          - generic [ref=f44e60]:
+            - heading "Mon profil" [level=2] [ref=f44e61]
+            - paragraph [ref=f44e62]: Mettez à jour vos informations et objectifs pour un meilleur matching.
+            - link "Gérer mon profil" [ref=f44e64] [cursor=pointer]:
+              - /url: /dashboard/profile/
+          - generic [ref=f44e65]:
+            - heading "Mon CV" [level=2] [ref=f44e66]
+            - paragraph [ref=f44e67]: Gérez votre CV pour un matching précis avec les offres.
+            - link "Gérer mon CV" [ref=f44e69] [cursor=pointer]:
+              - /url: /dashboard/cv/
+        - generic [ref=f44e70]:
+          - generic [ref=f44e71]:
+            - heading "Recommandations" [level=3] [ref=f44e72]
+            - paragraph [ref=f44e73]: Offres ciblant votre profil technique.
+            - link "Voir" [ref=f44e74] [cursor=pointer]:
+              - /url: /dashboard/recommendations/
+          - generic [ref=f44e75]:
+            - heading "Favoris" [level=3] [ref=f44e76]
+            - paragraph [ref=f44e77]: Retrouvez vos annonces sauvegardées.
+            - link "Voir" [ref=f44e78] [cursor=pointer]:
+              - /url: /dashboard/saved-jobs/
+          - generic [ref=f44e79]:
+            - heading "Sécurité & compte" [level=3] [ref=f44e80]
+            - paragraph [ref=f44e81]: Gérez vos préférences et la sécurité.
+            - link "Gérer" [ref=f44e82] [cursor=pointer]:
+              - /url: /dashboard/account/
+  - contentinfo [ref=f44e83]:
+    - generic [ref=f44e84]:
+      - generic [ref=f44e85]:
+        - text: TuniAtlas
+        - generic [ref=f44e86]: Tech jobs abroad for Tunisian talent.
+      - generic [ref=f44e87]:
+        - link "Offres" [ref=f44e88] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f44e89] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f44e90] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f44e91] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f44e92] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f44e93] [cursor=pointer]:
+          - /url: /about/

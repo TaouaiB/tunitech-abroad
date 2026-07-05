@@ -71,8 +71,38 @@ function initUI(){
   document.querySelectorAll('form[data-validate]').forEach(form=>{
     if(form.dataset.boundValidate) return;
     form.dataset.boundValidate='true';
+    form.noValidate=true;
     form.addEventListener('input',(e)=>validateField(e.target,false));
-    form.addEventListener('submit',(e)=>{e.preventDefault();let ok=true;form.querySelectorAll('[required], input[type=email], input[type=password]').forEach(el=>{if(!validateField(el,true)) ok=false}); if(!ok){form.classList.add('shake');setTimeout(()=>form.classList.remove('shake'),320);toast('Fix highlighted fields','bad');return} toast(form.dataset.success||'Saved','good');});
+    form.addEventListener('submit',(e)=>{
+        const form = e.target.closest("form");
+        if (!form) return;
+        let ok=true;
+        form.querySelectorAll('[required], input[type=email], input[type=password]').forEach(el=>{
+            if(!validateField(el,true)) ok=false
+        });
+        if(!ok){
+            e.preventDefault();
+            form.classList.add('shake');
+            setTimeout(()=>form.classList.remove('shake'),320);
+            toast('Fix highlighted fields','bad');
+            return;
+        }
+        if (form.matches("[data-auth-form='true']")) {
+            return;
+        }
+
+        // If it's a real POST form with an action, let it submit naturally to the server.
+        const isPost = form.getAttribute('method') && form.getAttribute('method').toLowerCase() === 'post';
+        if (isPost && form.getAttribute('action')) {
+            return;
+        }
+
+        // Only prevent default and show toast for dummy/prototype forms without real post action
+        e.preventDefault();
+        if (form.dataset.success) {
+            toast(form.dataset.success, 'good');
+        }
+    });
   });
   document.querySelectorAll('[data-tab-target]').forEach(btn=>{
   if(btn.dataset.boundTab) return;

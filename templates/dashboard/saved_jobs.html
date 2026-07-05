@@ -1,109 +1,63 @@
 {% extends 'base.html' %}
 {% load job_presentation %}
-
 {% block title %}Favoris - TuniAtlas{% endblock %}
-
 {% block content %}
-<main class="saved-v16">
-    <section class="section">
-        <div class="shell">
-            <h1 class="page-title small" style="margin-bottom:6px;">Offres sauvegardées</h1>
-            <p class="subtitle" style="margin-bottom:18px;">Retrouvez les annonces que vous avez mises de côté.</p>
-
-            <div class="grid">
-                {% for saved_job in saved_jobs %}
-                    <article class="job-card">
-                        <div>
-                            <div class="pill-row">
-                                {% for badge in saved_job.job|job_badges %}
-                                    <span class="pill {{ badge.css_class }}">{{ badge.text }}</span>
-                                {% endfor %}
-                                {% if saved_job.job.status == 'expired' %}
-                                    <span class="pill bad">Expirée</span>
-                                {% elif saved_job.job.status != 'active' %}
-                                    <span class="pill warn">{{ saved_job.job.get_status_display }}</span>
-                                {% endif %}
-                                {% if not saved_job.job|is_publicly_visible %}
-                                    <span class="pill warn">Non publiée</span>
-                                {% endif %}
-                            </div>
-
-                            <h3 class="job-title">
-                                {% if saved_job.job|is_publicly_visible %}
-                                <a href="{% url 'jobs:detail' saved_job.job.public_id %}">
-                                {% endif %}
-                                    {{ saved_job.job.title|default:"Offre sans titre" }}
-                                {% if saved_job.job|is_publicly_visible %}
-                                </a>
-                                {% endif %}
-                            </h3>
-
-                            <div class="job-meta">
-                                {% if saved_job.job.company_name|is_valid_badge %}
-                                    <span>{{ saved_job.job.company_name }}</span>
-                                {% endif %}
-                                {% if saved_job.job.location|is_valid_badge %}
-                                    <span>·</span><span>{{ saved_job.job.location }}</span>
-                                {% elif saved_job.job.city|is_valid_badge %}
-                                    <span>·</span><span>{{ saved_job.job.city }}</span>
-                                {% endif %}
-                                {% if saved_job.job.source.name|is_valid_badge %}
-                                    <span>·</span><span>{{ saved_job.job.source.name }}</span>
-                                {% endif %}
-                                {% if saved_job.job.published_at %}
-                                    <span>·</span><span>{{ saved_job.job.published_at|date:"d M Y" }}</span>
-                                {% elif saved_job.job.first_seen_at %}
-                                    <span>·</span><span>{{ saved_job.job.first_seen_at|date:"d M Y" }}</span>
-                                {% elif saved_job.job.last_seen_at %}
-                                    <span>·</span><span>{{ saved_job.job.last_seen_at|date:"d M Y" }}</span>
-                                {% endif %}
-                            </div>
-
-                            <p class="job-desc">
-                                {% if saved_job.job.description|is_valid_badge and saved_job.job.description|length > 12 %}
-                                    {{ saved_job.job.description|striptags|truncatewords:28 }}
-                                {% else %}
-                                    Description disponible sur la source de l'offre.
-                                {% endif %}
-                                {% if not saved_job.job|is_publicly_visible %}
-                                    <br><span style="color:var(--warn); font-size:12px;">{{ saved_job.job|public_eligibility_reason }}</span>
-                                {% endif %}
-                            </p>
-
-                            {% with skill_chips=saved_job.job|card_skill_chips %}
-                            {% if skill_chips %}
-                                <div class="pill-row">
-                                    {% for skill in skill_chips %}
-                                        {% if skill|is_valid_badge %}
-                                            <span class="skill">{{ skill }}</span>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            {% endwith %}
-                        </div>
-
-                        <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;gap:14px;min-width:102px">
-                            <div style="display:flex; gap:8px;">
-                                {% if saved_job.job|is_publicly_visible %}
-                                    <a class="btn secondary" href="{% url 'jobs:detail' saved_job.job.public_id %}" style="padding:11px; height:42px;">Voir l'offre</a>
-                                {% endif %}
-                                {% include 'jobs/partials/save_button.html' with job=saved_job.job is_saved=True %}
-                            </div>
-                        </div>
-                    </article>
-                {% empty %}
-                    <div class="empty-state" style="border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow:var(--shadow2);">
-                        <div class="empty-ill" style="margin:0 auto 16px auto;">
-                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
-                        </div>
-                        <h3 class="h2">Aucune offre sauvegardée</h3>
-                        <p class="subtitle" style="margin:0 auto 24px auto; max-width:500px;">Sauvegardez les offres intéressantes pour les comparer plus tard.</p>
-                        <a href="{% url 'jobs:list' %}" class="btn primary">Explorer les offres</a>
+<div class="saved-v16">
+<section class="section">
+    <div class="shell">
+        <h1 class="page-title small" style="margin-bottom:6px;">Offres sauvegardées</h1>
+        <p class="subtitle" style="margin-bottom:18px;">Retrouvez les annonces que vous avez mises de côté.</p>
+        <div class="grid">
+            {% for saved_job in saved_jobs %}
+            <article class="job-card">
+                <div>
+                    <div class="pill-row">
+                        {% for badge in saved_job.job|job_badges %}<span class="pill {{ badge.css_class }}">{{ badge.text }}</span>{% endfor %}
+                        {% if saved_job.job.status == 'expired' %}<span class="pill bad">Expirée</span>{% endif %}
+                        {% if not saved_job.job|is_publicly_visible %}<span class="pill warn">Non publiée</span>{% endif %}
                     </div>
-                {% endfor %}
+                    <h3 class="job-title">
+                        {% if saved_job.job|is_publicly_visible %}<a href="{% url 'jobs:detail' saved_job.job.public_id %}">{% endif %}
+                        {{ saved_job.job.title|default:"Offre sans titre" }}
+                        {% if saved_job.job|is_publicly_visible %}</a>{% endif %}
+                    </h3>
+                    <div class="job-meta">
+                        {% if saved_job.job.company_name|is_valid_badge %}<span>{{ saved_job.job.company_name }}</span>{% endif %}
+                        {% if saved_job.job.location|is_valid_badge %}<span>·</span><span>{{ saved_job.job.location }}</span>{% elif saved_job.job.city|is_valid_badge %}<span>·</span><span>{{ saved_job.job.city }}</span>{% endif %}
+                        {% if saved_job.job.source.name|is_valid_badge %}<span>·</span><span>{{ saved_job.job.source.name }}</span>{% endif %}
+                    </div>
+                    <p class="job-desc">
+                        {% if saved_job.job.description|is_valid_badge and saved_job.job.description|length > 12 %}
+                            {{ saved_job.job.description|striptags|truncatewords:28 }}
+                        {% else %}
+                            Description disponible sur la source de l'offre.
+                        {% endif %}
+                        {% if not saved_job.job|is_publicly_visible %}<br><span style="color:var(--warn);font-size:12px;">{{ saved_job.job|public_eligibility_reason }}</span>{% endif %}
+                    </p>
+                    {% with skill_chips=saved_job.job|card_skill_chips %}
+                    {% if skill_chips %}
+                    <div class="pill-row">
+                        {% for skill in skill_chips %}<span class="skill {{ skill|skill_color }}">{{ skill }}</span>{% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                <div style="display:flex;align-items:flex-start;justify-content:flex-end;gap:10px;">
+                    {% include 'jobs/partials/save_button.html' with job=saved_job.job is_saved=True remove_card=True %}
+                </div>
+            </article>
+            {% empty %}
+            <div class="empty-state" style="border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow2);padding:52px 22px;">
+                <div class="empty-ill" style="margin:0 auto 16px auto;">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                </div>
+                <h2 class="h2">Aucune offre sauvegardée</h2>
+                <p class="subtitle" style="margin:0 auto 24px auto;max-width:500px;">Sauvegardez les offres intéressantes pour les comparer plus tard.</p>
+                <a href="{% url 'jobs:list' %}" class="btn primary">Explorer les offres</a>
             </div>
+            {% endfor %}
         </div>
-    </section>
-</main>
+    </div>
+</section>
+</div>
 {% endblock %}

@@ -1,5 +1,4 @@
-{% load job_presentation %}
-<article class="job-card" data-type="{{ job.contract_type|lower|default:'unknown' }}" data-city="{{ job.city|lower|default:'unknown' }}">
+{% load job_presentation %}<article class="job-card">
     <div>
         <div class="pill-row">
             {% for badge in job|job_badges %}
@@ -22,49 +21,23 @@
                 <span class="pill good">{{ job.first_seen_at|date:"d M" }}</span>
             {% endif %}
         </div>
-
-        <h3 class="job-title">
-            <a href="{% url 'jobs:detail' job.public_id %}">{{ job.title|default:"Offre IT sans titre" }}</a>
-        </h3>
-
+        <h3 class="job-title"><a href="{% url 'jobs:detail' job.public_id %}">{{ job.title|default:"Offre IT sans titre" }}</a></h3>
         <div class="job-meta">
-            {% if job.company_name|is_valid_badge %}
-                <span>{{ job.company_name }}</span><span>·</span>
-            {% endif %}
-            {% if job.location|is_valid_badge %}
-                <span>{{ job.location }}</span><span>·</span>
-            {% elif job.city|is_valid_badge %}
-                <span>{{ job.city }}</span><span>·</span>
-            {% endif %}
-            {% if job.source.name|is_valid_badge %}
-                <span>{{ job.source.name }}</span>
-            {% endif %}
+            {% if job.company_name|is_valid_badge %}<span>{{ job.company_name }}</span><span>·</span>{% endif %}
+            {% if job.location|is_valid_badge %}<span>{{ job.location }}</span><span>·</span>{% elif job.city|is_valid_badge %}<span>{{ job.city }}</span><span>·</span>{% endif %}
+            {% if job.source.name|is_valid_badge %}<span>{{ job.source.name }}</span>{% endif %}
         </div>
-
         {% if job.description|is_valid_badge and job.description|length > 12 %}
             <p class="job-desc">{{ job.description|striptags|truncatewords:28 }}</p>
         {% else %}
             <p class="job-desc">Description disponible sur la source de l'offre.</p>
         {% endif %}
-
         {% with skill_chips=job|card_skill_chips %}
         <div class="pill-row">
             {% if skill_chips %}
                 {% for skill in skill_chips %}
                     {% if skill|is_valid_badge %}
-                        {% if 'js' in skill|lower or 'javascript' in skill|lower %}
-                            <span class="skill js">{{ skill }}</span>
-                        {% elif 'react' in skill|lower %}
-                            <span class="skill react">{{ skill }}</span>
-                        {% elif 'node' in skill|lower %}
-                            <span class="skill node">{{ skill }}</span>
-                        {% elif 'ts' in skill|lower or 'typescript' in skill|lower %}
-                            <span class="skill ts">{{ skill }}</span>
-                        {% elif 'api' in skill|lower or 'python' in skill|lower or 'django' in skill|lower %}
-                            <span class="skill api">{{ skill }}</span>
-                        {% else %}
-                            <span class="skill">{{ skill }}</span>
-                        {% endif %}
+                        <span class="skill {{ skill|skill_color }}">{{ skill }}</span>
                     {% endif %}
                 {% endfor %}
             {% elif job|is_pending_analysis %}
@@ -75,7 +48,6 @@
         </div>
         {% endwith %}
     </div>
-
     <div style="display:flex;align-items:flex-start;justify-content:flex-end">
         {% if user.is_authenticated %}
             {% include 'jobs/partials/save_button.html' with job=job is_saved=job.is_saved %}

@@ -1,0 +1,56 @@
+- generic [active] [ref=f46e1]:
+  - banner [ref=f46e2]:
+    - generic [ref=f46e3]:
+      - link "T TuniAtlas" [ref=f46e4] [cursor=pointer]:
+        - /url: /jobs/
+        - generic [ref=f46e5]: T
+        - generic [ref=f46e6]: TuniAtlas
+      - navigation [ref=f46e7]:
+        - link "Offres" [ref=f46e8] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f46e9] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f46e10] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f46e11] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f46e12] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f46e13] [cursor=pointer]:
+          - /url: /about/
+      - generic [ref=f46e14]:
+        - button "Switch theme" [ref=f46e15] [cursor=pointer]:
+          - img [ref=f46e16]
+          - img [ref=f46e20]
+        - button "Switch language" [ref=f46e22] [cursor=pointer]:
+          - generic [ref=f46e23]: EN
+          - generic [ref=f46e25]: FR
+        - button "T" [ref=f46e27] [cursor=pointer]
+  - main [ref=f46e28]:
+    - generic [ref=f46e29]:
+      - generic [ref=f46e30]:
+        - img [ref=f46e32]
+        - heading "Déconnexion" [level=2] [ref=f46e34]
+        - paragraph [ref=f46e35]: Êtes-vous sûr de vouloir vous déconnecter ?
+      - generic [ref=f46e38]:
+        - button "Se déconnecter" [ref=f46e39] [cursor=pointer]
+        - link "Annuler" [ref=f46e40] [cursor=pointer]:
+          - /url: /dashboard/
+  - contentinfo [ref=f46e41]:
+    - generic [ref=f46e42]:
+      - generic [ref=f46e43]:
+        - text: TuniAtlas
+        - generic [ref=f46e44]: Tech jobs abroad for Tunisian talent.
+      - generic [ref=f46e45]:
+        - link "Offres" [ref=f46e46] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f46e47] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f46e48] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f46e49] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f46e50] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f46e51] [cursor=pointer]:
+          - /url: /about/

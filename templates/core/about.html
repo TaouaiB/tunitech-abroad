@@ -3,28 +3,15 @@
 {% block title %}À propos — TuniAtlas{% endblock %}
 
 {% block content %}
-<section class="about-v16 section">
+<section class="section about-v16">
   <div class="shell">
-    <h1 class="page-title small">À propos</h1>
+    <h1 class="page-title small" data-i18n="About us">À propos</h1>
 
-    <div class="main-layout">
-      <div class="grid">
-        <div class="card">
-          <h2 class="h2">Notre mission</h2>
-          <p class="muted">
-            TuniAtlas Jobs aide les talents IT tunisiens à trouver des opportunités à l'étranger, en commençant par la France.
-          </p>
-          <ul class="about-v16-list muted">
-            <li><strong>Recherche locale :</strong> Les offres et la recherche sont basées sur notre base de données PostgreSQL locale. Il n'y a pas d'appels API en direct à France Travail pendant votre recherche.</li>
-            <li><strong>Match personnalisé :</strong> Les données de votre CV et de votre profil aident au matching et aux recommandations.</li>
-            <li><strong>Algorithme déterministe :</strong> Le matching est basé sur des règles déterministes. Un LLM peut aider à expliquer ou suggérer des pistes, mais il ne décide pas du score final.</li>
-            <li><strong>Confidentialité :</strong> Vos fichiers CV restent strictement privés.</li>
-          </ul>
-        </div>
-
-        <form class="card grid" method="post" action="{% url 'core:about' %}" novalidate>
+    <div class="main-layout" style="margin-top:18px">
+      <section class="grid">
+        <form class="card grid" method="post" action="{% url 'core:about' %}">
           {% csrf_token %}
-          <h2 class="h2">Contact</h2>
+          <h2 class="h2" data-i18n="Contact">Contact</h2>
 
           {% if form.non_field_errors %}
             <div class="compact-state bad">
@@ -37,73 +24,72 @@
             </div>
           {% endif %}
 
-          <div class="honeypot" aria-hidden="true">
+          <div style="display:none">
             {{ form.website }}
           </div>
 
-          <div class="grid grid-2">
+          <div class="account-box">
             <div class="field{% if form.name.errors %} has-error{% endif %}">
-              <label for="{{ form.name.id_for_label }}">Nom complet</label>
+              <label for="{{ form.name.id_for_label }}" data-i18n="Reason">Motif</label>
               {{ form.name }}
-              {% if form.name.errors %}
-                <p class="error">{{ form.name.errors.0 }}</p>
-              {% endif %}
+              <div class="error">Requis.</div>
             </div>
             <div class="field{% if form.email.errors %} has-error{% endif %}">
-              <label for="{{ form.email.id_for_label }}">Email</label>
+              <label for="{{ form.email.id_for_label }}" data-i18n="Email">Email</label>
               {{ form.email }}
-              {% if form.email.errors %}
-                <p class="error">{{ form.email.errors.0 }}</p>
-              {% endif %}
+              <div class="error" data-i18n="Valid email required.">Email valide requis.</div>
             </div>
           </div>
 
           <div class="field{% if form.subject.errors %} has-error{% endif %}">
-            <label for="{{ form.subject.id_for_label }}">Motif</label>
+            <label for="{{ form.subject.id_for_label }}" data-i18n="Reason">Motif</label>
             {{ form.subject }}
-            {% if form.subject.errors %}
-              <p class="error">{{ form.subject.errors.0 }}</p>
-            {% endif %}
+            {% if form.subject.errors %}<div class="error" style="display:block;">{{ form.subject.errors.0 }}</div>{% endif %}
           </div>
 
           <div class="field{% if form.message.errors %} has-error{% endif %}">
-            <label for="{{ form.message.id_for_label }}">Message</label>
+            <label for="{{ form.message.id_for_label }}" data-i18n="Message">Message</label>
             {{ form.message }}
-            {% if form.message.errors %}
-              <p class="error">{{ form.message.errors.0 }}</p>
-            {% endif %}
+            <div class="error" data-i18n="Message required.">Message requis.</div>
+            {% if form.message.errors %}<div class="error" style="display:block;">{{ form.message.errors.0 }}</div>{% endif %}
           </div>
 
-          <div>
-            <button type="submit" class="btn primary">Envoyer</button>
-          </div>
+          <button type="submit" class="btn primary" data-i18n="Send">Envoyer</button>
         </form>
-      </div>
+
+        <div class="card">
+          <h2 class="h2" data-i18n="Links">Liens</h2>
+          <div class="notice-list">
+            <div class="notice">
+              <span class="dot"></span>
+              <div>
+                <b data-i18n="Contact">Contact</b>
+                <div class="small">contact@tuniatlas.com</div>
+              </div>
+            </div>
+            <div class="notice">
+              <span class="dot good"></span>
+              <div>
+                <b data-i18n="Jobs">Offres</b>
+                <div class="small"><a href="{% url 'jobs:list' %}" style="color:var(--brand);font-weight:900;text-decoration:none">Parcourir les offres</a></div>
+              </div>
+            </div>
+            <div class="notice">
+              <span class="dot warn"></span>
+              <div>
+                <b data-i18n="Account">Compte</b>
+                <div class="small"><a href="{% if user.is_authenticated %}{% url 'dashboard:account' %}{% else %}{% url 'account_login' %}{% endif %}" style="color:var(--brand);font-weight:900;text-decoration:none">Gérer les paramètres</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <aside class="card sticky">
-        <h2 class="h2">Liens</h2>
+        <h2 class="h2">Privacy &amp; terms</h2>
         <div class="notice-list">
-          <div class="notice">
-            <span class="dot"></span>
-            <div>
-              <b>Contact direct</b>
-              <div class="small">Utilisez le formulaire sécurisé.</div>
-            </div>
-          </div>
-          <div class="notice">
-            <span class="dot good"></span>
-            <div>
-              <b>Offres</b>
-              <a href="{% url 'jobs:list' %}" class="small about-v16-link">Parcourir les offres</a>
-            </div>
-          </div>
-          <div class="notice">
-            <span class="dot warn"></span>
-            <div>
-              <b>Compte</b>
-              <a href="{% if user.is_authenticated %}{% url 'dashboard:account' %}{% else %}{% url 'account_login' %}{% endif %}" class="small about-v16-link">Gérer les paramètres</a>
-            </div>
-          </div>
+          <div class="notice"><span class="dot"></span><div><b>Privacy</b></div></div>
+          <div class="notice"><span class="dot good"></span><div><b>Terms</b></div></div>
         </div>
       </aside>
     </div>
