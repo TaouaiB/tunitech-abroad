@@ -6,9 +6,9 @@
 <div class="jobs-v16">
 <section class="mobile-index-tools">
   <div class="shell">
-    <div class="tool-row">
-      <button class="btn primary full" type="button" onclick="document.body.classList.toggle('index-search-open');document.body.classList.remove('index-stats-open');" data-i18n="Search">Rechercher</button>
-      <button class="btn secondary full" type="button" onclick="document.body.classList.toggle('filters-open');document.body.classList.remove('mobile-open');" data-i18n="Filters">Filtres</button>
+    <div class="tool-row jobs-mobile-actions">
+      <button class="btn primary full" type="button" data-mobile-search-toggle data-i18n="Search">Rechercher</button>
+      <button class="btn secondary full" type="button" data-mobile-filters-toggle data-i18n="Filters">Filtres</button>
     </div>
   </div>
 </section>
@@ -28,33 +28,49 @@
 
 <section class="section">
   <div class="shell layout">
-    <button class="btn secondary mobile-filter-trigger full" type="button" onclick="document.body.classList.toggle('filters-open');document.body.classList.remove('mobile-open')">
+    <button class="btn secondary mobile-filter-trigger full" type="button" data-mobile-filters-toggle>
       <span data-i18n="Filters">Filtres</span><span>▾</span>
     </button>
 
     <aside id="mobileFiltres" class="card sticky">
-      <button class="btn secondary mobile-filter-close" type="button" onclick="document.body.classList.remove('filters-open')" data-i18n="Close">Fermer</button>
+      <button class="btn secondary mobile-filter-close" type="button" onclick="closeAllMobilePanels()" data-i18n="Close">Fermer</button>
       <h2 class="h3" data-i18n="Filters">Filtres</h2>
       {% include "jobs/partials/job_filter_panel.html" %}
     </aside>
 
     <section>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
-        <div>
+      <div class="sort-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
+        <div class="sort-title">
           <h2 class="h2" data-i18n="Latest opportunities">Dernières opportunités</h2>
+          {% if filters.q %}
           <p class="small">
-            {% if filters.q %}
-                Résultats pour {{ filters.q }}
-            {% else %}
-                <span data-i18n="Sorted by newness.">Triées par nouveauté.</span>
-            {% endif %}
+              Résultats pour {{ filters.q }}
           </p>
+          {% endif %}
         </div>
-        <select class="select" style="max-width:180px" onchange="window.location.href=this.value">
+        <select class="select desktop-sort-select" style="max-width:180px" onchange="window.location.href=this.value">
           <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=newest" {% if sort == "newest" or not sort %}selected{% endif %}>Plus récentes</option>
           <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=relevance" {% if sort == "relevance" %}selected{% endif %}>Meilleure correspondance</option>
           <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=company" {% if sort == "company" %}selected{% endif %}>Entreprise</option>
         </select>
+        <div class="mobile-sort" data-mobile-sort>
+          <button class="select mobile-sort-button"
+                  type="button"
+                  data-mobile-sort-button
+                  aria-expanded="false">
+            <span data-mobile-sort-label>
+              {% if sort == "relevance" %}Meilleure correspondance
+              {% elif sort == "company" %}Entreprise
+              {% else %}Plus récentes{% endif %}
+            </span>
+            <span>▾</span>
+          </button>
+          <div class="mobile-sort-menu" data-mobile-sort-menu hidden>
+            <button type="button" data-sort-value="newest" {% if sort == "newest" or not sort %}class="active"{% endif %} data-fr="Plus récentes" data-en="Newest">Plus récentes</button>
+            <button type="button" data-sort-value="relevance" {% if sort == "relevance" %}class="active"{% endif %} data-fr="Meilleure correspondance" data-en="Best match">Meilleure correspondance</button>
+            <button type="button" data-sort-value="company" {% if sort == "company" %}class="active"{% endif %} data-fr="Entreprise" data-en="Company">Entreprise</button>
+          </div>
+        </div>
       </div>
 
       {% include "jobs/partials/job_results.html" %}

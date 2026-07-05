@@ -17,7 +17,7 @@ class SocialConnectionDisconnectTests(TestCase):
         self.client.force_login(user)
         account = SocialAccount.objects.create(id=987654321, user=user, provider="google", uid="12345")
 
-        response = self.client.get("/dashboard/account/connections/")
+        response = self.client.get("/dashboard/account/")
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="disconnect_token" value="')
@@ -34,7 +34,7 @@ class SocialConnectionDisconnectTests(TestCase):
 
         response = self.client.post("/dashboard/account/connections/", {"disconnect_token": token})
 
-        self.assertRedirects(response, "/dashboard/account/connections/")
+        self.assertRedirects(response, "/dashboard/account/#connections", fetch_redirect_response=False)
         self.assertFalse(SocialAccount.objects.filter(id=account.id).exists())
 
     def test_tampered_token_is_rejected(self):
@@ -47,7 +47,7 @@ class SocialConnectionDisconnectTests(TestCase):
             {"disconnect_token": f"invalid_token:{account.id}"},
         )
 
-        self.assertRedirects(response, "/dashboard/account/connections/")
+        self.assertRedirects(response, "/dashboard/account/#connections", fetch_redirect_response=False)
         self.assertTrue(SocialAccount.objects.filter(id=account.id).exists())
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Requête de déconnexion invalide" in m.message for m in messages))
@@ -61,7 +61,7 @@ class SocialConnectionDisconnectTests(TestCase):
         self.client.force_login(current_user)
         response = self.client.post("/dashboard/account/connections/", {"disconnect_token": token})
 
-        self.assertRedirects(response, "/dashboard/account/connections/")
+        self.assertRedirects(response, "/dashboard/account/#connections", fetch_redirect_response=False)
         self.assertTrue(SocialAccount.objects.filter(id=account.id).exists())
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Impossible de déconnecter ce compte" in m.message for m in messages))

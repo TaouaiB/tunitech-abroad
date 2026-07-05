@@ -54,6 +54,8 @@
 
           <button type="button" class="settings-mobile-toggle {% if settings_active == 'connections' %}active{% endif %}" data-settings-toggle="connections"><span data-i18n="Connected accounts">Comptes liés</span><span>▾</span></button>
           <div id="connections" class="card grid settings-mobile-section {% if settings_active == 'connections' %}mobile-section-open{% endif %}">
+            {% url 'dashboard:account' as settings_url %}
+            {% with settings_connected_url=settings_url|add:"#connections" %}
             <h2 class="h2" data-i18n="Connected accounts">Comptes liés</h2>
             <div class="connection">
               <div class="pill-row">
@@ -63,7 +65,7 @@
               {% if providers.google %}
                 <form method="post" action="{% url 'dashboard:connections' %}" style="margin:0;">{% csrf_token %}<input type="hidden" name="disconnect_token" value="{{ providers.google.disconnect_token }}"><button type="submit" class="btn secondary" style="color:var(--bad)" data-i18n="Disconnect">Déconnecter</button></form>
               {% else %}
-                <form method="post" action="{% provider_login_url 'google' process='connect' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn primary" data-i18n="Connect">Connecter</button></form>
+                <form method="post" action="{% provider_login_url 'google' process='connect' next=settings_connected_url %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn primary" data-i18n="Connect">Connecter</button></form>
               {% endif %}
             </div>
             <div class="connection">
@@ -74,9 +76,10 @@
               {% if providers.github %}
                 <form method="post" action="{% url 'dashboard:connections' %}" style="margin:0;">{% csrf_token %}<input type="hidden" name="disconnect_token" value="{{ providers.github.disconnect_token }}"><button type="submit" class="btn secondary" style="color:var(--bad)" data-i18n="Disconnect">Déconnecter</button></form>
               {% else %}
-                <form method="post" action="{% provider_login_url 'github' process='connect' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn primary" data-i18n="Connect">Connecter</button></form>
+                <form method="post" action="{% provider_login_url 'github' process='connect' next=settings_connected_url %}" style="margin:0;">{% csrf_token %}<button type="submit" class="btn primary" data-i18n="Connect">Connecter</button></form>
               {% endif %}
             </div>
+            {% endwith %}
           </div>
 
           <button type="button" class="settings-mobile-toggle {% if settings_active == 'danger' %}active{% endif %}" data-settings-toggle="danger"><span data-i18n="Delete account">Supprimer le compte</span><span>▾</span></button>

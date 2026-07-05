@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core import signing
@@ -230,6 +231,6 @@ def dashboard_connections(request):
         except (BadSignature, ValueError):
             messages.error(request, "Requête de déconnexion invalide.")
 
-        return redirect("dashboard:connections")
+        return redirect(f"{reverse('dashboard:account')}#connections")
 
-    return render(request, "dashboard/connections.html", _settings_context(request, settings_active="connections"))
+    return redirect(f"{reverse('dashboard:account')}#connections")

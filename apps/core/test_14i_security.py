@@ -117,14 +117,12 @@ class Phase14ISecurityTests(TestCase):
             last_fetched_at=now,
         )
 
-    def test_anonymous_blocked_from_dashboard(self):
+    def test_anonymous_redirected_from_dashboard_to_jobs(self):
         response = self.client_anon.get(reverse("dashboard:home"))
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("login", response.url)
+        self.assertRedirects(response, reverse("jobs:list"), fetch_redirect_response=False)
 
     def test_anonymous_blocked_from_private_routes(self):
         private_urls = [
-            reverse("dashboard:home"),
             reverse("dashboard:profile"),
             reverse("dashboard:cv"),
             reverse("dashboard:cv_status", kwargs={"public_id": self.cv_a.public_id}),
@@ -132,7 +130,6 @@ class Phase14ISecurityTests(TestCase):
             reverse("dashboard:saved_jobs"),
             reverse("dashboard:email_preferences"),
             reverse("dashboard:account"),
-            reverse("dashboard:connections"),
             reverse("dashboard:delete_account"),
             reverse("matching:history"),
             reverse("matching:detail", kwargs={"public_id": self.match_b.public_id}),
@@ -146,7 +143,6 @@ class Phase14ISecurityTests(TestCase):
 
     def test_authenticated_user_allowed_on_own_private_routes(self):
         private_urls = [
-            reverse("dashboard:home"),
             reverse("dashboard:profile"),
             reverse("dashboard:cv"),
             reverse("dashboard:cv_status", kwargs={"public_id": self.cv_a.public_id}),
@@ -154,7 +150,6 @@ class Phase14ISecurityTests(TestCase):
             reverse("dashboard:saved_jobs"),
             reverse("dashboard:email_preferences"),
             reverse("dashboard:account"),
-            reverse("dashboard:connections"),
             reverse("dashboard:delete_account"),
             reverse("matching:history"),
         ]
@@ -165,18 +160,18 @@ class Phase14ISecurityTests(TestCase):
                 self.assertEqual(response.status_code, 200)
 
     def test_inactive_user_and_logout_clear_private_access(self):
-        response = self.client_a.get(reverse("dashboard:home"))
+        response = self.client_a.get(reverse("dashboard:profile"))
         self.assertEqual(response.status_code, 200)
 
         self.user_a.is_active = False
         self.user_a.save(update_fields=["is_active"])
-        response = self.client_a.get(reverse("dashboard:home"))
+        response = self.client_a.get(reverse("dashboard:profile"))
         self.assertEqual(response.status_code, 302)
 
         self.user_b.is_active = True
         self.user_b.save(update_fields=["is_active"])
         self.client_b.logout()
-        response = self.client_b.get(reverse("dashboard:home"))
+        response = self.client_b.get(reverse("dashboard:profile"))
         self.assertEqual(response.status_code, 302)
 
     def test_public_pages_remain_public(self):

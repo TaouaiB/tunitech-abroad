@@ -42,8 +42,8 @@
             {% if active_cv %}
                 <!-- Active CV Section -->
                 <div style="border:1px solid var(--good); background:color-mix(in srgb, var(--good) 4%, var(--panel)); border-radius:18px; padding:18px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div>
+                    <div class="cv-active-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                        <div style="word-break:break-word; overflow-wrap:anywhere; min-width:0; max-width:100%;">
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <strong style="font-size:16px;" data-i18n="Active CV">CV actif</strong>
                                 <span class="pill good" style="padding:4px 8px; font-size:10px;" data-i18n="Online">En ligne</span>
@@ -118,7 +118,7 @@
                         <b data-i18n="Drop your CV or click to browse">Déposez votre CV ou cliquez pour parcourir</b>
                         <div class="small" style="margin-top:4px;" data-i18n="PDF up to 5 MB">PDF jusqu'à 5 Mo</div>
                     </div>
-                    <div x-show="fileName" style="display:none;">
+                    <div x-show="fileName" style="display:none; word-break:break-word; overflow-wrap:anywhere;">
                         <b style="color:var(--good);" x-text="fileName"></b>
                         <div class="small" style="margin-top:4px;" x-text="fileSize"></div>
                     </div>
@@ -140,7 +140,7 @@
           </div>
         </section>
 
-        <aside class="card sticky">
+        <aside class="card sticky progression-aside">
           <h2 class="h2" data-i18n="Completion">Progression</h2>
           <div class="notice-list" style="margin-top:16px">
             {% if not request.user.has_usable_password %}

@@ -1700,3 +1700,144 @@ body.modal-open{overflow:hidden}
   .mobile-index-tools .btn{font-size:12px}
   .settings-mobile-toggle,.profile-step-toggle{padding:12px 13px;border-radius:15px}
 }
+
+/* Phase 16H Mobile Repair Overrides */
+@media (max-width: 768px) {
+  /* Repair 1: Settings duplicate list */
+  nav.settings-nav {
+    display: none !important;
+  }
+
+  /* Repair 2: About Privacy modal on mobile */
+  .modal-backdrop {
+    align-items: center !important;
+    padding: 18px !important;
+  }
+  .modal-card {
+    max-height: calc(100vh - 48px) !important;
+  }
+
+  /* Repair 3: Jobs list mobile sort control */
+  .sort-header {
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+  .sort-header > .sort-title {
+    width: 100% !important;
+    margin-bottom: 4px;
+  }
+  .sort-header > select {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Repair 5: CV area buttons */
+  .pill-row {
+    flex-wrap: wrap !important;
+  }
+
+  /* Repair 6: Hide Progression block on mobile */
+  .progression-aside {
+    display: none !important;
+  }
+}
+
+/* Repair 2: Red close button for modal globally */
+.modal-close {
+  color: var(--bad) !important;
+}
+
+/* Phase 16H Extra: Mobile jobs actions layout */
+@media (max-width: 920px) {
+  .jobs-mobile-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  .jobs-mobile-actions .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
+
+/* Phase 16H Final Mobile Account Toggles */
+@media (max-width: 920px) {
+  .account-dropdown {
+    display: none !important;
+  }
+
+  .mobile-open .nav-links {
+    z-index: 120 !important;
+  }
+
+  .jobs-mobile-actions {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@media (min-width: 921px) {
+  .mobile-only-link,
+  .mobile-about-only,
+  .mobile-sort {
+    display: none !important;
+  }
+}
+
+/* Custom Mobile Sort Dropdown */
+@media (max-width: 920px) {
+  .desktop-sort-select {
+    display: none !important;
+  }
+
+  .mobile-sort {
+    display: block;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    z-index: 5;
+  }
+
+  .mobile-sort-button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .mobile-sort-menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 30;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 6px;
+    overflow: hidden;
+  }
+
+  .mobile-sort-menu button {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    padding: 11px 12px;
+    border-radius: 12px;
+    font-weight: 800;
+  }
+
+  .mobile-sort-menu button:hover,
+  .mobile-sort-menu button.active {
+    background: var(--panel2);
+  }
+}

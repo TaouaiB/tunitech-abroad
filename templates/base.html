@@ -32,10 +32,16 @@
                 {% if user.is_authenticated %}
                     <a class="nav-link {% if request.resolver_match.view_name == 'dashboard:recommendations' %}active{% endif %}" href="{% url 'dashboard:recommendations' %}">Recommandations</a>
                     <a class="nav-link {% if request.resolver_match.view_name == 'dashboard:saved_jobs' %}active{% endif %}" href="{% url 'dashboard:saved_jobs' %}">Favoris</a>
-                    <a class="nav-link {% if request.resolver_match.view_name == 'core:about' %}active{% endif %}" href="{% url 'core:about' %}">À propos</a>
+                    <a class="nav-link mobile-about-only {% if request.resolver_match.view_name == 'core:about' %}active{% endif %}" href="{% url 'core:about' %}" data-fr="À propos" data-en="About">À propos</a>
+                    <a class="nav-link mobile-only-link {% if request.resolver_match.view_name == 'dashboard:cv' %}active{% endif %}" href="{% url 'dashboard:cv' %}" data-fr="Profil" data-en="Profile">Profil</a>
+                    <a class="nav-link mobile-only-link {% if request.resolver_match.view_name == 'dashboard:account' %}active{% endif %}" href="{% url 'dashboard:account' %}" data-fr="Paramètres" data-en="Settings">Paramètres</a>
+                    <form method="post" action="{% url 'account_logout' %}" class="mobile-only-link" style="margin:0;padding:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-link danger-link full" style="color:var(--bad);text-align:left;width:100%;" data-fr="Déconnexion" data-en="Sign out">Déconnexion</button>
+                    </form>
                 {% else %}
                     <a class="nav-link" href="{% url 'account_login' %}?next={% url 'dashboard:recommendations' %}">Recommandations</a>
-                    <a class="nav-link {% if request.resolver_match.view_name == 'core:about' %}active{% endif %}" href="{% url 'core:about' %}">À propos</a>
+                    <a class="nav-link mobile-about-only {% if request.resolver_match.view_name == 'core:about' %}active{% endif %}" href="{% url 'core:about' %}" data-fr="À propos" data-en="About">À propos</a>
                     <a class="nav-link" href="{% url 'account_login' %}">Connexion</a>
                 {% endif %}
             </nav>
@@ -52,7 +58,7 @@
                     <span>FR</span>
                 </button>
                 {% if user.is_authenticated %}
-                <div class="dropdown" data-dropdown>
+                <div class="dropdown account-dropdown" data-dropdown>
                     <button class="avatar" data-dropdown-btn>{{ user.email|make_list|first|upper }}</button>
                     <div class="dropdown-menu">
                         {% if user.has_usable_password %}

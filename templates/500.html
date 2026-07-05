@@ -1,15 +1,33 @@
 {% extends "base.html" %}
 
-{% block title %}Erreur système - TuniAtlas{% endblock %}
+{% block title %}500 - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="tta-error-page py-16 text-center flex flex-col items-center">
-    <p class="tta-error-code text-6xl font-bold text-brand-600 mb-4">500</p>
-    <h1 class="tta-error-title text-3xl font-bold text-gray-900 mb-4">Incident temporaire</h1>
-    <p class="tta-error-body text-gray-600 max-w-md mx-auto mb-8">Une erreur technique est survenue. Vos données et votre CV restent protégés. Réessayez dans quelques instants ou revenez aux offres.</p>
-    <div class="tta-chip-row" style="justify-content:center">
-        <a class="tta-btn tta-btn-primary" href="{% url 'jobs:list' %}">Voir les offres</a>
-        <a class="tta-btn tta-btn-secondary" href="{% url 'core:home' %}">Retour à l’accueil</a>
+<section class="section">
+  <div class="shell">
+    <div class="card empty-state" style="text-align:center;">
+      <h1 class="code-title">500</h1>
+
+      <h2 class="h2"
+          data-fr="Erreur serveur"
+          data-en="Server error">
+        Erreur serveur
+      </h2>
+
+      <p class="subtitle"
+         style="margin-bottom:16px;"
+         data-fr="Une erreur est survenue. Réessayez dans un instant."
+         data-en="Something went wrong. Please try again in a moment.">
+        Une erreur est survenue. Réessayez dans un instant.
+      </p>
+
+      <a class="btn primary"
+         href="{% url 'jobs:list' %}"
+         data-fr="Retour aux offres"
+         data-en="Back to jobs">
+        Retour aux offres
+      </a>
     </div>
-</div>
+  </div>
+</section>
 {% endblock %}

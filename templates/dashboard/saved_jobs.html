@@ -5,8 +5,7 @@
 <div class="saved-v16">
 <section class="section">
     <div class="shell">
-        <h1 class="page-title small" style="margin-bottom:6px;" data-i18n="Saved jobs">Offres sauvegardées</h1>
-        <p class="subtitle" style="margin-bottom:18px;" data-i18n="Find your saved jobs here.">Retrouvez les annonces que vous avez mises de côté.</p>
+        <h1 class="page-title small" style="margin-bottom:18px;" data-i18n="Saved jobs">Offres sauvegardées</h1>
         <div class="grid" id="saved-jobs-grid" data-saved-jobs-grid>
             {% for saved_job in saved_jobs %}
             <article class="job-card" id="saved-job-card-{{ saved_job.job.public_id }}">

@@ -101,21 +101,31 @@ class AdminAccessTests(TestCase):
 from django.test import override_settings
 
 class ErrorPageTests(TestCase):
-    @override_settings(DEBUG=False)
+    @override_settings(DEBUG=False, ALLOWED_HOSTS=["testserver"])
     def test_custom_404_page(self):
         response = self.client.get('/this-url-does-not-exist-12345/')
         self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, '404.html')
         self.assertContains(response, '404', status_code=404)
-        self.assertContains(response, 'trouver la page', status_code=404)
-        self.assertNotContains(response, 'Using the URLconf defined in', status_code=404)
+        self.assertContains(response, 'Page introuvable', status_code=404)
+        self.assertContains(response, 'Retour aux offres', status_code=404)
+        self.assertNotContains(response, 'Using the URLconf defined', status_code=404)
 
-    @override_settings(DEBUG=False)
+    @override_settings(DEBUG=False, ALLOWED_HOSTS=["testserver"])
     def test_recommendations_root_returns_404(self):
         # We explicitly don't have a /recommendations/ URL, it should be /dashboard/recommendations/
         response = self.client.get('/recommendations/')
         self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, '404.html')
+        self.assertContains(response, 'Page introuvable', status_code=404)
+
+    def test_custom_500_template_exists(self):
+        from django.template.loader import get_template
+        from django.template import TemplateDoesNotExist
+        try:
+            get_template("500.html")
+        except TemplateDoesNotExist:
+            self.fail("500.html template does not exist")
 
 
 class DemoSeedCommandTests(TestCase):
