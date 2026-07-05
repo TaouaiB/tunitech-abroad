@@ -292,12 +292,12 @@ class JobIngestionConfig(models.Model):
     custom_keywords = models.JSONField(default=list, blank=True)
 
     limit_per_keyword = models.PositiveIntegerField(default=50)
-    max_total_per_run = models.PositiveIntegerField(default=1000)
+    max_total_per_run = models.PositiveIntegerField(default=250)
     max_pages_per_keyword = models.PositiveIntegerField(default=10)
 
     # Phase 16B additions
     target_daily_fetch_count = models.PositiveIntegerField(default=1000)
-    max_jobs_per_run = models.PositiveIntegerField(default=1000)
+    max_jobs_per_run = models.PositiveIntegerField(default=250)
     max_pages_per_query = models.PositiveIntegerField(default=10)
     page_size = models.PositiveIntegerField(default=100)
     queries_json = models.JSONField(default=list, blank=True)
@@ -305,7 +305,7 @@ class JobIngestionConfig(models.Model):
     removed_after_hours = models.PositiveIntegerField(default=168)
     expire_grace_hours = models.PositiveIntegerField(default=24)
 
-    frequency_minutes = models.PositiveIntegerField(default=240)
+    frequency_minutes = models.PositiveIntegerField(default=360)
     nightly_enabled = models.BooleanField(default=True)
     nightly_max_total = models.PositiveIntegerField(default=2000)
 

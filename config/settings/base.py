@@ -207,7 +207,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "run_it_job_ingestion": {
         "task": "apps.jobs.tasks.run_it_job_ingestion",
-        "schedule": crontab(minute="0", hour="*/4"),
+        "schedule": crontab(minute="0", hour="*/6"),
     },
     "mark_stale_and_expired_jobs": {
         "task": "apps.jobs.tasks.mark_stale_and_expired_jobs",
@@ -293,7 +293,8 @@ AUTHENTICATION_BACKENDS = [
 
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[TuniAtlas] "
 LOGIN_REDIRECT_URL = "/jobs/"
 LOGOUT_REDIRECT_URL = "/jobs/"
 

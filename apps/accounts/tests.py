@@ -332,7 +332,7 @@ class AuthViewsTests(TestCase):
         self.assertNotContains(response, "Account created")
         self.assertContains(response, "has-error")
 
-    def test_normal_email_signup_still_requires_email_confirmation(self):
+    def test_normal_email_signup_redirects_to_jobs_and_sends_verification_email(self):
         response = self.client.post(
             "/accounts/signup/",
             {
@@ -343,7 +343,7 @@ class AuthViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/accounts/confirm-email/", response["Location"])
+        self.assertIn("/jobs/", response["Location"])
         user = User.objects.get(email="normal-signup@example.test")
         email_address = EmailAddress.objects.get(user=user, email=user.email)
         self.assertFalse(email_address.verified)
