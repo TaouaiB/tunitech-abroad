@@ -7,13 +7,6 @@
 <main class="auth-v16">
   <section class="section">
     <div class="shell" style="max-width:560px;">
-      {% if form.errors or form.non_field_errors %}
-      <div class="toast bad" data-django-toast style="margin:0 0 14px 0;position:static;animation:none;">
-        <span class="dot bad"></span>
-        <div><b>Erreur</b><span>Identifiants invalides.</span></div>
-      </div>
-      {% endif %}
-
       <div class="hero-card">
         <h1 class="page-title small" data-i18n="Sign in">Connexion</h1>
 
@@ -68,4 +61,13 @@
     </div>
   </section>
 </main>
+{% endblock %}
+
+{% block page_toasts %}
+{% if form.errors or form.non_field_errors %}
+<div class="toast bad" data-django-toast>
+  <span class="dot bad"></span>
+  <div><b>Erreur</b><span>Identifiants invalides.</span></div>
+</div>
+{% endif %}
 {% endblock %}
