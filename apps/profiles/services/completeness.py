@@ -4,7 +4,6 @@ from apps.profiles.services.validation import (
     LANGUAGE_LEVEL_CHOICES,
     RELOCATION_PREFERENCE_CHOICES,
     REMOTE_PREFERENCE_CHOICES,
-    TARGET_JOB_TYPE_CHOICES,
     TARGET_TYPE_CHOICES,
     is_meaningful_text,
     meaningful_list,
@@ -17,12 +16,11 @@ class ProfileCompletenessService:
         'phone': 'Téléphone',
         'location': 'Localisation',
         'current_level': 'Niveau de carrière',
-        'years_experience': 'Années d’expérience',
+        'years_experience': "Années d'expérience",
         'target_roles': 'Rôles ciblés',
-        'target_job_types': 'Types de contrat cibles',
-        'target_type': 'Type d’opportunité recherchée',
+        'target_type': "Type d'opportunité recherchée",
         'french_level': 'Niveau de français',
-        'english_level': 'Niveau d’anglais',
+        'english_level': "Niveau d'anglais",
         'relocation_preference': 'Mobilité / relocalisation',
         'remote_preference': 'Préférence télétravail'
     }
@@ -46,7 +44,6 @@ class ProfileCompletenessService:
         "remote_preference": {value for value, _label in REMOTE_PREFERENCE_CHOICES if value},
         "target_type": {value for value, _label in TARGET_TYPE_CHOICES if value},
     }
-    TARGET_JOB_TYPE_VALUES = {value for value, _label in TARGET_JOB_TYPE_CHOICES}
 
     @classmethod
     def get_missing_fields(cls, profile: CandidateProfile) -> list[str]:
@@ -122,11 +119,11 @@ class ProfileCompletenessService:
     @classmethod
     def calculate(cls, profile: CandidateProfile) -> int:
         score = cls._score(profile)
-        
+
         if profile.profile_completion_score != score:
             profile.profile_completion_score = score
             profile.save(update_fields=['profile_completion_score'])
-            
+
         return score
 
     @classmethod
@@ -136,7 +133,7 @@ class ProfileCompletenessService:
         for field in fields_to_check:
             if cls._is_field_complete(profile, field):
                 filled += 1
-                
+
         base = 10
         additional = int((filled / len(fields_to_check)) * 90)
         return base + additional
@@ -150,10 +147,6 @@ class ProfileCompletenessService:
             return is_meaningful_text(str(val))
         if field == "target_roles":
             return bool(meaningful_list(val if isinstance(val, list) else [str(val)]))
-        if field == "target_job_types":
-            if not isinstance(val, list) or not val:
-                return False
-            return all(item in cls.TARGET_JOB_TYPE_VALUES for item in val)
         if field in cls.ALLOWED_VALUES:
             return val in cls.ALLOWED_VALUES[field]
         return True

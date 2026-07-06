@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load socialaccount %}
 
-{% block title %}Connexion - TuniAtlas{% endblock %}
+{% block title %}Réinitialiser le mot de passe - TuniAtlas{% endblock %}
 
 {% block content %}
 <main class="auth-v16">
@@ -51,10 +51,10 @@
 
           <button type="submit" class="btn primary full" data-i18n="Sign in">Connexion</button>
           <div class="small" style="text-align:center;margin-top:8px;">
-            <a href="{% url 'account_signup' %}" style="color:var(--brand);text-decoration:none;font-weight:900;">Pas encore de compte ? Créer un compte</a>
+            <a href="{% url 'account_signup' %}" style="color:var(--brand);text-decoration:none;font-weight:900;"><span data-fr="Pas encore de compte ? Créer un compte" data-en="No account yet? Create account">Pas encore de compte ? Créer un compte</span></a>
           </div>
           <div class="small" style="text-align:center;">
-            <a href="{% url 'account_reset_password' %}" style="color:var(--brand);text-decoration:none;font-weight:700;">Mot de passe oublié ?</a>
+            <a href="{% url 'account_reset_password' %}" style="color:var(--brand);text-decoration:none;font-weight:700;"><span data-fr="Mot de passe oublié ?" data-en="Forgot password?">Mot de passe oublié ?</span></a>
           </div>
         </form>
       </div>
@@ -70,4 +70,69 @@
   <div><b>Erreur</b><span>Identifiants invalides.</span></div>
 </div>
 {% endif %}
+
+<script>
+(function(){
+  function applyPasswordResetLang(){
+    const root = document.querySelector("main.auth-v16");
+    if(!root) return;
+
+    const lang = localStorage.getItem("ta-lang") || document.documentElement.lang || "fr";
+
+    document.title = (lang === "fr" ? "Réinitialiser le mot de passe" : "Reset password") + " - TuniAtlas";
+
+    root.querySelectorAll("[data-fr][data-en]").forEach((el) => {
+      el.textContent = lang === "fr" ? el.dataset.fr : el.dataset.en;
+    });
+
+    root.querySelectorAll("label").forEach((el) => {
+      const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+      if (["Adresse email", "Adresse e-mail", "Email address"].includes(text)) {
+        el.textContent = lang === "fr" ? "Adresse email" : "Email address";
+      }
+    });
+
+    root.querySelectorAll("input[placeholder]").forEach((el) => {
+      const text = (el.getAttribute("placeholder") || "").replace(/\s+/g, " ").trim();
+      if (["Adresse email", "Adresse e-mail", "Email address"].includes(text)) {
+        el.setAttribute("placeholder", lang === "fr" ? "Adresse email" : "Email address");
+      }
+    });
+
+    root.querySelectorAll("button, a").forEach((el) => {
+      const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+
+      if (["Réinitialiser le mot de passe", "Reset password"].includes(text)) {
+        el.textContent = lang === "fr" ? "Réinitialiser le mot de passe" : "Reset password";
+      }
+
+      if (["Retour à la connexion", "Back to sign in"].includes(text)) {
+        el.textContent = lang === "fr" ? "Retour à la connexion" : "Back to sign in";
+      }
+    });
+  }
+
+  window.TUNIATLAS_PASSWORD_RESET_DIRECT_FIX_V3 = applyPasswordResetLang;
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(applyPasswordResetLang, 0);
+    setTimeout(applyPasswordResetLang, 150);
+    setTimeout(applyPasswordResetLang, 500);
+  });
+
+  window.addEventListener("load", function(){
+    setTimeout(applyPasswordResetLang, 0);
+    setTimeout(applyPasswordResetLang, 250);
+  });
+
+  document.addEventListener("click", function(e){
+    if(e.target.closest("[data-lang-toggle]")){
+      setTimeout(applyPasswordResetLang, 50);
+      setTimeout(applyPasswordResetLang, 200);
+      setTimeout(applyPasswordResetLang, 500);
+    }
+  }, true);
+})();
+</script>
+
 {% endblock %}

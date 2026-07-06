@@ -7,7 +7,7 @@
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
         <h3 class="h3" style="display:flex; align-items:center; gap:8px; margin:0;">
             <svg class="icon" style="color:var(--brand);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-            Statut de l'analyse
+            <span data-fr="Statut de l'analyse" data-en="Analysis status">Statut de l'analyse</span>
         </h3>
 
         <span class="pill {% if cv.parse_status == 'pending' or cv.parse_status == 'processing' %}warn{% elif cv.parse_status == 'parsed' or cv.parse_status == 'parsed_with_warnings' %}good{% else %}bad{% endif %}" style="padding:4px 8px; font-size:10px;">
@@ -20,26 +20,14 @@
                 <svg class="icon" style="width:12px; height:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             {% endif %}
 
-            {% if cv.parse_status == 'pending' %}
-                En attente
-            {% elif cv.parse_status == 'processing' %}
-                Analyse en cours
-            {% elif cv.parse_status == 'parsed' %}
-                Terminée
-            {% elif cv.parse_status == 'parsed_with_warnings' %}
-                Terminée avec avertissements
-            {% elif cv.parse_status == 'failed' %}
-                Échouée
-            {% else %}
-                {{ cv.get_parse_status_display }}
-            {% endif %}
+            <span data-fr="{% if cv.parse_status == 'pending' %}En attente{% elif cv.parse_status == 'processing' %}Analyse en cours{% elif cv.parse_status == 'parsed' %}Terminée{% elif cv.parse_status == 'parsed_with_warnings' %}Terminée avec avertissements{% elif cv.parse_status == 'failed' %}Échouée{% else %}{{ cv.get_parse_status_display }}{% endif %}" data-en="{% if cv.parse_status == 'pending' %}Pending{% elif cv.parse_status == 'processing' %}Processing{% elif cv.parse_status == 'parsed' %}Completed{% elif cv.parse_status == 'parsed_with_warnings' %}Completed with warnings{% elif cv.parse_status == 'failed' %}Failed{% else %}{{ cv.get_parse_status_display }}{% endif %}">{% if cv.parse_status == 'pending' %}En attente{% elif cv.parse_status == 'processing' %}Analyse en cours{% elif cv.parse_status == 'parsed' %}Terminée{% elif cv.parse_status == 'parsed_with_warnings' %}Terminée avec avertissements{% elif cv.parse_status == 'failed' %}Échouée{% else %}{{ cv.get_parse_status_display }}{% endif %}</span>
         </span>
     </div>
 
     <div class="small" style="margin-bottom:8px;">
-        Uploadé le : {{ cv.uploaded_at|date:"d M Y à H:i" }}
+        <span data-fr="Uploadé le :" data-en="Uploaded on:">Uploadé le :</span> {{ cv.uploaded_at|date:"d M Y à H:i" }}
         {% if cv.parsed_at %}
-        <br>Analysé le : {{ cv.parsed_at|date:"d M Y à H:i" }}
+        <br><span data-fr="Analysé le :" data-en="Analyzed on:">Analysé le :</span> {{ cv.parsed_at|date:"d M Y à H:i" }}
         {% endif %}
     </div>
 
@@ -55,11 +43,11 @@
             {% with parsed=cv.parsed_data %}
                 {% if parsed.extracted_location or parsed.extracted_linkedin_url or parsed.extracted_github_url or parsed.extracted_portfolio_url %}
                     <div class="small" style="margin-bottom:8px;">
-                        <strong>Informations detectees</strong>
+                        <strong data-fr="Informations détectées" data-en="Detected information">Informations détectées</strong>
                     </div>
                     <div class="notice-list" style="gap:8px; margin-bottom:12px; word-break:break-word; overflow-wrap:anywhere;">
                         {% if parsed.extracted_location %}
-                            <div class="small"><strong>Localisation :</strong> {{ parsed.extracted_location }}</div>
+                            <div class="small"><strong data-fr="Localisation :" data-en="Location:">Localisation :</strong> {{ parsed.extracted_location }}</div>
                         {% endif %}
                         {% if parsed.extracted_linkedin_url %}
                             <div class="small"><strong>LinkedIn :</strong> {{ parsed.extracted_linkedin_url }}</div>
@@ -74,13 +62,13 @@
                 {% endif %}
             {% endwith %}
             <div class="small" style="margin-bottom:8px;">
-                <strong>Compétences détectées</strong> ({{ cv.parsed_data.skills|length|default:0 }}) :
+                <strong data-fr="Compétences détectées" data-en="Detected skills">Compétences détectées</strong> ({{ cv.parsed_data.skills|length|default:0 }}) :
             </div>
             <div class="pill-row">
                 {% for skill in cv.parsed_data.skills|slice:":8" %}
                     <span class="skill pill brand" style="padding:4px 8px; font-size:10px;">{{ skill.name }}</span>
                 {% empty %}
-                    <span class="small">Aucune compétence lisible.</span>
+                    <span class="small" data-fr="Aucune compétence lisible." data-en="No readable skills.">Aucune compétence lisible.</span>
                 {% endfor %}
                 {% if cv.parsed_data.skills|length > 8 %}
                     <span class="skill pill" style="padding:4px 8px; font-size:10px;">+{{ cv.parsed_data.skills|length|add:"-8" }}</span>

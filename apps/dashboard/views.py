@@ -17,17 +17,22 @@ from apps.privacy.services.account_deletion import AccountDeletionService
 from allauth.socialaccount.models import SocialAccount
 from apps.notifications.forms import EmailPreferenceForm
 from apps.notifications.models import EmailPreference
+from types import SimpleNamespace
 
 
 def _settings_context(request, **extra):
     social_accounts = SocialAccount.objects.filter(user=request.user)
     providers = {}
     for acc in social_accounts:
-        acc.disconnect_token = signing.dumps(
+        disconnect_token = signing.dumps(
             {"account_id": acc.id},
             salt=SOCIAL_DISCONNECT_SIGNING_SALT,
         )
-        providers[acc.provider] = acc
+        providers[acc.provider] = SimpleNamespace(
+            account=acc,
+            provider=acc.provider,
+            disconnect_token=disconnect_token,
+        )
 
     try:
         deletion_request = request.user.deletion_requests.filter(status__in=['pending', 'processing']).first()
@@ -125,12 +130,22 @@ def dashboard_profile(request):
             suggestions[key] = val
 
     from apps.profiles.services.completeness import ProfileCompletenessService
-    missing_fields = []
+    missing_fields: list[str] = []
     is_complete_enough = False
+    completion_score = 0
     if profile:
         completeness_report = ProfileCompletenessService.get_report(profile)
-        is_complete_enough = completeness_report["score"] >= 50
-        missing_fields = completeness_report["missing"] + completeness_report["invalid"]
+
+        score_value = completeness_report.get("score", 0)
+        completion_score = score_value if isinstance(score_value, int) else 0
+        is_complete_enough = completion_score >= 50
+
+        missing_value = completeness_report.get("missing", [])
+        invalid_value = completeness_report.get("invalid", [])
+        missing = missing_value if isinstance(missing_value, list) else []
+        invalid = invalid_value if isinstance(invalid_value, list) else []
+        missing_fields = missing + invalid
+
         profile_skills = ProfileSkill.objects.filter(profile=profile).order_by("-is_confirmed", "normalized_name")
     else:
         profile_skills = ProfileSkill.objects.none()
@@ -139,9 +154,11 @@ def dashboard_profile(request):
         "form": form,
         "profile": profile,
         "profile_skills": profile_skills,
+        "has_active_cv": active_cv is not None,
         "suggestions": suggestions,
         "missing_fields": missing_fields,
-        "is_complete_enough": is_complete_enough
+        "is_complete_enough": is_complete_enough,
+        "completion_score": completion_score
     })
 
 @login_required
@@ -174,9 +191,22 @@ def dashboard_cv(request):
 
     active_cv = CVUpload.objects.filter(user=user, is_active=True).first()
 
+    profile = getattr(user, 'candidate_profile', None)
+    completion_score = 0
+    is_complete_enough = False
+    if profile:
+        from apps.profiles.services.completeness import ProfileCompletenessService
+        completeness_report = ProfileCompletenessService.get_report(profile)
+        score_value = completeness_report.get("score", 0)
+        completion_score = score_value if isinstance(score_value, int) else 0
+        is_complete_enough = completion_score >= 50
+
     return render(request, "dashboard/cv_manage.html", {
         "form": form,
-        "active_cv": active_cv
+        "active_cv": active_cv,
+        "completion_score": completion_score,
+        "is_complete_enough": is_complete_enough,
+        "has_active_cv": active_cv is not None
     })
 
 @login_required

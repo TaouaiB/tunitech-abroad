@@ -6,15 +6,15 @@
 <main class="profile-v16">
   <section class="section">
     <div class="shell">
-      <h1 class="page-title small" data-i18n="Profile">Profil</h1>
+      <h1 class="page-title small" data-fr="Profil" data-en="Profile">Profil</h1>
 
       <div class="stepper">
         {% if not request.user.has_usable_password %}
         <div class="step" onclick="window.location.href='{% url 'account_set_password' %}'" style="cursor:pointer;">
           <span class="step-num">1</span>
           <div>
-            <b data-i18n="Password">Mot de passe</b>
-            <div class="small" data-i18n="Not set">Non défini</div>
+            <b data-fr="Mot de passe" data-en="Password">Mot de passe</b>
+            <div class="small" data-fr="Non défini" data-en="Not set">Non défini</div>
           </div>
         </div>
         {% endif %}
@@ -22,14 +22,14 @@
           <span class="step-num">{% if not request.user.has_usable_password %}2{% else %}1{% endif %}</span>
           <div>
             <b>CV</b>
-            <div class="small" data-i18n="Manage your CV">Gérez votre CV</div>
+            <div class="small" data-fr="Gérez votre CV" data-en="Manage your CV">Gérez votre CV</div>
           </div>
         </div>
         <div class="step" onclick="window.location.href='{% url 'dashboard:profile' %}'" style="cursor:pointer;">
           <span class="step-num">{% if not request.user.has_usable_password %}3{% else %}2{% endif %}</span>
           <div>
-            <b data-i18n="Profile">Profil</b>
-            <div class="small" data-i18n="Complete your info">Complétez vos infos</div>
+            <b data-fr="Profil" data-en="Profile">Profil</b>
+            <div class="small" data-fr="Complétez vos infos" data-en="Complete your info">Complétez vos infos</div>
           </div>
         </div>
       </div>
@@ -37,37 +37,36 @@
       <div class="main-layout">
         <section class="grid">
           <div class="card grid">
-            <h2 class="h2">CV</h2>
+            <h2 class="h2" data-fr="CV" data-en="CV">CV</h2>
 
             {% if active_cv %}
-                <!-- Active CV Section -->
                 <div style="border:1px solid var(--good); background:color-mix(in srgb, var(--good) 4%, var(--panel)); border-radius:18px; padding:18px;">
                     <div class="cv-active-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
                         <div style="word-break:break-word; overflow-wrap:anywhere; min-width:0; max-width:100%;">
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <strong style="font-size:16px;" data-i18n="Active CV">CV actif</strong>
-                                <span class="pill good" style="padding:4px 8px; font-size:10px;" data-i18n="Online">En ligne</span>
+                                <strong style="font-size:16px;" data-fr="CV actif" data-en="Active CV">CV actif</strong>
+                                <span class="pill good" style="padding:4px 8px; font-size:10px;" data-fr="En ligne" data-en="Online">En ligne</span>
                             </div>
                             <div class="small" style="margin-top:4px; font-weight:700;">{{ active_cv.original_filename }}</div>
-                            <div class="small" style="margin-top:2px;">Mis en ligne le {{ active_cv.uploaded_at|date:"d M Y à H:i" }}</div>
+                            <div class="small" style="margin-top:2px;" data-fr="Mis en ligne le" data-en="Uploaded on">Mis en ligne le</div>
                         </div>
                         <form method="post" action="." style="margin:0;">
                             {% csrf_token %}
                             <input type="hidden" name="delete_cv_id" value="{{ active_cv.public_id }}">
-                            <button type="submit" class="btn secondary" style="color:var(--bad);" onclick="return confirm('Voulez-vous vraiment supprimer ce CV ?');" data-i18n="Remove">Supprimer</button>
+                            <button type="submit" class="btn secondary" style="color:var(--bad);" onclick="return confirm('Voulez-vous vraiment supprimer ce CV ?');" data-fr="Supprimer" data-en="Remove">Supprimer</button>
                         </form>
                     </div>
                     {% include 'cvs/partials/cv_status.html' with cv=active_cv %}
                     <div class="small" style="margin-top:12px; color:var(--good); display:flex; align-items:center; gap:4px;">
                         <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                        <span data-i18n="Encrypted private file. Not shared with employers.">Fichier chiffré et privé. Non partagé avec les employeurs.</span>
+                        <span data-fr="Fichier chiffré et privé. Non partagé avec les employeurs." data-en="Encrypted private file. Not shared with employers.">Fichier chiffré et privé. Non partagé avec les employeurs.</span>
                     </div>
                 </div>
             {% else %}
-                <div class="small" style="margin-bottom:12px;" data-i18n="No active CV. Add your CV below to calculate compatibility with targeted jobs. Private file, not shared with employers.">Aucun CV actif. Ajoutez votre CV ci-dessous pour calculer la compatibilité avec les offres ciblées. Fichier privé, non partagé avec les employeurs.</div>
+                <div class="small" style="margin-bottom:12px;" data-fr="Aucun CV actif. Ajoutez votre CV ci-dessous pour calculer la compatibilité avec les offres ciblées. Fichier privé, non partagé avec les employeurs." data-en="No active CV. Add your CV below to calculate compatibility with targeted jobs. Private file, not shared with employers.">Aucun CV actif. Ajoutez votre CV ci-dessous pour calculer la compatibilité avec les offres ciblées. Fichier privé, non partagé avec les employeurs.</div>
             {% endif %}
 
-            <h3 class="h3" style="margin-top:16px;" data-i18n="{% if active_cv %}Replace your CV{% else %}Upload a new CV{% endif %}">{% if active_cv %}Remplacer votre CV{% else %}Uploader un nouveau CV{% endif %}</h3>
+            <h3 class="h3" style="margin-top:16px;" data-fr="{% if active_cv %}Remplacer votre CV{% else %}Uploader un nouveau CV{% endif %}" data-en="{% if active_cv %}Replace your CV{% else %}Upload a new CV{% endif %}">{% if active_cv %}Remplacer votre CV{% else %}Uploader un nouveau CV{% endif %}</h3>
             <form method="post" enctype="multipart/form-data" class="grid"
                   x-data="{
                       fileName: '',
@@ -115,8 +114,8 @@
                        :style="isDragging ? 'border-color:var(--brand); background:color-mix(in srgb, var(--brand) 12%, var(--panel));' : (fileName ? 'border-color:var(--good); background:color-mix(in srgb, var(--good) 8%, var(--panel));' : '')">
                     <input type="file" name="{{ form.file.name }}" id="{{ form.file.id_for_label }}" hidden @change="handleFileChange($event)" accept="application/pdf">
                     <div x-show="!fileName">
-                        <b data-i18n="Drop your CV or click to browse">Déposez votre CV ou cliquez pour parcourir</b>
-                        <div class="small" style="margin-top:4px;" data-i18n="PDF up to 5 MB">PDF jusqu'à 5 Mo</div>
+                        <b data-fr="Déposez votre CV ou cliquez pour parcourir" data-en="Drop your CV or click to browse">Déposez votre CV ou cliquez pour parcourir</b>
+                        <div class="small" style="margin-top:4px;" data-fr="PDF jusqu'à 5 Mo" data-en="PDF up to 5 MB">PDF jusqu'à 5 Mo</div>
                     </div>
                     <div x-show="fileName" style="display:none; word-break:break-word; overflow-wrap:anywhere;">
                         <b style="color:var(--good);" x-text="fileName"></b>
@@ -129,33 +128,33 @@
 
 
                 <div x-show="isUploading" style="display:none;" class="small">
-                    <b style="color:var(--brand);" data-i18n="Analysis in progress...">Analyse en cours...</b> <span data-i18n="Please wait.">Veuillez patienter.</span>
+                    <b style="color:var(--brand);" data-fr="Analyse en cours..." data-en="Analysis in progress...">Analyse en cours...</b> <span data-fr="Veuillez patienter." data-en="Please wait.">Veuillez patienter.</span>
                 </div>
 
                 <div class="pill-row" style="margin-top:12px;">
-                    <button class="btn secondary" type="button" onclick="window.location.href='{% url 'dashboard:profile' %}'" data-i18n="Skip to profile">Passer au profil</button>
-                    <button type="submit" class="btn primary" :disabled="isUploading" data-i18n="Upload and analyze CV">Envoyer et analyser le CV</button>
+                    <button class="btn secondary" type="button" onclick="window.location.href='{% url 'dashboard:profile' %}'" data-fr="Passer au profil" data-en="Skip to profile">Passer au profil</button>
+                    <button type="submit" class="btn primary" :disabled="isUploading" data-fr="Envoyer et analyser le CV" data-en="Upload and analyze CV">Envoyer et analyser le CV</button>
                 </div>
             </form>
           </div>
         </section>
 
         <aside class="card sticky progression-aside">
-          <h2 class="h2" data-i18n="Completion">Progression</h2>
+          <h2 class="h2" data-fr="Progression" data-en="Completion">Progression</h2>
           <div class="notice-list" style="margin-top:16px">
             {% if not request.user.has_usable_password %}
             <div class="notice">
               <span class="dot warn"></span>
-              <div><b data-i18n="Password">Mot de passe</b></div>
+              <div><b data-fr="Mot de passe" data-en="Password">Mot de passe</b></div>
             </div>
             {% endif %}
             <div class="notice">
-              <span class="dot {% if active_cv %}good{% else %}warn{% endif %}"></span>
-              <div><b data-i18n="Online CV">CV en ligne</b></div>
+              <span class="dot {% if has_active_cv %}good{% else %}warn{% endif %}"></span>
+              <div><b data-fr="CV en ligne" data-en="Online CV">CV en ligne</b></div>
             </div>
             <div class="notice">
-              <span class="dot warn"></span>
-              <div><b data-i18n="Profile completed">Profil complété</b></div>
+              <span class="dot {% if is_complete_enough %}good{% else %}warn{% endif %}"></span>
+              <div><b data-fr="Profil complété" data-en="Profile completed">Profil complété</b></div>
             </div>
           </div>
         </aside>
