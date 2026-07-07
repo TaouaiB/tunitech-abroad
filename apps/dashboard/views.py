@@ -113,6 +113,24 @@ def dashboard_profile(request):
             initial_data[key] = val
 
     if request.method == "POST":
+        if request.POST.get("skill_action") == "add":
+            skill_name = request.POST.get("skill_name", "")
+            try:
+                ProfileUpdateService.add_profile_skill(user, skill_name)
+                messages.success(request, "Skill added.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect(reverse("dashboard:profile") + "#profile-skills")
+
+        if request.POST.get("remove_skill"):
+            normalized_name = request.POST.get("remove_skill")
+            removed = ProfileUpdateService.remove_profile_skill(user, normalized_name)
+            if removed:
+                messages.success(request, "Skill removed.")
+            else:
+                messages.warning(request, "Skill not found.")
+            return redirect(reverse("dashboard:profile") + "#profile-skills")
+
         from apps.profiles.forms import ProfileForm
         form = ProfileForm(request.POST, instance=profile)
         if form.is_valid():

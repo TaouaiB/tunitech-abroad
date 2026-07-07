@@ -109,22 +109,30 @@
                 {% if forloop.last %}</div>{% endif %}
             {% endfor %}
 
-            <h3 class="h3" style="margin-top:16px;" data-fr="Compétences confirmées" data-en="Confirmed skills">Compétences confirmées</h3>
+            <h3 id="profile-skills" class="h3" style="margin-top:16px; scroll-margin-top:90px;" data-fr="Compétences confirmées" data-en="Confirmed skills">Compétences confirmées</h3>
             <div class="small" style="margin-bottom:8px;" data-fr="Compétences confirmées et détectées depuis votre CV, utilisées pour le matching." data-en="Confirmed and CV-detected skills used for matching.">Compétences confirmées et détectées depuis votre CV, utilisées pour le matching.</div>
+
+            <div class="pill-row" style="align-items:center; gap:8px; margin-bottom:12px;">
+                <input type="text" name="skill_name" placeholder="Ajouter une compétence, ex. Python" data-fr-placeholder="Ajouter une compétence, ex. Python" data-en-placeholder="Add a skill, e.g. Python" style="flex:1; min-width:160px;">
+                <button type="submit" name="skill_action" value="add" class="btn secondary" data-fr="Ajouter" data-en="Add">Ajouter</button>
+            </div>
+
             {% if profile_skills %}
                 <div class="pill-row">
                     {% for skill in profile_skills %}
-                        <span class="skill {% if skill.is_confirmed %}ok{% else %}pill brand{% endif %}">
+                        <span class="skill {% if skill.is_confirmed %}ok{% else %}pill brand{% endif %}" style="display:inline-flex; align-items:center; gap:6px;">
                             {{ skill.raw_name|default:skill.normalized_name }}
+                            <button type="submit" name="remove_skill" value="{{ skill.normalized_name }}" class="btn secondary" style="padding:2px 8px; font-size:14px; line-height:1;" aria-label="Remove {{ skill.raw_name|default:skill.normalized_name }}" data-fr-label="Retirer {{ skill.raw_name|default:skill.normalized_name }}" data-en-label="Remove {{ skill.raw_name|default:skill.normalized_name }}">-</button>
                         </span>
                     {% endfor %}
                 </div>
             {% else %}
                 <div class="small" style="border:1px dashed var(--line); padding:12px; border-radius:12px;">
-                    <span>Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section.</span>
+                    <span data-fr="Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section." data-en="No skills detected yet. Upload or replace your CV to fill this section.">Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section.</span>
                 </div>
             {% endif %}
-            <div class="pill-row" style="margin-top:16px; border-top:1px solid var(--line); padding-top:16px;">
+
+            <div id="profile-actions" class="pill-row" style="margin-top:16px; border-top:1px solid var(--line); padding-top:16px; scroll-margin-top:90px;">
                 <a class="btn secondary" href="{% url 'dashboard:cv' %}" data-fr="Retour au CV" data-en="Back to CV">Retour au CV</a>
                 <button type="submit" class="btn primary" data-fr="Enregistrer le profil" data-en="Save profile">Enregistrer le profil</button>
             </div>
