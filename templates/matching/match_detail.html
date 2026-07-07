@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load job_presentation %}
-{% block title %}Analyse - {{ match.job_snapshot_json.title|default:"Offre" }} - TuniAtlas{% endblock %}
+{% block title %}Analyse - {{ match.job.title }} - TuniAtlas{% endblock %}
 {% block content %}
 <div class="match-v16">
 <section class="section">
@@ -11,11 +11,13 @@
                     <strong>{{ match.fit_score }}%</strong>
                 </div>
                 <h1 class="h2" style="text-align:center;margin-top:16px">
-                    {% if match.is_match_low_confidence %}À vérifier
-                    {% elif match.fit_score >= 80 %}Très bon match
-                    {% elif match.fit_score >= 65 %}Bon potentiel
-                    {% elif match.fit_score >= 50 %}Match partiel
-                    {% else %}Match faible{% endif %}
+                    {% if match.fit_score >= 80 %}
+                        <span data-fr="Match fort" data-en="Strong match">Match fort</span>
+                    {% elif match.fit_score >= 55 %}
+                        <span data-fr="Match moyen" data-en="Medium match">Match moyen</span>
+                    {% else %}
+                        <span data-fr="Match faible" data-en="Weak match">Match faible</span>
+                    {% endif %}
                 </h1>
                 <p class="small" style="text-align:center">{{ match.job_snapshot_json.title|default:"Offre" }} · {{ match.job_snapshot_json.company_name|default:"Entreprise inconnue" }}</p>
                     <div class="grid match-actions" style="margin-top:16px">
@@ -44,7 +46,7 @@
                                     {% if match.strong_skills_json %}
                                         {% for skill in match.strong_skills_json|slice:":4" %}{{ skill.name|default:skill }}{% if not forloop.last %}, {% endif %}{% endfor %}
                                     {% else %}
-                                        Score global calculé à {{ match.fit_score }}%.
+                                        <span data-fr="Score global calculé à {{ match.fit_score }}%." data-en="Overall score calculated at {{ match.fit_score }}%.">Score global calculé à {{ match.fit_score }}%.</span>
                                     {% endif %}
                                 </div>
                             </div>
@@ -64,17 +66,17 @@
                         </div>
                         <div class="notice">
                             <span class="dot {% if match.language_score >= 60 %}good{% else %}warn{% endif %}"></span>
-                            <div><b data-i18n="Good language fit">Bon niveau langues</b><div class="small">Signal langues: {{ match.language_score }}%.</div></div>
+                            <div><b data-i18n="Good language fit">Bon niveau langues</b><div class="small"><span data-fr="Signal langues : {{ match.language_score }}%." data-en="Language signal: {{ match.language_score }}%.">Signal langues : {{ match.language_score }}%.</span></div></div>
                         </div>
                         <div class="notice">
                             <span class="dot {% if match.technical_skills_score >= 65 %}good{% else %}warn{% endif %}"></span>
-                            <div><b data-i18n="Backend gap">Écart backend</b><div class="small">{% if match.technical_skills_score >= 65 %}Signal technique exploitable pour cette offre.{% else %}Renforcez les preuves techniques dans le CV avant candidature.{% endif %}</div></div>
+                            <div><b data-i18n="Backend gap">Écart backend</b><div class="small">{% if match.technical_skills_score >= 65 %}<span data-fr="Signal technique exploitable pour cette offre." data-en="Usable technical signal for this job.">Signal technique exploitable pour cette offre.</span>{% else %}<span data-fr="Renforcez les preuves techniques dans le CV avant candidature." data-en="Strengthen the technical evidence in your CV before applying.">Renforcez les preuves techniques dans le CV avant candidature.</span>{% endif %}</div></div>
                         </div>
                     </div>
                 </div>
                 <div class="grid grid-2">
                     <div class="card">
-                        <h2 class="h2">Points forts</h2>
+                        <h2 class="h2" data-fr="Points forts" data-en="Strengths">Points forts</h2>
                         {% if match.strong_skills_json %}
                         <div class="pill-row">
                             {% for skill in match.strong_skills_json %}
@@ -82,11 +84,11 @@
                             {% endfor %}
                         </div>
                         {% else %}
-                        <p class="small">Aucun point fort identifié.</p>
+                        <p class="small" data-fr="Aucun point fort identifié." data-en="No strength identified yet.">Aucun point fort identifié.</p>
                         {% endif %}
                     </div>
                     <div class="card">
-                        <h2 class="h2">Manquantes</h2>
+                        <h2 class="h2" data-fr="Compétences manquantes" data-en="Missing skills">Compétences manquantes</h2>
                         {% if match.missing_required_skills_json %}
                         <div class="pill-row">
                             {% for skill in match.missing_required_skills_json %}
@@ -110,12 +112,12 @@
                 {% endif %}
                 {% if match.recommended_actions_json %}
                 <div class="card">
-                    <h2 class="h2">Actions recommandées</h2>
+                    <h2 class="h2" data-fr="Actions recommandées" data-en="Recommended actions">Actions recommandées</h2>
                     <div class="notice-list">
                         {% for action in match.recommended_actions_json %}
                         <div class="notice">
                             <span class="dot {% if match.missing_required_skills_json %}bad{% elif match.missing_optional_skills_json %}warn{% else %}good{% endif %}"></span>
-                            <div><b>{{ action }}</b></div>
+                            <div><b class="match-action-text" data-fr="{{ action }}">{{ action }}</b></div>
                         </div>
                         {% endfor %}
                     </div>
@@ -123,7 +125,7 @@
                 {% endif %}
                 {% if match.human_risk_flags %}
                 <div class="card">
-                    <h2 class="h2">Points de vigilance</h2>
+                    <h2 class="h2" data-fr="Points de vigilance" data-en="Watch points">Points de vigilance</h2>
                     <div class="notice-list">
                         {% for flag in match.human_risk_flags %}
                         <div class="notice">
@@ -151,4 +153,137 @@
     </div>
 </section>
 </div>
+
+<script>
+/* TUNIATLAS_MATCH_DETAIL_LOCAL_I18N_V2 */
+(function(){
+  function currentLang(){
+    return localStorage.getItem("ta-lang") || document.documentElement.lang || "fr";
+  }
+
+  function actionToEnglish(fr){
+    const text = (fr || "").trim();
+
+    const exactMap = {
+      "Votre profil est bien aligné avec cette offre. Vérifiez les conditions de mobilité/contrat puis postulez sur la source.": "Your profile is well aligned with this job. Check the mobility/contract conditions, then apply on the source website."
+    };
+    if (exactMap[text]) return exactMap[text];
+
+    const match = text.match(/^Priorité\s*:\s*ajoutez\s+(.+?)\s+à votre plan d[’']apprentissage\. Mettez à jour votre CV si vous avez déjà utilisé\s+(.+?)\.$/);
+    if (match) {
+      const skill = match[1];
+      return `Priority: add ${skill} to your learning plan. Update your CV if you have already used ${skill}.`;
+    }
+    return text;
+  }
+
+  function vigilanceToEnglish(fr){
+    const text = (fr || "").trim();
+    const map = {
+      "Expérience non précisée": "Experience not specified"
+    };
+    return map[text] || text;
+  }
+
+  function translateKnownRawText(text, isEn){
+    const frToEn = {
+      "Aucun écart requis majeur détecté.": "No major required gap detected.",
+      "Vous possédez toutes les compétences requises.": "You have all required skills."
+    };
+
+    const enToFr = Object.fromEntries(Object.entries(frToEn).map(([fr, en]) => [en, fr]));
+    return isEn ? (frToEn[text] || text) : (enToFr[text] || text);
+  }
+
+  function applyKnownRawTexts(isEn){
+    const walker = document.createTreeWalker(document.querySelector(".match-v16"), NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.parentElement) return NodeFilter.FILTER_REJECT;
+        if (["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA"].includes(node.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
+        return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach(node => {
+      const raw = node.nodeValue;
+      const trimmed = raw.trim();
+      const translated = translateKnownRawText(trimmed, isEn);
+      if (translated !== trimmed) {
+        node.nodeValue = raw.replace(trimmed, translated);
+      }
+    });
+  }
+
+  function applyMatchDetailI18n(){
+    const isEn = currentLang() === "en";
+
+    document.querySelectorAll(".match-v16 [data-fr][data-en]").forEach(el => {
+      const value = isEn ? el.getAttribute("data-en") : el.getAttribute("data-fr");
+      if (value) el.textContent = value;
+    });
+
+    applyKnownRawTexts(isEn);
+
+    document.querySelectorAll(".match-action-text").forEach(el => {
+      const fr = el.getAttribute("data-fr") || el.textContent.trim();
+      let en = el.getAttribute("data-en") || "";
+      if (!en || en === fr) {
+        en = actionToEnglish(fr);
+      }
+      el.setAttribute("data-fr", fr);
+      el.setAttribute("data-en", en);
+      el.textContent = isEn ? en : fr;
+    });
+
+    document.querySelectorAll(".match-vigilance-text").forEach(el => {
+      const fr = el.getAttribute("data-fr") || el.textContent.trim();
+      const en = el.getAttribute("data-en") || vigilanceToEnglish(fr);
+      el.setAttribute("data-fr", fr);
+      el.setAttribute("data-en", en);
+      el.textContent = isEn ? en : fr;
+    });
+
+    document.querySelectorAll(".match-v16 .card").forEach(card => {
+      const title = card.querySelector("h2");
+      if (!title) return;
+
+      const titleFr = title.getAttribute("data-fr") || title.textContent.trim();
+      const titleEn = title.getAttribute("data-en") || "";
+      const isVigilanceCard = titleFr === "Points de vigilance" || titleEn === "Watch points" || title.textContent.trim() === "Watch points";
+      if (!isVigilanceCard) return;
+
+      card.querySelectorAll(".notice-list b").forEach(el => {
+        const current = el.textContent.trim();
+        const fr = el.getAttribute("data-fr") || (current === "Experience not specified" ? "Expérience non précisée" : current);
+        const en = el.getAttribute("data-en") || vigilanceToEnglish(fr);
+
+        el.classList.add("match-vigilance-text");
+        el.setAttribute("data-fr", fr);
+        el.setAttribute("data-en", en);
+        el.textContent = isEn ? en : fr;
+      });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(applyMatchDetailI18n, 80);
+    setTimeout(applyMatchDetailI18n, 300);
+  });
+
+  window.addEventListener("load", applyMatchDetailI18n);
+
+  document.addEventListener("click", function(e){
+    if (e.target.closest("[data-lang-toggle]")) {
+      setTimeout(applyMatchDetailI18n, 80);
+      setTimeout(applyMatchDetailI18n, 300);
+    }
+  });
+
+  document.addEventListener("htmx:afterSwap", applyMatchDetailI18n);
+})();
+</script>
+
 {% endblock %}
