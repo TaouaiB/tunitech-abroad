@@ -10,7 +10,7 @@
 
       <div class="stepper">
         {% if not request.user.has_usable_password %}
-        <div class="step" onclick="window.location.href='{% url 'account_set_password' %}'" style="cursor:pointer;">
+        <div class="step" data-profile-nav="{% url 'account_set_password' %}" style="cursor:pointer;">
           <span class="step-num">1</span>
           <div>
             <b data-fr="Mot de passe" data-en="Password">Mot de passe</b>
