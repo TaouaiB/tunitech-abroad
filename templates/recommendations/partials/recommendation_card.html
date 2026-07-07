@@ -3,7 +3,7 @@
     <div>
         <div class="pill-row">
             {% for badge in rec.job|job_badges %}<span class="pill {{ badge.css_class }}">{{ badge.text }}</span>{% endfor %}
-            {% if rec.is_match_low_confidence %}<span class="pill warn">À vérifier</span>{% endif %}
+            {% if rec.is_match_low_confidence %}<span class="pill warn recommendation-i18n" data-fr="À vérifier" data-en="To verify">À vérifier</span>{% endif %}
         </div>
         <h3 class="job-title">
             <a href="{% url 'jobs:detail' rec.job.public_id %}">{{ rec.job.title|default:"Offre sans titre" }}</a>
@@ -19,7 +19,7 @@
             Score calculé à partir des données de votre profil et de cette offre.
             {% endif %}
             {% if rec.is_match_low_confidence %}
-                <br><span style="color:var(--warn);font-size:12px;">Signal technique insuffisant : vérifiez l'offre originale avant d'interpréter ce score.</span>
+                <br><span style="color:var(--warn);font-size:12px;"><span class="recommendation-i18n" data-fr="Signal technique insuffisant : vérifiez l\'offre originale avant d\'interpréter ce score." data-en="Insufficient technical signal: check the original job post before interpreting this score.">Signal technique insuffisant : vérifiez l\'offre originale avant d\'interpréter ce score.</span></span>
             {% endif %}
         </p>
         <div class="pill-row">

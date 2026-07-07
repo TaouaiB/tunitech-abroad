@@ -180,7 +180,9 @@
   function vigilanceToEnglish(fr){
     const text = (fr || "").trim();
     const map = {
-      "Expérience non précisée": "Experience not specified"
+      "Expérience non précisée": "Experience not specified",
+      "Expérience insuffisante": "Insufficient experience",
+      "Signal technique insuffisant": "Insufficient technical signal"
     };
     return map[text] || text;
   }
