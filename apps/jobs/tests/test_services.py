@@ -27,6 +27,7 @@ from apps.jobs.services.skill_extraction import JobSkillExtractionService
 from apps.jobs.services.freshness import JobFreshnessService
 from apps.skills.models import Skill, SkillCategory, SkillAlias
 from apps.skills.models import UnmatchedSkillCandidate
+from apps.skills.services.normalizer import normalize_skill_text
 
 
 class JobServicesTest(TestCase):
@@ -259,6 +260,141 @@ class JobServicesTest(TestCase):
                 source_type="job",
             ).exists()
         )
+
+    def test_skill_extraction_rejects_ambiguous_alias_false_positives(self):
+        chef = Skill.objects.create(canonical_name="Chef", slug="chef", category=SkillCategory.DEVOPS, is_active=True)
+        SkillAlias.objects.create(skill=chef, alias="Chef", normalized_alias="chef")
+        go = Skill.objects.create(canonical_name="Go", slug="go", category=SkillCategory.PROGRAMMING_LANGUAGE, is_active=True)
+        SkillAlias.objects.create(skill=go, alias="Go", normalized_alias="go")
+        spring = Skill.objects.create(canonical_name="Spring Boot", slug="spring-boot", category=SkillCategory.BACKEND, is_active=True)
+        SkillAlias.objects.create(skill=spring, alias="Spring", normalized_alias="spring")
+        sql = Skill.objects.create(canonical_name="SQL", slug="sql", category=SkillCategory.DATABASE, is_active=True)
+        SkillAlias.objects.create(skill=sql, alias="SQL", normalized_alias="sql")
+        sql_server = Skill.objects.create(canonical_name="SQL Server", slug="sql-server", category=SkillCategory.DATABASE, is_active=True)
+        SkillAlias.objects.create(skill=sql_server, alias="SQL Server", normalized_alias="sql server")
+
+        now = timezone.now()
+        raw = RawJobRecord.objects.create(
+            source=self.source,
+            source_job_id="ambiguous_false_positive",
+            raw_payload_json={"intitule": "Chef de projet", "description": "Go live in spring season. SQL Server and NoSQL exposure."},
+            payload_hash="hash-ambiguous",
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+        )
+        job = JobNormalizationService.normalize(raw)
+        self.assertIsNotNone(job)
+        assert job is not None
+
+        JobSkillExtractionService.extract_for_job(job)
+
+        names = set(
+            NormalizedJobSkill.objects.filter(job=job).values_list("skill__canonical_name", flat=True)
+        )
+        self.assertEqual(names, {"SQL Server"})
+
+    def test_skill_extraction_accepts_technical_ambiguous_alias_contexts(self):
+        chef = Skill.objects.create(canonical_name="Chef", slug="chef", category=SkillCategory.DEVOPS, is_active=True)
+        SkillAlias.objects.create(skill=chef, alias="Chef", normalized_alias="chef")
+        go = Skill.objects.create(canonical_name="Go", slug="go", category=SkillCategory.PROGRAMMING_LANGUAGE, is_active=True)
+        SkillAlias.objects.create(skill=go, alias="Go", normalized_alias="go")
+        SkillAlias.objects.create(skill=go, alias="Golang", normalized_alias="golang")
+        r_skill = Skill.objects.create(canonical_name="R", slug="r", category=SkillCategory.PROGRAMMING_LANGUAGE, is_active=True)
+        SkillAlias.objects.create(skill=r_skill, alias="R", normalized_alias="r")
+        oracle = Skill.objects.create(canonical_name="Oracle DB", slug="oracle-db", category=SkillCategory.DATABASE, is_active=True)
+        SkillAlias.objects.create(skill=oracle, alias="Oracle", normalized_alias="oracle")
+
+        now = timezone.now()
+        raw = RawJobRecord.objects.create(
+            source=self.source,
+            source_job_id="ambiguous_technical_context",
+            raw_payload_json={
+                "intitule": "Backend Go developer",
+                "description": "DevOps Chef cookbooks, R Shiny dashboards, and Oracle Database support.",
+            },
+            payload_hash="hash-technical-ambiguous",
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+        )
+        job = JobNormalizationService.normalize(raw)
+        self.assertIsNotNone(job)
+        assert job is not None
+
+        JobSkillExtractionService.extract_for_job(job)
+
+        names = set(
+            NormalizedJobSkill.objects.filter(job=job).values_list("skill__canonical_name", flat=True)
+        )
+        self.assertTrue({"Chef", "Go", "R", "Oracle DB"}.issubset(names))
+
+    def test_skill_extraction_english_required_context_marks_detected_alias_required(self):
+        django = Skill.objects.create(canonical_name="Django", slug="django", category=SkillCategory.BACKEND, is_active=True)
+        SkillAlias.objects.create(skill=django, alias="Django", normalized_alias="django")
+
+        cues = [
+            "Django required for backend delivery.",
+            "Django is mandatory for this role.",
+            "Must have Django experience.",
+            "Strong experience with Django APIs.",
+            "Proficiency in Django is expected.",
+            "Hands-on experience with Django services.",
+        ]
+        now = timezone.now()
+        for index, description in enumerate(cues):
+            with self.subTest(description=description):
+                raw = RawJobRecord.objects.create(
+                    source=self.source,
+                    source_job_id=f"english-required-context-{index}",
+                    raw_payload_json={"intitule": "Backend developer", "description": description},
+                    payload_hash=f"hash-english-required-{index}",
+                    first_seen_at=now,
+                    last_seen_at=now,
+                    last_fetched_at=now,
+                )
+                job = JobNormalizationService.normalize(raw)
+                self.assertIsNotNone(job)
+                assert job is not None
+
+                JobSkillExtractionService.extract_for_job(job)
+
+                job_skill = NormalizedJobSkill.objects.get(job=job, skill=django)
+                self.assertEqual(job_skill.requirement_type, RequirementType.REQUIRED.value)
+
+    def test_skill_extraction_normalizes_accented_job_text_before_alias_scan(self):
+        cybersecurity = Skill.objects.create(
+            canonical_name="Cybersécurité",
+            slug="cybersecurite",
+            category=SkillCategory.SECURITY,
+            is_active=True,
+        )
+        SkillAlias.objects.create(
+            skill=cybersecurity,
+            alias="Cybersécurité",
+            normalized_alias=normalize_skill_text("Cybersécurité"),
+        )
+        now = timezone.now()
+        raw = RawJobRecord.objects.create(
+            source=self.source,
+            source_job_id="accent-normalized-alias",
+            raw_payload_json={
+                "intitule": "Analyste sécurité",
+                "description": "Compétences techniques indispensables en cybersécurité applicative.",
+            },
+            payload_hash="hash-accent-normalized-alias",
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+        )
+        job = JobNormalizationService.normalize(raw)
+        self.assertIsNotNone(job)
+        assert job is not None
+
+        JobSkillExtractionService.extract_for_job(job)
+
+        job_skill = NormalizedJobSkill.objects.get(job=job, skill=cybersecurity)
+        self.assertEqual(job_skill.requirement_type, RequirementType.REQUIRED.value)
 
     def test_freshness_service(self):
         JobIngestionConfig.objects.create(

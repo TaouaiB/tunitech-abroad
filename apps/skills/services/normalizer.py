@@ -3,6 +3,7 @@ from typing import List, Optional, Set, Dict
 from django.db import transaction
 from django.db.models import F
 from apps.skills.models import Skill, SkillAlias, UnmatchedSkillCandidate
+from apps.skills.services.ambiguity import implied_aliases_for_phrase, is_allowed_skill_match, is_metadata_noise
 from apps.skills.services.ignored import IgnoredSkillService
 import re
 import unicodedata
@@ -50,6 +51,10 @@ def candidate_normalized_skill_texts(text: str | None) -> list[str]:
     if replacement and replacement not in candidates:
         candidates.append(replacement)
 
+    for implied_alias in implied_aliases_for_phrase(text):
+        if implied_alias not in candidates:
+            candidates.append(implied_alias)
+
     return candidates
 
 class SkillNormalizerService:
@@ -72,6 +77,8 @@ class SkillNormalizerService:
         normalized_to_raw: Dict[str, str] = {}
         lookup_to_primary_normalized: Dict[str, str] = {}
         for raw in unique_raw_skills:
+            if is_metadata_noise(raw):
+                continue
             candidates = candidate_normalized_skill_texts(raw)
             if candidates:
                 primary = candidates[0]
@@ -90,15 +97,22 @@ class SkillNormalizerService:
         
         with transaction.atomic():
             for normalized, raw in normalized_to_raw.items():
-                matched_skill = None
+                matched_skills: list[tuple[str, Skill]] = []
                 for candidate, primary_normalized in lookup_to_primary_normalized.items():
                     if primary_normalized == normalized and candidate in alias_map:
-                        matched_skill = alias_map[candidate]
-                        break
+                        matched_skills.append((candidate, alias_map[candidate]))
 
-                if matched_skill:
-                    canonical_skills_set.add(matched_skill)
-                else:
+                allowed_match_found = False
+                for matched_alias, matched_skill in matched_skills:
+                    if is_allowed_skill_match(
+                        raw_text=raw,
+                        canonical_name=matched_skill.canonical_name,
+                        alias=matched_alias,
+                    ):
+                        canonical_skills_set.add(matched_skill)
+                        allowed_match_found = True
+
+                if not allowed_match_found:
                     status = 'ignored' if IgnoredSkillService.is_ignored(normalized) else 'pending'
                     candidate, created = UnmatchedSkillCandidate.objects.get_or_create(
                         normalized_text=normalized,

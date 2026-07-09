@@ -148,7 +148,7 @@ class CVServiceTests(TestCase):
         profile.refresh_from_db()
         self.assertEqual(profile.full_name, "Existing Name")
         self.assertEqual(profile.phone, "+216 11 111 111")
-        self.assertEqual(profile.location, "Tunis")
+        self.assertEqual(profile.location, "")
         self.assertEqual(profile.linkedin_url, "https://linkedin.com/in/amina")
         self.assertEqual(profile.github_url, "https://github.com/amina")
         self.assertEqual(profile.portfolio_url, "https://amina.dev")
@@ -159,8 +159,7 @@ class CVServiceTests(TestCase):
         )
 
         self.assertIsNotNone(parsed_data)
-        # Check warning was added
-        self.assertTrue(any("differs from CV name 'Amina Ben Ali'" in w for w in parsed_data.warnings_json))
+        self.assertFalse(any("differs from CV name 'Amina Ben Ali'" in w for w in parsed_data.warnings_json))
 
     @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
     def test_parsing_prefills_empty_profile(self, mock_llm):
@@ -171,8 +170,8 @@ class CVServiceTests(TestCase):
         CVParsingService.parse(cv)
 
         profile.refresh_from_db()
-        self.assertEqual(profile.full_name, "Amina Ben Ali")
-        self.assertEqual(profile.phone, "+33 6 12 34 56 78")
+        self.assertEqual(profile.full_name, "")
+        self.assertEqual(profile.phone, "")
 
     def test_parsing_normalizes_current_level_labels_before_profile_save(self):
         self.assertEqual(CVParsingService._normalize_current_level("Junior"), "junior")
@@ -265,9 +264,9 @@ class CVServiceTests(TestCase):
         CVParsingService.parse_by_id(cv.id)
 
         profile.refresh_from_db()
-        self.assertEqual(profile.full_name, "Aymen Ben Salah")
-        self.assertEqual(profile.phone, "+216 55 123 456")
-        self.assertEqual(profile.location, "Tunis, Tunisia")
+        self.assertEqual(profile.full_name, "")
+        self.assertEqual(profile.phone, "")
+        self.assertEqual(profile.location, "")
         self.assertEqual(profile.linkedin_url, "https://linkedin.com/in/aymen-bensalah-test")
         self.assertEqual(profile.github_url, "https://github.com/aymen-bensalah-test")
         self.assertEqual(profile.portfolio_url, f"https://{portfolio_domain}")

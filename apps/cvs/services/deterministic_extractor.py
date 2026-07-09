@@ -1,6 +1,8 @@
 import re
 from typing import TypedDict
 
+from apps.skills.services.ambiguity import is_metadata_noise
+
 
 class CVDeterministicExtractionResult(TypedDict):
     extracted_email: str
@@ -243,7 +245,8 @@ class CVDeterministicExtractorService:
             "projects", "education", "experience", "private", "university", "target", "roles", "salary", "range", 
             "march", "january", "february", "april", "may", "june", "july", "august", "september", "october", "november", "december", 
             "and", "role", "tunis", "tunisia", "france", "belgium", "luxembourg", "canada", "local", "clients", 
-            "digitalbridge", "labs", "professional", "certifications", "languages", "error", "cases"
+            "digitalbridge", "labs", "professional", "certifications", "languages", "error", "cases",
+            "source", "status", "statut", "badge", "verified", "verifie", "certifie"
         }
         
         for line in lines:
@@ -256,7 +259,7 @@ class CVDeterministicExtractorService:
                         parts = re.split(r'[,•|-]', line.split(":", 1)[1])
                         for p in parts:
                             c = p.strip()
-                            if 1 < len(c) < 30:
+                            if 1 < len(c) < 30 and not is_metadata_noise(c):
                                 skill_candidates.add(c)
                     continue
             
@@ -275,6 +278,8 @@ class CVDeterministicExtractorService:
                     for p in parts:
                         cleaned = p.strip()
                         if 1 < len(cleaned) < 30:
+                            if is_metadata_noise(cleaned):
+                                continue
                             cleaned_lower = cleaned.lower()
                             # Check if it contains any noise words as whole words
                             words = cleaned_lower.split()

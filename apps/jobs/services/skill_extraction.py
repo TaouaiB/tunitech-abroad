@@ -5,6 +5,11 @@ from apps.jobs.models import (
     NormalizedJob,
     RequirementType,
 )
+from apps.skills.services.ambiguity import (
+    evidence_candidate_for_match,
+    is_allowed_skill_match,
+    normalize_context_text,
+)
 from apps.skills.services.normalizer import SkillExtractionResult
 from apps.skills.models import SkillAlias
 
@@ -23,11 +28,30 @@ GENERIC_FT_LABELS = [
     "application métier",
 ]
 
+STRONG_REQUIREMENT_CONTEXT_PATTERN = re.compile(
+    r"\b("
+    r"maitrise de|"
+    r"competences techniques indispensables|"
+    r"indispensable|"
+    r"exige|"
+    r"obligatoire|"
+    r"stack technique|"
+    r"competences techniques|"
+    r"environnement technique|"
+    r"profil recherche|"
+    r"required|"
+    r"mandatory|"
+    r"must have|"
+    r"strong experience with|"
+    r"proficiency in|"
+    r"hands on experience with"
+    r")\b"
+)
+
 class JobSkillExtractionService:
     @staticmethod
     def extract_for_job(job: NormalizedJob) -> SkillExtractionResult:
-        description_lower = (job.description or "").lower()
-        combined_text = f"{job.title} {job.description}".lower()
+        combined_text = normalize_context_text(f"{job.title} {job.description}")
 
         required_raw = job.required_skills_json if isinstance(job.required_skills_json, list) else []
         optional_raw = job.optional_skills_json if isinstance(job.optional_skills_json, list) else []
@@ -35,7 +59,7 @@ class JobSkillExtractionService:
         raw_skills_dict: Dict[str, dict] = {}
 
         # Check description context
-        strong_requirement_context = bool(re.search(r'(maîtrise de|maitrise de|compétences techniques indispensables|indispensable|exigé|exige|obligatoire|stack technique|compétences techniques|environnement technique|profil recherché)', combined_text))
+        strong_requirement_context = bool(STRONG_REQUIREMENT_CONTEXT_PATTERN.search(combined_text))
 
         for req in required_raw:
             if isinstance(req, str) and req.strip():
@@ -54,25 +78,50 @@ class JobSkillExtractionService:
                     raw_skills_dict[opt] = {"type": RequirementType.OPTIONAL.value, "confidence": "1.000"}
 
         # Find aliases in text
-        aliases = list(SkillAlias.objects.filter(skill__is_active=True).values_list('normalized_alias', flat=True))
-        aliases.sort(key=len, reverse=True)
+        aliases = list(
+            SkillAlias.objects.filter(skill__is_active=True)
+            .select_related("skill")
+            .values("normalized_alias", "skill__canonical_name")
+        )
+        aliases.sort(key=lambda row: len(row["normalized_alias"]), reverse=True)
 
-        for alias in aliases:
-            if not alias or len(alias) < 2:
+        for row in aliases:
+            alias = row["normalized_alias"]
+            if not alias or (len(alias) < 2 and alias not in {"c", "r"}):
                 continue
             if alias.isalnum():
                 pattern = rf"\b{re.escape(alias)}\b"
                 if re.search(pattern, combined_text):
-                    if alias not in raw_skills_dict:
+                    if alias not in raw_skills_dict and is_allowed_skill_match(
+                        raw_text=alias,
+                        canonical_name=row["skill__canonical_name"],
+                        alias=alias,
+                        context=combined_text,
+                    ):
                         req_type = RequirementType.REQUIRED.value if strong_requirement_context else RequirementType.DETECTED.value
                         conf = "1.000" if strong_requirement_context else "0.700"
-                        raw_skills_dict[alias] = {"type": req_type, "confidence": conf}
+                        candidate = evidence_candidate_for_match(
+                            alias=alias,
+                            canonical_name=row["skill__canonical_name"],
+                            context=combined_text,
+                        )
+                        raw_skills_dict[candidate] = {"type": req_type, "confidence": conf}
             else:
                 if alias in combined_text:
-                    if alias not in raw_skills_dict:
+                    if alias not in raw_skills_dict and is_allowed_skill_match(
+                        raw_text=alias,
+                        canonical_name=row["skill__canonical_name"],
+                        alias=alias,
+                        context=combined_text,
+                    ):
                         req_type = RequirementType.REQUIRED.value if strong_requirement_context else RequirementType.DETECTED.value
                         conf = "1.000" if strong_requirement_context else "0.700"
-                        raw_skills_dict[alias] = {"type": req_type, "confidence": conf}
+                        candidate = evidence_candidate_for_match(
+                            alias=alias,
+                            canonical_name=row["skill__canonical_name"],
+                            context=combined_text,
+                        )
+                        raw_skills_dict[candidate] = {"type": req_type, "confidence": conf}
 
         from apps.jobs.services.skill_materialization import JobSkillMaterializationService
 
