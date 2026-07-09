@@ -1,8 +1,7 @@
-from datetime import timedelta
+from datetime import time, timedelta
 from django.utils import timezone
-from django.db.models import Q
 
-from apps.jobs.models import NormalizedJob, JobStatus
+from apps.jobs.models import NormalizedJob, JobStatus, JobIngestionConfig, JobIngestionRun
 
 
 class JobFreshnessService:
@@ -11,42 +10,77 @@ class JobFreshnessService:
         if now is None:
             now = timezone.now()
 
-        stale_threshold = now - timedelta(hours=24)
-        removed_threshold = now - timedelta(hours=72)
+        config = JobIngestionConfig.objects.filter(enabled=True).first()
+        stale_hours = getattr(config, "stale_after_hours", 24) if config else 24
+        removed_hours = getattr(config, "removed_after_hours", 72) if config else 72
+        expire_grace_hours = getattr(config, "expire_grace_hours", 24) if config else 24
+
+        stale_threshold = now - timedelta(hours=stale_hours)
+        removed_threshold = now - timedelta(hours=removed_hours)
 
         results = {
             "expired_count": 0,
             "removed_count": 0,
             "stale_count": 0,
             "active_count": 0,
+            "aborted": False,
         }
 
-        # 1. Expired jobs: expires_at is past
-        expired_qs = NormalizedJob.objects.filter(
-            expires_at__lt=now
-        ).exclude(status__in=[JobStatus.EXPIRED.value, JobStatus.ARCHIVED.value])
-        results["expired_count"] = expired_qs.update(status=JobStatus.EXPIRED.value)
+        # Safety: Failed ingestion run does not mass-stale jobs
+        last_run = JobIngestionRun.objects.order_by("-started_at").first()
+        if last_run and last_run.status == "failed":
+            results["aborted"] = True
+            return results
 
-        # 2. Removed jobs: last_seen_at older than 72h
-        # We only consider jobs that are not already EXPIRED, REMOVED or ARCHIVED
-        removed_qs = NormalizedJob.objects.filter(
-            last_seen_at__lt=removed_threshold
-        ).exclude(status__in=[JobStatus.EXPIRED.value, JobStatus.REMOVED.value, JobStatus.ARCHIVED.value])
-        results["removed_count"] = removed_qs.update(status=JobStatus.REMOVED.value)
+        updates_by_status = {
+            JobStatus.EXPIRED.value: [],
+            JobStatus.REMOVED.value: [],
+            JobStatus.STALE.value: [],
+            JobStatus.ACTIVE.value: [],
+        }
 
-        # 3. Stale jobs: last_seen_at older than 24h but newer than 72h
-        stale_qs = NormalizedJob.objects.filter(
-            last_seen_at__lt=stale_threshold,
-            last_seen_at__gte=removed_threshold
-        ).exclude(status__in=[JobStatus.EXPIRED.value, JobStatus.REMOVED.value, JobStatus.STALE.value, JobStatus.ARCHIVED.value])
-        results["stale_count"] = stale_qs.update(status=JobStatus.STALE.value)
+        for job in NormalizedJob.objects.exclude(status=JobStatus.ARCHIVED.value).only(
+            "id",
+            "status",
+            "expires_at",
+            "last_seen_at",
+        ):
+            new_status = JobFreshnessService._status_for_job(
+                job,
+                now=now,
+                stale_threshold=stale_threshold,
+                removed_threshold=removed_threshold,
+                expire_grace_hours=expire_grace_hours,
+            )
+            if new_status != job.status:
+                updates_by_status[new_status].append(job.id)
 
-        # 4. Active jobs: last_seen_at newer than 24h, and expires_at is in future or null
-        active_qs = NormalizedJob.objects.filter(
-            last_seen_at__gte=stale_threshold
-        ).filter(
-            Q(expires_at__isnull=True) | Q(expires_at__gte=now)
-        ).exclude(status__in=[JobStatus.ACTIVE.value, JobStatus.ARCHIVED.value])
-        results["active_count"] = active_qs.update(status=JobStatus.ACTIVE.value)
+        for status, ids in updates_by_status.items():
+            if ids:
+                NormalizedJob.objects.filter(id__in=ids).update(status=status)
+
+        results["expired_count"] = len(updates_by_status[JobStatus.EXPIRED.value])
+        results["removed_count"] = len(updates_by_status[JobStatus.REMOVED.value])
+        results["stale_count"] = len(updates_by_status[JobStatus.STALE.value])
+        results["active_count"] = len(updates_by_status[JobStatus.ACTIVE.value])
 
         return results
+
+    @staticmethod
+    def _status_for_job(job, *, now, stale_threshold, removed_threshold, expire_grace_hours) -> str:
+        expires_at = JobFreshnessService._effective_expires_at(job.expires_at)
+        if expires_at and expires_at < now - timedelta(hours=expire_grace_hours):
+            return JobStatus.EXPIRED.value
+        if job.last_seen_at and job.last_seen_at < removed_threshold:
+            return JobStatus.REMOVED.value
+        if job.last_seen_at and job.last_seen_at < stale_threshold:
+            return JobStatus.STALE.value
+        return JobStatus.ACTIVE.value
+
+    @staticmethod
+    def _effective_expires_at(expires_at):
+        if not expires_at:
+            return None
+        if expires_at.timetz().replace(tzinfo=None) == time.min:
+            return expires_at + timedelta(days=1) - timedelta(microseconds=1)
+        return expires_at

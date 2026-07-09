@@ -148,7 +148,7 @@ Active CV card
   privacy line
 Upload/replace card
   dropzone
-  consent checkbox
+  No separate CV processing consent step. CV upload itself is the user action requesting private CV analysis. Privacy/Terms explain CV processing.
   submit button
 Danger/delete action
 ```
@@ -176,7 +176,6 @@ Fichier chiffré et privé. Non partagé avec les employeurs.
 
 - PDF only.
 - max 5 MB unless system setting says otherwise.
-- consent required.
 - dropzone has drag-over feedback.
 - submit button disabled/clear during upload if possible.
 

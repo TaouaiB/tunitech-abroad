@@ -16,11 +16,14 @@ import hashlib
 class TestAutomatedITIngestion(TestCase):
 
     def test_default_config_values(self):
-        # 1. default config has enrichment_enabled=True and enrich_every_fetched_it_job=True.
+        """Test the default config values are properly set."""
         config = JobIngestionConfig.objects.create(name="test_default")
         self.assertEqual(config.limit_per_keyword, 50)
-        self.assertEqual(config.max_total_per_run, 1000)
+        self.assertEqual(config.max_total_per_run, 250)
         self.assertEqual(config.nightly_max_total, 2000)
+        self.assertEqual(config.target_daily_fetch_count, 1000)
+        self.assertEqual(config.max_jobs_per_run, 250)
+        self.assertEqual(config.frequency_minutes, 360)
         self.assertTrue(config.enrichment_enabled)
         self.assertTrue(config.enrich_every_fetched_it_job)
 
@@ -35,7 +38,7 @@ class TestAutomatedITIngestion(TestCase):
             name="test_dedup",
             limit_per_keyword=2,
             max_total_per_run=3,
-            max_pages_per_keyword=1,
+            max_pages_per_query=1,
             enrichment_enabled=False
         )
 

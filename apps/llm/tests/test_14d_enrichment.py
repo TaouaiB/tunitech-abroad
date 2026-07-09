@@ -82,7 +82,7 @@ class EnrichmentTests(TestCase):
         }
         validated_data, errors = validate_enrichment_schema(data, self.job.description)
         self.assertEqual(len(errors), 0)
-        
+
         # Soft skills filtered out
         data = {
             "required_skills": [
@@ -159,7 +159,7 @@ class EnrichmentTests(TestCase):
         )
 
         profile = CandidateProfile.objects.create(user=user, years_experience=2)
-        ProfileSkill.objects.create(profile=profile, raw_name="Python", normalized_name="python")
+        ProfileSkill.objects.create(profile=profile, raw_name="Python", normalized_name="python", skill=python)
 
         NormalizedJobSkill.objects.create(
             job=self.job,
@@ -170,7 +170,7 @@ class EnrichmentTests(TestCase):
         )
 
         res = MatchScoringService.calculate(profile, self.job)
-        
+
         # Python should match from canonical materialized skills, not raw enrichment JSON.
         strong_names = [s["name"] for s in res.strong_skills]
         self.assertIn("Python", strong_names)
@@ -227,6 +227,16 @@ class EnrichmentTests(TestCase):
 
         self.assertEqual(status, JobEnrichment.Status.SKIPPED)
         self.assertEqual(enrichment.status, JobEnrichment.Status.SKIPPED)
+
+    @override_settings(JOB_ENRICHMENT_ENABLED=True, LLM_ENABLED=False)
+    def test_enrich_job_llm_disabled_returns_skipped_not_fake_success(self):
+        enrichment = enrich_job(self.job, force=True)
+
+        self.assertEqual(enrichment.status, JobEnrichment.Status.SKIPPED)
+        self.assertEqual(enrichment.status_reason, "LLM disabled")
+        self.assertEqual(enrichment.validated_output_json, {})
+        self.assertEqual(enrichment.validation_errors_json, [])
+        self.assertEqual(enrichment.total_tokens, 0)
 
     @override_settings(JOB_ENRICHMENT_ENABLED=True)
     @patch('apps.llm.management.commands.enrich_jobs.enrich_job_task.delay')

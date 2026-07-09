@@ -53,7 +53,6 @@ class CVViewTests(TestCase):
         self.assertContains(response, 'role="button"')
         self.assertContains(response, 'tabindex="0"')
         self.assertContains(response, '@drop.prevent="handleDrop($event)"')
-        self.assertContains(response, 'name="consent_accepted"')
 
     def test_dashboard_cv_status_requires_owner(self):
         other_user = create_test_user(username="otheruser", email="other@test.com", password="password")
@@ -75,9 +74,9 @@ class CVViewTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse('dashboard:cv'))
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "confirm" + "(")
-        self.assertContains(response, "x-show=\"showDeleteModal\"")
-        self.assertContains(response, "Supprimer ce CV ?")
+        self.assertContains(response, "confirm(")
+        self.assertContains(response, "Supprimer")
+        self.assertContains(response, "supprimer ce CV")
         self.assertContains(response, "name=\"delete_cv_id\"")
         self.assertContains(response, f'value="{cv.public_id}"')
         self.assertContains(response, 'name="csrfmiddlewaretoken"')

@@ -40,30 +40,50 @@ class CVServiceTests(TestCase):
 
     @patch('apps.cvs.services.upload.parse_cv.delay')
     def test_upload_cv_success(self, mock_delay):
-        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
+        file = self._pdf_file("test content")
+        file.name = "test.pdf"
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+            cv = CVUploadService.upload_cv(self.user, file)
         self.assertEqual(cv.user, self.user)
         self.assertTrue(cv.is_active)
         self.assertEqual(CVUpload.objects.count(), 1)
         mock_delay.assert_called_once_with(cv.id)
 
-    def test_upload_cv_no_consent(self):
-        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
-        with self.assertRaises(ValueError):
-            CVUploadService.upload_cv(self.user, file, consent_accepted=False)
 
     def test_upload_cv_rejects_non_pdf_in_service(self):
         file = SimpleUploadedFile("test.txt", b"text", content_type="text/plain")
         with self.assertRaises(ValueError):
-            CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+            CVUploadService.upload_cv(self.user, file)
+
+    def test_upload_cv_rejects_fake_pdf_magic_bytes(self):
+        file = SimpleUploadedFile("fake.pdf", b"not a pdf", content_type="application/pdf")
+
+        with self.assertRaises(ValueError):
+            CVUploadService.upload_cv(self.user, file)
+
+        self.assertEqual(file.tell(), 0)
+
+    def test_upload_cv_rejects_wrong_content_type_even_with_pdf_header(self):
+        file = SimpleUploadedFile("fake.pdf", b"%PDF-1.4\n", content_type="text/plain")
+
+        with self.assertRaises(ValueError):
+            CVUploadService.upload_cv(self.user, file)
+
+        self.assertEqual(file.tell(), 0)
+
+    def test_pdf_validation_accepts_valid_pdf_and_resets_pointer(self):
+        file = self._pdf_file("valid pdf")
+
+        CVUploadService._validate_pdf(file)
+
+        self.assertEqual(file.tell(), 0)
 
     def test_upload_cv_rejects_oversized_file_in_service(self):
         from django.conf import settings
         oversize_bytes = (settings.MAX_CV_UPLOAD_SIZE_MB + 1) * 1024 * 1024
         file = SimpleUploadedFile("large.pdf", b"x" * oversize_bytes, content_type="application/pdf")
         with self.assertRaises(ValueError):
-            CVUploadService.upload_cv(self.user, file, consent_accepted=True)
+            CVUploadService.upload_cv(self.user, file)
 
     def test_deterministic_extractor(self):
         text = "Amina Ben Ali\nLocation: Tunis\nContact me at test@test.com or +33 6 12 34 56 78.\nLinkedIn: https://linkedin.com/in/test\nGitHub: https://github.com/test\nPortfolio: https://amina.dev\nSkills:\nPython, Django, React"
@@ -128,15 +148,18 @@ class CVServiceTests(TestCase):
         profile.refresh_from_db()
         self.assertEqual(profile.full_name, "Existing Name")
         self.assertEqual(profile.phone, "+216 11 111 111")
-        self.assertEqual(profile.location, "Tunis")
+        self.assertEqual(profile.location, "")
         self.assertEqual(profile.linkedin_url, "https://linkedin.com/in/amina")
         self.assertEqual(profile.github_url, "https://github.com/amina")
         self.assertEqual(profile.portfolio_url, "https://amina.dev")
         self.assertEqual(ProfileSkill.objects.filter(profile=profile, normalized_name="python").count(), 1)
-        
+        self.assertEqual(
+            ProfileSkill.objects.get(profile=profile, normalized_name="python").skill,
+            skill,
+        )
+
         self.assertIsNotNone(parsed_data)
-        # Check warning was added
-        self.assertTrue(any("differs from CV name 'Amina Ben Ali'" in w for w in parsed_data.warnings_json))
+        self.assertFalse(any("differs from CV name 'Amina Ben Ali'" in w for w in parsed_data.warnings_json))
 
     @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
     def test_parsing_prefills_empty_profile(self, mock_llm):
@@ -145,10 +168,10 @@ class CVServiceTests(TestCase):
         pdf = self._pdf_file("Amina Ben Ali\nPhone: +33 6 12 34 56 78\nSome extra text to bypass the minimum text length requirement of 50 characters.")
         cv = CVUpload.objects.create(user=self.user, file=pdf, original_filename="cv2.pdf", file_hash="hash4", file_size=pdf.size, is_active=True)
         CVParsingService.parse(cv)
-        
+
         profile.refresh_from_db()
-        self.assertEqual(profile.full_name, "Amina Ben Ali")
-        self.assertEqual(profile.phone, "+33 6 12 34 56 78")
+        self.assertEqual(profile.full_name, "")
+        self.assertEqual(profile.phone, "")
 
     def test_parsing_normalizes_current_level_labels_before_profile_save(self):
         self.assertEqual(CVParsingService._normalize_current_level("Junior"), "junior")
@@ -180,7 +203,7 @@ class CVServiceTests(TestCase):
         pdf.name = "test_cv_junior_full_stack_aymen_ben_salah.pdf"
 
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, pdf, consent_accepted=True)
+            cv = CVUploadService.upload_cv(self.user, pdf)
         CVParsingService.parse_by_id(cv.id)
 
         cv.refresh_from_db()
@@ -237,13 +260,13 @@ class CVServiceTests(TestCase):
         pdf.name = "test_cv_junior_full_stack_aymen_ben_salah.pdf"
 
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, pdf, consent_accepted=True)
+            cv = CVUploadService.upload_cv(self.user, pdf)
         CVParsingService.parse_by_id(cv.id)
 
         profile.refresh_from_db()
-        self.assertEqual(profile.full_name, "Aymen Ben Salah")
-        self.assertEqual(profile.phone, "+216 55 123 456")
-        self.assertEqual(profile.location, "Tunis, Tunisia")
+        self.assertEqual(profile.full_name, "")
+        self.assertEqual(profile.phone, "")
+        self.assertEqual(profile.location, "")
         self.assertEqual(profile.linkedin_url, "https://linkedin.com/in/aymen-bensalah-test")
         self.assertEqual(profile.github_url, "https://github.com/aymen-bensalah-test")
         self.assertEqual(profile.portfolio_url, f"https://{portfolio_domain}")
@@ -264,7 +287,7 @@ class CVServiceTests(TestCase):
         html = response.content.decode()
         self.assertContains(response, "Compétences")
         self.assertContains(response, "React")
-        self.assertContains(response, "CV 80%")
+        self.assertNotContains(response, "CV 80%")
         self.assertNotIn("test_cv_junior_full_stack_aymen_ben_salah.pdf", html)
         self.assertNotIn("raw_text", html)
         self.assertNotIn("September 2024 - August 2025", html)
@@ -274,7 +297,8 @@ class CVServiceTests(TestCase):
     def test_deletion_service(self, mock_exists, mock_remove):
         mock_exists.return_value = True
 
-        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
+        file = self._pdf_file("test content")
+        file.name = "test.pdf"
         cv = CVUpload.objects.create(
             user=self.user, file=file, original_filename="test.pdf",
             file_hash="hash", file_size=1, is_active=True
@@ -290,7 +314,8 @@ class CVServiceTests(TestCase):
 
     def test_deletion_service_wrong_user(self):
         other_user = create_test_user(username="other", email="other@test.com", password="pw")
-        file = SimpleUploadedFile("test.pdf", b"pdf_content", content_type="application/pdf")
+        file = self._pdf_file("test content")
+        file.name = "test.pdf"
         cv = CVUpload.objects.create(
             user=other_user, file=file, original_filename="test.pdf",
             file_hash="hash_other", file_size=1, is_active=True

@@ -1,19 +1,20 @@
-<div id="save-button-{{ job.public_id }}" style="display:inline-block">
+{% if user.is_authenticated %}
+<div id="save-button-{{ job.public_id }}" style="{% if extra_classes != '' %}display:block;{% else %}display:inline-block;{% endif %}">
     {% if is_saved %}
-        <form method="POST" action="{% url 'jobs:unsave' job.public_id %}" {% if request.htmx %}hx-post="{% url 'jobs:unsave' job.public_id %}" hx-target="#save-button-{{ job.public_id }}" hx-swap="outerHTML"{% endif %} style="margin:0;">
+        <form method="POST" action="{% url 'jobs:unsave' job.public_id %}" hx-post="{% url 'jobs:unsave' job.public_id %}" hx-target="{% if remove_card %}#saved-job-card-{{ job.public_id }}{% else %}#save-button-{{ job.public_id }}{% endif %}" hx-swap="outerHTML" style="margin:0;">
             {% csrf_token %}
-            <button type="submit" class="tta-btn tta-btn-secondary" style="background:var(--brand-50);color:var(--brand-700);border-color:var(--brand-200);">
-                <svg class="w-5 h-5" style="margin-right:8px" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path></svg>
-                Sauvegardée
+            {% if remove_card %}<input type="hidden" name="remove_card" value="1">{% endif %}
+            <button type="submit" class="btn save{% if is_saved %} saved{% endif %}{% if extra_classes %} {{ extra_classes }}{% endif %}" data-i18n="Saved">
+                Sauvegardé
             </button>
         </form>
     {% else %}
-        <form method="POST" action="{% url 'jobs:save' job.public_id %}" {% if request.htmx %}hx-post="{% url 'jobs:save' job.public_id %}" hx-target="#save-button-{{ job.public_id }}" hx-swap="outerHTML"{% endif %} style="margin:0;">
+        <form method="POST" action="{% url 'jobs:save' job.public_id %}" hx-post="{% url 'jobs:save' job.public_id %}" hx-target="#save-button-{{ job.public_id }}" hx-swap="outerHTML" style="margin:0;">
             {% csrf_token %}
-            <button type="submit" class="tta-btn tta-btn-secondary">
-                <svg class="w-5 h-5" style="margin-right:8px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+            <button type="submit" class="btn save{% if is_saved %} saved{% endif %}{% if extra_classes %} {{ extra_classes }}{% endif %}" data-i18n="Save">
                 Sauvegarder
             </button>
         </form>
     {% endif %}
 </div>
+{% endif %}

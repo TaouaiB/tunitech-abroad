@@ -1,0 +1,79 @@
+- generic [active] [ref=f55e1]:
+  - banner [ref=f55e2]:
+    - generic [ref=f55e3]:
+      - link "T TuniAtlas" [ref=f55e4] [cursor=pointer]:
+        - /url: /jobs/
+        - generic [ref=f55e5]: T
+        - generic [ref=f55e6]: TuniAtlas
+      - navigation [ref=f55e7]:
+        - link "Offres" [ref=f55e8] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f55e9] [cursor=pointer]:
+          - /url: /accounts/login/?next=/dashboard/recommendations/
+        - link "À propos" [ref=f55e10] [cursor=pointer]:
+          - /url: /about/
+        - link "Connexion" [ref=f55e11] [cursor=pointer]:
+          - /url: /accounts/login/
+      - generic [ref=f55e12]:
+        - button "Switch theme" [ref=f55e13] [cursor=pointer]:
+          - img [ref=f55e14]
+          - img [ref=f55e18]
+        - button "Switch language" [ref=f55e20] [cursor=pointer]:
+          - generic [ref=f55e21]: EN
+          - generic [ref=f55e23]: FR
+        - button "Menu" [ref=f55e24] [cursor=pointer]:
+          - img [ref=f55e25]
+  - main [ref=f55e27]:
+    - main [ref=f55e28]:
+      - generic [ref=f55e30]:
+        - generic [ref=f55e31]:
+          - heading "Connexion" [level=1] [ref=f55e32]
+          - generic [ref=f55e33]:
+            - button "Continuer avec Google" [ref=f55e35] [cursor=pointer]:
+              - img [ref=f55e36]
+              - generic [ref=f55e41]: Continuer avec Google
+            - button "Continuer avec GitHub" [ref=f55e43] [cursor=pointer]:
+              - img [ref=f55e44]
+              - generic [ref=f55e46]: Continuer avec GitHub
+          - generic [ref=f55e47]:
+            - generic [ref=f55e48]:
+              - generic [ref=f55e49]: Email
+              - textbox "you@email.com" [ref=f55e50]
+            - generic [ref=f55e51]:
+              - generic [ref=f55e52]: Mot de passe
+              - textbox "6+ caractères" [ref=f55e53]
+            - button "Connexion" [ref=f55e54] [cursor=pointer]
+            - link "Mot de passe oublié ?" [ref=f55e56] [cursor=pointer]:
+              - /url: /accounts/password/reset/
+        - generic [ref=f55e57]:
+          - heading "Créer un compte" [level=2] [ref=f55e58]
+          - generic [ref=f55e59]:
+            - generic [ref=f55e60]:
+              - generic [ref=f55e61]:
+                - generic [ref=f55e62]: Prénom
+                - textbox "Baha" [ref=f55e63]
+              - generic [ref=f55e64]:
+                - generic [ref=f55e65]: Nom
+                - textbox "Taouai" [ref=f55e66]
+            - generic [ref=f55e67]:
+              - generic [ref=f55e68]: Email
+              - textbox "you@email.com" [ref=f55e69]
+            - generic [ref=f55e70]:
+              - generic [ref=f55e71]: Mot de passe
+              - textbox "6+ caractères" [ref=f55e72]
+            - generic [ref=f55e73]:
+              - generic [ref=f55e74]: Confirmer le mot de passe
+              - textbox "Répéter le mot de passe" [ref=f55e75]
+            - button "Créer un compte" [ref=f55e76] [cursor=pointer]
+  - contentinfo [ref=f55e77]:
+    - generic [ref=f55e78]:
+      - generic [ref=f55e79]:
+        - text: TuniAtlas
+        - generic [ref=f55e80]: Tech jobs abroad for Tunisian talent.
+      - generic [ref=f55e81]:
+        - link "Offres" [ref=f55e82] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f55e83] [cursor=pointer]:
+          - /url: /accounts/login/?next=/dashboard/recommendations/
+        - link "À propos" [ref=f55e84] [cursor=pointer]:
+          - /url: /about/

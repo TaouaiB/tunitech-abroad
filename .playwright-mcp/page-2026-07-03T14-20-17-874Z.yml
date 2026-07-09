@@ -1,0 +1,229 @@
+- generic [active] [ref=f48e1]:
+  - banner [ref=f48e2]:
+    - generic [ref=f48e3]:
+      - link "T TuniAtlas" [ref=f48e4] [cursor=pointer]:
+        - /url: /jobs/
+        - generic [ref=f48e5]: T
+        - generic [ref=f48e6]: TuniAtlas
+      - navigation [ref=f48e7]:
+        - link "Offres" [ref=f48e8] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f48e9] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f48e10] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f48e11] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f48e12] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f48e13] [cursor=pointer]:
+          - /url: /about/
+      - generic [ref=f48e14]:
+        - button "Switch theme" [ref=f48e15] [cursor=pointer]:
+          - img [ref=f48e16]
+          - img [ref=f48e20]
+        - button "Switch language" [ref=f48e22] [cursor=pointer]:
+          - generic [ref=f48e23]: EN
+          - generic [ref=f48e25]: FR
+        - button "T" [ref=f48e27] [cursor=pointer]
+        - button "Menu" [ref=f48e28] [cursor=pointer]:
+          - img [ref=f48e29]
+  - main [ref=f48e31]:
+    - generic [ref=f48e33]:
+      - generic [ref=f48e34]:
+        - text: Objectif International · Profils IT tunisiens
+        - heading "Trouvez des offres IT adaptées à votre profil" [level=1] [ref=f48e35]
+        - paragraph [ref=f48e36]: TuniAtlas aide les talents IT tunisiens à trouver des offres IT ciblées, comprendre leur compatibilité et identifier les compétences à renforcer.
+        - generic [ref=f48e37]:
+          - generic [ref=f48e38]:
+            - generic [ref=f48e39]: Mot-clé
+            - textbox "Mot-clé" [ref=f48e40]:
+              - /placeholder: Python, data, frontend...
+          - generic [ref=f48e41]:
+            - generic [ref=f48e42]: Lieu
+            - textbox "Lieu" [ref=f48e43]:
+              - /placeholder: Paris, Lyon...
+          - button "Rechercher" [ref=f48e44] [cursor=pointer]
+        - generic [ref=f48e45]:
+          - generic [ref=f48e46]: Stage PFE
+          - generic [ref=f48e47]: Alternance
+          - generic [ref=f48e48]: Junior
+          - generic [ref=f48e49]: Django
+          - generic [ref=f48e50]: Data
+          - generic [ref=f48e51]: Remote
+        - generic [ref=f48e52]:
+          - link "Explorer les offres" [ref=f48e53] [cursor=pointer]:
+            - /url: /jobs/
+          - link "Analyser mon CV" [ref=f48e54] [cursor=pointer]:
+            - /url: /accounts/signup/
+        - paragraph [ref=f48e55]: CV privé • Analyse de compatibilité • Offres IT
+      - generic [ref=f48e56]:
+        - generic [ref=f48e58]:
+          - text: Aperçu intelligent
+          - heading "Ce que tu vois avant de postuler" [level=2] [ref=f48e59]
+        - generic [ref=f48e60]:
+          - generic [ref=f48e61]:
+            - strong [ref=f48e62]: 82% · Très bon match
+            - text: Django, PostgreSQL et REST alignés.
+          - generic [ref=f48e63]:
+            - strong [ref=f48e64]: Compétences requises manquantes
+            - text: Docker, tests automatisés.
+          - generic [ref=f48e65]:
+            - strong [ref=f48e66]: Action recommandée
+            - text: Renforcer le profil GitHub et confirmer le niveau français.
+    - region "Offres récentes" [ref=f48e67]:
+      - generic [ref=f48e68]:
+        - generic [ref=f48e69]:
+          - generic [ref=f48e70]:
+            - heading "Offres récentes" [level=2] [ref=f48e71]
+            - paragraph [ref=f48e72]: Parcourez les offres IT actualisées.
+          - link "Toutes les offres" [ref=f48e73] [cursor=pointer]:
+            - /url: /jobs/
+        - generic [ref=f48e75]:
+          - article [ref=f48e76]:
+            - generic [ref=f48e77]:
+              - generic [ref=f48e78]:
+                - generic [ref=f48e79]: CDI
+                - generic [ref=f48e80]: Apprenticeship
+                - generic [ref=f48e81]: Internship
+                - generic [ref=f48e82]: 03 Jul
+              - heading "Développeur web Full Stack H/F" [level=3] [ref=f48e83]:
+                - link "Développeur web Full Stack H/F" [ref=f48e84] [cursor=pointer]:
+                  - /url: /jobs/db50eb5c-5c55-475f-ad76-94d3b4892358/
+              - generic [ref=f48e85]:
+                - generic [ref=f48e86]: P.B.O.
+                - generic [ref=f48e87]: ·
+                - generic [ref=f48e88]: 86 - CHASSENEUIL DU POITOU
+                - generic [ref=f48e89]: ·
+                - generic [ref=f48e90]: France Travail
+              - paragraph [ref=f48e91]: "Vos principales missions sont : Développer de nouvelles applications web avec des technologies récentes Concevoir et développer de nouvelles fonctionnalités côté front-end et back-end Maintenir, faire évoluer et …"
+              - generic [ref=f48e92]:
+                - generic [ref=f48e93]: JavaScript
+                - generic [ref=f48e94]: PHP
+                - generic [ref=f48e95]: React
+                - generic [ref=f48e96]: HTML5
+                - generic [ref=f48e97]: CSS3
+            - button "Sauvegarder" [ref=f48e101] [cursor=pointer]
+          - article [ref=f48e102]:
+            - generic [ref=f48e103]:
+              - generic [ref=f48e104]:
+                - generic [ref=f48e105]: CDI
+                - generic [ref=f48e106]: Full-time Job
+                - generic [ref=f48e107]: Senior
+                - generic [ref=f48e108]: 03 Jul
+              - heading "Développeur informatique (F/H)" [level=3] [ref=f48e109]:
+                - link "Développeur informatique (F/H)" [ref=f48e110] [cursor=pointer]:
+                  - /url: /jobs/892ffe28-2e48-4f2a-abe7-44347b1e8f03/
+              - generic [ref=f48e111]:
+                - generic [ref=f48e112]: JBM BUREAU MEDICAL RANDSTAD PROFESSIONAL
+                - generic [ref=f48e113]: ·
+                - generic [ref=f48e114]: 13 - Rousset
+                - generic [ref=f48e115]: ·
+                - generic [ref=f48e116]: France Travail
+              - paragraph [ref=f48e117]: Nous recherchons un(e) Ingénieur(e) en informatique industrielle pour rejoindre notre équipe au sein du bureau d'étude Software. Vous serez en charge de développer, améliorer et maintenir les logiciels. …
+              - generic [ref=f48e119]: Teamwork
+            - button "Sauvegarder" [ref=f48e123] [cursor=pointer]
+          - article [ref=f48e124]:
+            - generic [ref=f48e125]:
+              - generic [ref=f48e126]:
+                - generic [ref=f48e127]: CDD
+                - generic [ref=f48e128]: Contrat
+                - generic [ref=f48e129]: Junior
+                - generic [ref=f48e130]: 03 Jul
+              - heading "Ingénieur en développement logiciel (H/F)" [level=3] [ref=f48e131]:
+                - link "Ingénieur en développement logiciel (H/F)" [ref=f48e132] [cursor=pointer]:
+                  - /url: /jobs/80dfb749-700a-446e-8ea5-69102b285ae4/
+              - generic [ref=f48e133]:
+                - generic [ref=f48e134]: UNIVERSITE GRENOBLE ALPES
+                - generic [ref=f48e135]: ·
+                - generic [ref=f48e136]: 38 - ST MARTIN D HERES
+                - generic [ref=f48e137]: ·
+                - generic [ref=f48e138]: France Travail
+              - paragraph [ref=f48e139]: "Présentation de la structure : Dans un contexte de modernisation des systèmes d'information, d'innovation et de transformation numérique, l'unité de service Direction du Numérique, DNUM, de l'UGA a …"
+              - generic [ref=f48e140]:
+                - generic [ref=f48e141]: Python
+                - generic [ref=f48e142]: JavaScript
+                - generic [ref=f48e143]: Java
+                - generic [ref=f48e144]: PHP
+                - generic [ref=f48e145]: React
+            - button "Sauvegarder" [ref=f48e149] [cursor=pointer]
+    - generic [ref=f48e151]:
+      - generic [ref=f48e153]:
+        - heading "Comment ça marche" [level=2] [ref=f48e154]
+        - paragraph [ref=f48e155]: Une expérience jobs-first, sans bloquer l’utilisateur anonyme.
+      - generic [ref=f48e156]:
+        - generic [ref=f48e157]:
+          - text: "1"
+          - heading "Explore les offres" [level=3] [ref=f48e158]
+          - paragraph [ref=f48e159]: Recherche locale PostgreSQL sur les offres normalisées.
+        - generic [ref=f48e160]:
+          - text: "2"
+          - heading "Teste ton match" [level=3] [ref=f48e161]
+          - paragraph [ref=f48e162]: Test rapide anonyme, puis analyse complète après connexion.
+        - generic [ref=f48e163]:
+          - text: "3"
+          - heading "Renforce ton profil" [level=3] [ref=f48e164]
+          - paragraph [ref=f48e165]: Compétences manquantes, recommandations et actions concrètes.
+    - region "Pensé pour les parcours IT tunisiens" [ref=f48e166]:
+      - generic [ref=f48e167]:
+        - generic [ref=f48e169]:
+          - heading "Pensé pour les parcours IT tunisiens" [level=2] [ref=f48e170]
+          - paragraph [ref=f48e171]: Un front door clair pour chercher des offres, puis enrichir son profil après connexion.
+        - generic [ref=f48e172]:
+          - generic [ref=f48e173]:
+            - text: Étudiants
+            - heading "Stage PFE et alternance" [level=3] [ref=f48e174]
+            - paragraph [ref=f48e175]: Repérez les offres adaptées aux premiers pas professionnels.
+          - generic [ref=f48e176]:
+            - text: Juniors
+            - heading "Premiers postes IT" [level=3] [ref=f48e177]
+            - paragraph [ref=f48e178]: Comparez les attentes techniques avant de postuler.
+          - generic [ref=f48e179]:
+            - text: Développeurs
+            - heading "Progression ciblée" [level=3] [ref=f48e180]
+            - paragraph [ref=f48e181]: Identifiez les compétences requises à renforcer pour vos rôles cibles.
+    - region "Du CV aux recommandations" [ref=f48e182]:
+      - generic [ref=f48e184]:
+        - generic [ref=f48e186]:
+          - text: Intelligence profil
+          - heading "Du CV aux recommandations" [level=2] [ref=f48e187]
+        - generic [ref=f48e188]:
+          - generic [ref=f48e189]:
+            - heading "CV privé" [level=3] [ref=f48e190]
+            - paragraph [ref=f48e191]: Le CV sert à extraire vos compétences et reste hors des pages publiques.
+          - generic [ref=f48e192]:
+            - heading "Compatibilité explicable" [level=3] [ref=f48e193]
+            - paragraph [ref=f48e194]: Le score final n’est pas décidé par un LLM et reste lié aux signaux métier.
+          - generic [ref=f48e195]:
+            - heading "Actions concrètes" [level=3] [ref=f48e196]
+            - paragraph [ref=f48e197]: Les écarts de compétences deviennent des pistes de progression lisibles.
+    - region "Continuez depuis votre espace candidat" [ref=f48e198]:
+      - generic [ref=f48e200]:
+        - generic [ref=f48e201]:
+          - heading "Continuez depuis votre espace candidat" [level=2] [ref=f48e202]
+          - paragraph [ref=f48e203]: Retrouvez votre tableau de bord, vos recommandations et votre CV.
+        - generic [ref=f48e204]:
+          - link "Aller au tableau de bord" [ref=f48e205] [cursor=pointer]:
+            - /url: /dashboard/
+          - link "Voir mes recommandations" [ref=f48e206] [cursor=pointer]:
+            - /url: /dashboard/recommendations/
+          - link "Gérer mon CV" [ref=f48e207] [cursor=pointer]:
+            - /url: /dashboard/cv/
+  - contentinfo [ref=f48e208]:
+    - generic [ref=f48e209]:
+      - generic [ref=f48e210]:
+        - text: TuniAtlas
+        - generic [ref=f48e211]: Tech jobs abroad for Tunisian talent.
+      - generic [ref=f48e212]:
+        - link "Offres" [ref=f48e213] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f48e214] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f48e215] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f48e216] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f48e217] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f48e218] [cursor=pointer]:
+          - /url: /about/

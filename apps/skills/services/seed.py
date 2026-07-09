@@ -11,6 +11,11 @@ class SkillSeedItem(TypedDict):
     aliases: List[str]
 
 class SkillSeedService:
+    CANONICAL_OVERRIDES = {
+        ".NET Core": ".NET",
+        "ASP.NET": "ASP.NET Core",
+    }
+
     @classmethod
     def seed_initial_taxonomy(cls) -> dict:
         """
@@ -23,9 +28,9 @@ class SkillSeedService:
             {"canonical": "JavaScript", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["JavaScript", "JS", "ECMAScript", "ES6"]},
             {"canonical": "TypeScript", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["TypeScript", "TS"]},
             {"canonical": "Java", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["Java", "Java 8", "Java 11", "Java 17", "Java 21", "Core Java", "J2EE"]},
-            {"canonical": "C#", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["C#", "C Sharp", "CSharp", ".NET C#"]},
+            {"canonical": "C#", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["C#", "C Sharp", "CSharp", "C-Sharp", ".NET C#"]},
             {"canonical": "C++", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["C++", "CPP", "C Plus Plus", "cxx"]},
-            {"canonical": "C", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["C", "C Language"]},
+            {"canonical": "C", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["C", "C Language", "Langage C"]},
             {"canonical": "Go", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["Go", "Golang"]},
             {"canonical": "Rust", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["Rust", "Rustlang"]},
             {"canonical": "PHP", "category": SkillCategory.PROGRAMMING_LANGUAGE.value, "aliases": ["PHP", "PHP 7", "PHP 8"]},
@@ -66,8 +71,9 @@ class SkillSeedService:
             {"canonical": "Flask", "category": SkillCategory.BACKEND.value, "aliases": ["Flask"]},
             {"canonical": "FastAPI", "category": SkillCategory.BACKEND.value, "aliases": ["FastAPI"]},
             {"canonical": "Spring Boot", "category": SkillCategory.BACKEND.value, "aliases": ["Spring Boot", "Spring", "SpringBoot", "Spring Framework"]},
-            {"canonical": ".NET Core", "category": SkillCategory.BACKEND.value, "aliases": [".NET Core", ".NET", "DotNet", "Dot Net", "ASP.NET Core"]},
-            {"canonical": "ASP.NET", "category": SkillCategory.BACKEND.value, "aliases": ["ASP.NET"]},
+            {"canonical": ".NET", "category": SkillCategory.BACKEND.value, "aliases": [".NET", "dotnet", "dot net", ".NET Core", "dotnet core"]},
+            {"canonical": "ASP.NET Core", "category": SkillCategory.BACKEND.value, "aliases": ["ASP.NET Core", "asp net core", "aspnet core", "ASP.NET"]},
+            {"canonical": "Entity Framework Core", "category": SkillCategory.BACKEND.value, "aliases": ["Entity Framework Core", "EF Core", "entityframeworkcore"]},
             {"canonical": "Laravel", "category": SkillCategory.BACKEND.value, "aliases": ["Laravel"]},
             {"canonical": "Symfony", "category": SkillCategory.BACKEND.value, "aliases": ["Symfony"]},
             {"canonical": "Ruby on Rails", "category": SkillCategory.BACKEND.value, "aliases": ["Ruby on Rails", "Rails", "RoR"]},
@@ -77,7 +83,7 @@ class SkillSeedService:
             {"canonical": "Microservices", "category": SkillCategory.BACKEND.value, "aliases": ["Microservices", "Microservices Architecture"]},
 
             # Database
-            {"canonical": "PostgreSQL", "category": SkillCategory.DATABASE.value, "aliases": ["PostgreSQL", "Postgres", "psql", "Postgres DB"]},
+            {"canonical": "PostgreSQL", "category": SkillCategory.DATABASE.value, "aliases": ["PostgreSQL", "Postgres", "Postgre SQL", "pgsql", "psql", "Postgres DB"]},
             {"canonical": "MySQL", "category": SkillCategory.DATABASE.value, "aliases": ["MySQL", "My SQL"]},
             {"canonical": "MariaDB", "category": SkillCategory.DATABASE.value, "aliases": ["MariaDB"]},
             {"canonical": "SQLite", "category": SkillCategory.DATABASE.value, "aliases": ["SQLite"]},
@@ -93,12 +99,12 @@ class SkillSeedService:
             {"canonical": "SQL", "category": SkillCategory.DATABASE.value, "aliases": ["SQL"]},
 
             # DevOps / Cloud
-            {"canonical": "Docker Compose", "category": SkillCategory.DEVOPS.value, "aliases": ["Docker Compose", "docker-compose"]},
+            {"canonical": "Docker Compose", "category": SkillCategory.DEVOPS.value, "aliases": ["Docker Compose", "docker-compose", "Compose"]},
             {"canonical": "Docker", "category": SkillCategory.DEVOPS.value, "aliases": ["Docker", "Docker Container"]},
             {"canonical": "Kubernetes", "category": SkillCategory.DEVOPS.value, "aliases": ["Kubernetes", "K8s", "Kube"]},
             {"canonical": "Jenkins", "category": SkillCategory.DEVOPS.value, "aliases": ["Jenkins"]},
-            {"canonical": "GitLab CI/CD", "category": SkillCategory.DEVOPS.value, "aliases": ["GitLab CI/CD", "GitLab CI"]},
-            {"canonical": "GitHub Actions", "category": SkillCategory.DEVOPS.value, "aliases": ["GitHub Actions"]},
+            {"canonical": "GitLab CI/CD", "category": SkillCategory.DEVOPS.value, "aliases": ["GitLab CI/CD", "GitLab CI", "GitLab Pipelines"]},
+            {"canonical": "GitHub Actions", "category": SkillCategory.DEVOPS.value, "aliases": ["GitHub Actions", "GH Actions"]},
             {"canonical": "Terraform", "category": SkillCategory.DEVOPS.value, "aliases": ["Terraform"]},
             {"canonical": "Ansible", "category": SkillCategory.DEVOPS.value, "aliases": ["Ansible"]},
             {"canonical": "AWS", "category": SkillCategory.CLOUD.value, "aliases": ["AWS", "Amazon Web Services", "Amazon AWS"]},
@@ -112,7 +118,7 @@ class SkillSeedService:
             {"canonical": "Prometheus", "category": SkillCategory.DEVOPS.value, "aliases": ["Prometheus"]},
             {"canonical": "Grafana", "category": SkillCategory.DEVOPS.value, "aliases": ["Grafana"]},
             {"canonical": "Datadog", "category": SkillCategory.DEVOPS.value, "aliases": ["Datadog"]},
-            {"canonical": "CI/CD", "category": SkillCategory.DEVOPS.value, "aliases": ["CI/CD", "Continuous Integration", "Continuous Deployment", "CI CD"]},
+            {"canonical": "CI/CD", "category": SkillCategory.DEVOPS.value, "aliases": ["CI/CD", "CICD", "Continuous Integration", "Continuous Delivery", "Continuous Deployment", "CI CD"]},
 
             # Mobile
             {"canonical": "React Native", "category": SkillCategory.MOBILE.value, "aliases": ["React Native", "RN"]},
@@ -209,7 +215,7 @@ class SkillSeedService:
             ("Prisma", SkillCategory.BACKEND.value, ["Prisma"]),
             ("Mongoose", SkillCategory.BACKEND.value, ["Mongoose"]),
             ("Hibernate", SkillCategory.BACKEND.value, ["Hibernate"]),
-            ("Entity Framework", SkillCategory.BACKEND.value, ["Entity Framework", "EF", "EF Core"]),
+            ("Entity Framework", SkillCategory.BACKEND.value, ["Entity Framework", "EF"]),
             ("JPA", SkillCategory.BACKEND.value, ["JPA"]),
             ("Django ORM", SkillCategory.BACKEND.value, ["Django ORM"]),
             ("SQLAlchemy", SkillCategory.BACKEND.value, ["SQLAlchemy"]),
@@ -532,10 +538,12 @@ class SkillSeedService:
         ]
 
         for name, category, aliases in extra_skills:
+            name = cls.CANONICAL_OVERRIDES.get(name, name)
             seed_data.append(SkillSeedItem(canonical=name, category=category, aliases=aliases))
 
         phase_15b_grouped = {}
         for canonical, alias, cat in phase_15b_aliases:
+            canonical = cls.CANONICAL_OVERRIDES.get(canonical, canonical)
             if canonical not in phase_15b_grouped:
                 phase_15b_grouped[canonical] = {"category": cat, "aliases": set()}
             phase_15b_grouped[canonical]["aliases"].add(alias)
@@ -549,7 +557,10 @@ class SkillSeedService:
 
         phase_15d_grouped = {}
         for decision in approved_taxonomy_decisions():
-            canonical = decision.target_canonical_skill
+            canonical = cls.CANONICAL_OVERRIDES.get(
+                decision.target_canonical_skill,
+                decision.target_canonical_skill,
+            )
             category = decision.target_category or SkillCategory.OTHER.value
             if canonical not in phase_15d_grouped:
                 phase_15d_grouped[canonical] = {"category": category, "aliases": set()}
@@ -566,7 +577,30 @@ class SkillSeedService:
         aliases_created = 0
         alias_conflicts = []
 
+        authoritative_aliases = {
+            normalize_skill_text(alias)
+            for alias in [
+                ".NET", "dotnet", "dot net", ".NET Core", "dotnet core",
+                ".Net Core 3.1",
+                "ASP.NET Core", "asp net core", "aspnet core", "ASP.NET",
+                "Entity Framework Core", "EF Core", "entityframeworkcore",
+                "C#", "C Sharp", "CSharp", "C-Sharp",
+                "Node.js", "Node", "NodeJS", "Node JS",
+                "React", "ReactJS", "React.js",
+                "PostgreSQL", "Postgres", "Postgre SQL", "pgsql",
+                "JavaScript", "JS",
+                "TypeScript", "TS",
+                "C++", "CPP", "C Plus Plus",
+                "CI/CD", "CICD",
+                "Docker Compose", "docker-compose", "Compose",
+                "GitHub Actions", "GH Actions",
+            ]
+        }
+
         with transaction.atomic():
+            cls._rename_legacy_canonical_skill(".NET Core", ".NET")
+            cls._rename_legacy_canonical_skill("ASP.NET", "ASP.NET Core")
+
             for item in seed_data:
                 canonical: str = item["canonical"]
                 safe_canonical: str = canonical.replace('#', 'sharp').replace('+', 'plus').replace('.', 'dot')
@@ -592,6 +626,11 @@ class SkillSeedService:
                         alias_obj = SkillAlias.objects.filter(normalized_alias=normalized).first()
                         if alias_obj:
                             if alias_obj.skill_id != skill.id:
+                                if normalized in authoritative_aliases:
+                                    alias_obj.skill = skill
+                                    alias_obj.alias = alias_text
+                                    alias_obj.save(update_fields=["skill", "alias", "updated_at"])
+                                    continue
                                 conflict = {
                                     "alias": alias_text,
                                     "normalized_alias": normalized,
@@ -618,3 +657,30 @@ class SkillSeedService:
             "aliases_created": aliases_created,
             "alias_conflicts": alias_conflicts,
         }
+
+    @staticmethod
+    def _slug_for_canonical(canonical: str) -> str:
+        safe_canonical = canonical.replace('#', 'sharp').replace('+', 'plus').replace('.', 'dot')
+        return slugify(safe_canonical) or normalize_skill_text(canonical).replace(' ', '-')
+
+    @classmethod
+    def _rename_legacy_canonical_skill(cls, old_name: str, new_name: str) -> None:
+        old_skill = Skill.objects.filter(canonical_name=old_name).first()
+        if not old_skill:
+            return
+
+        new_slug = cls._slug_for_canonical(new_name)
+        new_skill = Skill.objects.filter(canonical_name=new_name).first()
+        if not new_skill:
+            old_skill.canonical_name = new_name
+            old_skill.slug = new_slug
+            old_skill.source = old_skill.source or "seed"
+            old_skill.save(update_fields=["canonical_name", "slug", "source", "updated_at"])
+            return
+
+        for alias in old_skill.aliases.all():
+            if not SkillAlias.objects.filter(normalized_alias=alias.normalized_alias).exclude(pk=alias.pk).exists():
+                alias.skill = new_skill
+                alias.save(update_fields=["skill", "updated_at"])
+        old_skill.is_active = False
+        old_skill.save(update_fields=["is_active", "updated_at"])

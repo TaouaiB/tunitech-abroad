@@ -1,0 +1,17 @@
+{% extends "email/base_user_email.html" %}
+{% load account %}
+
+{% block content %}
+<p style="margin-top: 0;">Hello,</p>
+<p>You are receiving this email because someone tried to access a TuniAtlas account with the email <strong>{{ email }}</strong>. However, we do not have any record of such an account in our database.</p>
+<p>If this was you, you can sign up for an account by clicking the button below.</p>
+
+{% include "email/_button.html" with url=signup_url text="Sign up for TuniAtlas" %}
+
+<p style="font-size: 14px; color: #b8c4d6; word-break: break-all;">
+  If the button doesn't work, copy and paste this link into your browser:<br>
+  <a href="{{ signup_url }}" style="color: #60a5fa;">{{ signup_url }}</a>
+</p>
+
+<p style="margin-bottom: 0;">If you did not initiate this action, you can safely ignore this email.</p>
+{% endblock %}

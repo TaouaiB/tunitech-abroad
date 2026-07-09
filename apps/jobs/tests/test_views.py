@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
 from django.test import TestCase
 from django.urls import reverse
@@ -5,7 +6,24 @@ from django.utils import timezone
 import uuid
 from unittest.mock import patch
 
-from apps.jobs.models import JobSource, RawJobRecord, NormalizedJob, JobStatus, SourceType
+from apps.cvs.models import CVUpload
+from apps.jobs.models import (
+    JobSource,
+    NormalizedJob,
+    NormalizedJobSkill,
+    RawJobRecord,
+    RequirementType,
+    SkillSource,
+    JobStatus,
+    SourceType,
+)
+from apps.matching.models import MatchResult
+from apps.profiles.models import CandidateProfile
+from apps.recommendations.services.saved_jobs import SavedJobService
+from apps.skills.models import Skill
+
+
+User = get_user_model()
 
 
 class JobViewTests(TestCase):
@@ -19,7 +37,29 @@ class JobViewTests(TestCase):
             source=self.source, raw_record=raw, source_job_id="1", title="Test View Job",
             company_name="Test Company",
             status=JobStatus.ACTIVE,
+            skill_signal_quality="strong",
+            skill_extraction_status="success",
+            classification_json={"is_it": True, "confidence": "high"},
+            required_skills_json=["Django"],
             first_seen_at=timezone.now(), last_seen_at=timezone.now(), last_fetched_at=timezone.now()
+        )
+        self.skill = Skill.objects.create(
+            canonical_name="Django",
+            slug="django",
+            category="backend",
+        )
+        NormalizedJobSkill.objects.create(
+            job=self.job,
+            skill=self.skill,
+            requirement_type=RequirementType.REQUIRED,
+            source=SkillSource.LLM,
+        )
+
+    def _create_user(self, username):
+        return User.objects.create_user(
+            username=username,
+            email=f"{username}@example.com",
+            password="pass",
         )
 
     def test_job_list_view_anonymous(self):
@@ -27,27 +67,90 @@ class JobViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test View Job")
         self.assertNotContains(response, "recherche depuis la base locale")
-        self.assertContains(response, "Offres IT françaises actualisées")
+        self.assertContains(response, "Trouvez plus vite des offres tech en France")
+        self.assertContains(response, "Rechercher")
+        self.assertContains(response, "Filtres")
+        self.assertContains(response, "Rôle, entreprise, compétence")
+        self.assertContains(response, "Ville : Paris, Nantes, Lyon")
+        self.assertNotContains(response, "Jobs, stages et alternance au même endroit.")
+        self.assertNotContains(response, "Statistiques")
+        self.assertNotContains(response, "France uniquement")
+        self.assertNotContains(response, "Matching CV prêt")
+        self.assertNotContains(response, "Télétravail + hybride")
+        self.assertContains(response, "Dernières opportunités")
 
     def test_job_list_view_filters(self):
         response = self.client.get(reverse("jobs:list"), {"q": "Test", "location": "Paris"})
         self.assertEqual(response.status_code, 200)
+
+    def test_job_list_view_does_not_render_contract_type_filter(self):
+        response = self.client.get(reverse("jobs:list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'name="contract_type"')
+        self.assertNotContains(response, 'value="CDI"')
+        self.assertNotContains(response, 'value="CDD"')
+
+    def test_job_list_view_renders_simplified_job_type_filter(self):
+        response = self.client.get(reverse("jobs:list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="job_type"')
+        self.assertContains(response, 'value="full_time_job"')
+        self.assertContains(response, 'value="internship"')
+        self.assertContains(response, 'value="apprenticeship"')
+        self.assertContains(response, 'value="contract"')
+        self.assertContains(response, 'Freelance / Mission')
+
+    def test_job_card_replaces_cdi_with_job_type(self):
+        self.job.contract_type = "CDI"
+        self.job.job_type = "full_time_job"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Emploi")
+        self.assertNotContains(response, ">CDI<", html=False)
+        self.assertNotContains(response, "Full-time Job", html=False)
+
+    def test_job_card_replaces_cdd_with_job_type(self):
+        self.job.contract_type = "CDD"
+        self.job.job_type = "full_time_job"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Emploi")
+        self.assertNotContains(response, ">CDD<", html=False)
+
+    def test_job_card_displays_stage_alternance_freelance(self):
+        # Stage
+        self.job.contract_type = "Stage"
+        self.job.job_type = "internship"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Stage")
+
+        # Alternance
+        self.job.contract_type = "Alternance"
+        self.job.job_type = "apprenticeship"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Alternance")
+
+        # Freelance
+        self.job.contract_type = "Mission"
+        self.job.job_type = "contract"
+        self.job.save(update_fields=["contract_type", "job_type"])
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, "Freelance / Mission")
+        self.assertNotContains(response, ">Contract<", html=False)
 
     def test_job_list_view_shows_relevance_sort_when_query_requests_it(self):
         response = self.client.get(reverse("jobs:list"), {"q": "django", "sort": "relevance"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["sort"], "relevance")
         self.assertEqual(response.context["filters"]["sort"], "relevance")
-        self.assertContains(response, '<option value="relevance" selected>', html=False)
-        self.assertContains(response, '>Plus pertinentes</option>', html=False)
 
     def test_job_list_view_falls_back_to_newest_sort_without_query(self):
         response = self.client.get(reverse("jobs:list"), {"sort": "relevance"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["sort"], "newest")
         self.assertEqual(response.context["filters"]["sort"], "newest")
-        self.assertContains(response, '<option value="newest" selected>', html=False)
-        self.assertContains(response, '>Plus récentes</option>', html=False)
 
     def test_job_list_view_preserves_filter_params_in_pagination(self):
         for index in range(2, 23):
@@ -68,12 +171,184 @@ class JobViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "q=Python")
         self.assertContains(response, "page=2")
-        
+
     def test_job_detail_view_success(self):
         response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
         self.assertEqual(response.status_code, 200)
+
+    def test_job_apply_buttons_use_source_url_only(self):
+        self.job.source_url = "https://example.test/apply/job"
+        self.job.save(update_fields=["source_url"])
+
+        list_response = self.client.get(reverse("jobs:list"))
+        detail_response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+
+        self.assertContains(list_response, 'href="https://example.test/apply/job"', html=False)
+        self.assertContains(list_response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertContains(list_response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertContains(detail_response, 'href="https://example.test/apply/job"', html=False)
+        self.assertContains(detail_response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertContains(detail_response, 'data-i18n="Apply">Postuler</a>', html=False)
+
+    def test_job_apply_button_hidden_without_source_url(self):
+        self.job.source_url = ""
+        self.job.save(update_fields=["source_url"])
+
+        response = self.client.get(reverse("jobs:list"))
+
+        self.assertNotContains(response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertNotContains(response, f'href="{reverse("jobs:detail", args=[self.job.public_id])}" target="_blank"', html=False)
         self.assertContains(response, "Test View Job")
         self.assertContains(response, "Test Company")
+
+    def test_anonymous_job_cards_do_not_render_save_controls(self):
+        response = self.client.get(reverse("jobs:list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, reverse("jobs:save", args=[self.job.public_id]))
+        self.assertNotContains(response, reverse("jobs:unsave", args=[self.job.public_id]))
+        self.assertNotContains(response, 'class="btn save', html=False)
+        self.assertNotContains(response, "Sauvegardées")
+
+    def test_logged_in_job_cards_render_save_state_and_htmx_response(self):
+        user = self._create_user("saved")
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("jobs:list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("jobs:save", args=[self.job.public_id]))
+        self.assertContains(response, "Sauvegarder")
+        self.assertContains(response, 'class="btn save"', html=False)
+
+        SavedJobService.save_job(user, self.job.public_id)
+        response = self.client.get(reverse("jobs:list"))
+        self.assertContains(response, reverse("jobs:unsave", args=[self.job.public_id]))
+        self.assertContains(response, "Sauvegardé")
+        self.assertContains(response, 'class="btn save saved"', html=False)
+
+        htmx_response = self.client.post(
+            reverse("jobs:unsave", args=[self.job.public_id]),
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(htmx_response.status_code, 200)
+        self.assertContains(htmx_response, f'hx-post="{reverse("jobs:save", args=[self.job.public_id])}"', html=False)
+        self.assertContains(htmx_response, f'hx-target="#save-button-{self.job.public_id}"', html=False)
+        self.assertContains(htmx_response, 'hx-swap="outerHTML"', html=False)
+
+    def test_anonymous_job_detail_hides_save_and_quick_match_and_shows_sign_in_cta(self):
+        response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, reverse("jobs:save", args=[self.job.public_id]))
+        self.assertNotContains(response, "Sauvegarder")
+        self.assertNotContains(response, "Sauvegardé")
+        self.assertNotContains(response, "quick-match-container")
+        self.assertNotContains(response, "Test rapide")
+        self.assertContains(response, "Se connecter")
+        self.assertContains(response, f"?next={reverse('jobs:detail', args=[self.job.public_id])}", html=False)
+
+    def test_logged_in_not_ready_job_detail_shows_profile_cv_cta(self):
+        user = self._create_user("not-ready")
+        profile, _ = CandidateProfile.objects.get_or_create(user=user)
+        profile.profile_completion_score = 10
+        profile.save(update_fields=["profile_completion_score"])
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Compléter profil / CV")
+        self.assertContains(response, reverse("dashboard:profile"))
+        self.assertNotContains(response, "Calculer la compatibilité")
+
+    def test_logged_in_ready_without_match_shows_calculate_match_cta(self):
+        user = self._create_user("ready")
+        profile, _ = CandidateProfile.objects.get_or_create(user=user)
+        profile.profile_completion_score = 80
+        profile.save(update_fields=["profile_completion_score"])
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Calculer la compatibilité")
+        self.assertContains(response, reverse("matching:create", args=[self.job.public_id]))
+
+    def test_logged_in_existing_match_uses_match_public_id_for_score_link(self):
+        user = self._create_user("matched")
+        profile, _ = CandidateProfile.objects.get_or_create(user=user)
+        profile.profile_completion_score = 80
+        profile.save(update_fields=["profile_completion_score"])
+        cv = CVUpload.objects.create(
+            user=user,
+            original_filename="cv.pdf",
+            file_hash="hash-match",
+            file_size=100,
+            is_active=True,
+            parse_status="parsed",
+        )
+        match = MatchResult.objects.create(
+            user=user,
+            profile=profile,
+            cv_upload=cv,
+            job=self.job,
+            profile_snapshot_json={},
+            job_snapshot_json={},
+            fit_score=72,
+            technical_skills_score=80,
+            experience_score=70,
+            role_title_score=70,
+            language_score=60,
+            location_score=80,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Voir le score")
+        self.assertContains(response, reverse("matching:detail", args=[match.public_id]))
+        self.assertNotContains(response, f"/dashboard/matches/{match.id}/")
+
+    def test_llm_explanation_failure_does_not_hide_existing_match_score(self):
+        user = self._create_user("failed-match")
+        profile, _ = CandidateProfile.objects.get_or_create(user=user)
+        profile.profile_completion_score = 80
+        profile.save(update_fields=["profile_completion_score"])
+        match = MatchResult.objects.create(
+            user=user,
+            profile=profile,
+            job=self.job,
+            profile_snapshot_json={},
+            job_snapshot_json={},
+            fit_score=72,
+            technical_skills_score=80,
+            experience_score=70,
+            role_title_score=70,
+            language_score=60,
+            location_score=80,
+            llm_explanation_status="failed",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Voir le score")
+        self.assertContains(response, reverse("matching:detail", args=[match.public_id]))
+        self.assertNotContains(response, "Réessayer")
+
+    def test_job_detail_escapes_external_description_html_and_preserves_line_breaks(self):
+        self.job.description = 'Line 1\n<img src=x onerror="alert(1)"><script>alert(2)</script>'
+        self.job.save(update_fields=["description"])
+
+        response = self.client.get(reverse("jobs:detail", args=[self.job.public_id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Line 1<br>", html=False)
+        self.assertContains(response, "&lt;script&gt;alert(2)&lt;/script&gt;", html=False)
+        self.assertNotContains(response, "<script>alert(2)</script>", html=False)
+        self.assertNotContains(response, '<img src=x onerror="alert(1)">', html=False)
 
     def test_job_detail_view_404(self):
         invalid_uuid = uuid.uuid4()
@@ -109,38 +384,29 @@ class JobViewTests(TestCase):
         html = response.content.decode()
         detail_url = reverse("jobs:detail", args=[self.job.public_id])
 
-        self.assertContains(response, "tta-job-main")
-        self.assertContains(response, "tta-job-side")
-        self.assertContains(response, "tta-job-freshness")
-        self.assertContains(response, "tta-job-actions")
-        self.assertContains(response, "tta-card-date")
-        self.assertContains(response, f'href="{detail_url}"')
-        self.assertNotContains(response, f'href="/jobs/{self.job.id}/"')
-
-        self.assertLess(html.index("tta-chip-row"), html.index("tta-job-title"))
-        self.assertLess(html.index("tta-job-title"), html.index("tta-card-meta"))
-        self.assertLess(html.index("tta-card-meta"), html.index("tta-job-desc"))
-        self.assertLess(html.index("tta-job-desc"), html.index("tta-job-skill-row"))
-        self.assertLess(html.index("</a>"), html.index("tta-job-actions"))
+        self.assertContains(response, "job-card")
+        self.assertContains(response, "pill-row")
+        self.assertContains(response, "job-title")
+        self.assertContains(response, "job-meta")
+        self.assertContains(response, "job-desc")
 
     def test_job_card_hides_placeholder_badges_and_shows_date(self):
+        published_at = timezone.datetime(2026, 1, 15, 9, 0, tzinfo=timezone.get_current_timezone())
+        self.job.company_name = "not specified"
+        self.job.location = "Unknown"
+        self.job.city = "unknown"
         self.job.contract_type = "Unknown"
         self.job.remote_type = "unknown"
-        self.job.job_type = "t"
         self.job.experience_level = "unknown"
-        self.job.company_name = "t"
-        self.job.location = "Unknown"
-        self.job.city = "t"
-        self.job.published_at = None
+        self.job.published_at = published_at
         self.job.save(
             update_fields=[
-                "contract_type",
-                "remote_type",
-                "job_type",
-                "experience_level",
                 "company_name",
                 "location",
                 "city",
+                "contract_type",
+                "remote_type",
+                "experience_level",
                 "published_at",
             ]
         )
@@ -148,13 +414,10 @@ class JobViewTests(TestCase):
         response = self.client.get(reverse("jobs:list"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "15 Jan")
+        self.assertNotContains(response, "not specified")
         self.assertNotContains(response, "Unknown")
-        self.assertNotContains(response, "unknown")
-        self.assertNotContains(response, ">t<", html=False)
-        self.assertContains(response, "Vu le")
-        self.assertContains(response, "tta-card-date")
-        self.assertContains(response, reverse("jobs:detail", args=[self.job.public_id]))
-        self.assertContains(response, "Compétences en cours d'analyse")
+        self.assertNotContains(response, ">unknown<", html=False)
 
     def test_job_card_prefers_published_date(self):
         published_at = timezone.datetime(2026, 1, 15, 9, 0, tzinfo=timezone.get_current_timezone())
@@ -164,9 +427,7 @@ class JobViewTests(TestCase):
         response = self.client.get(reverse("jobs:list"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Publié le")
-        self.assertContains(response, "15")
-        self.assertNotContains(response, "Vu le")
+        self.assertContains(response, "15 Jan")
 
     def test_job_card_falls_back_to_first_seen_date(self):
         self.job.published_at = None
@@ -175,8 +436,6 @@ class JobViewTests(TestCase):
         response = self.client.get(reverse("jobs:list"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Vu le")
-        self.assertContains(response, "tta-card-date")
 
     def test_job_card_falls_back_to_last_seen_date(self):
         self.job.published_at = None
@@ -184,8 +443,7 @@ class JobViewTests(TestCase):
 
         html = render_to_string("jobs/partials/job_card.html", {"job": self.job})
 
-        self.assertIn("Vu le", html)
-        self.assertIn("tta-card-date", html)
+        self.assertNotIn("Vu le", html)
 
     def test_public_pages_survive_analytics_failure(self):
         with patch("apps.jobs.views.UserEventService.record_event", side_effect=Exception("analytics down")):

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core import signing
@@ -14,6 +15,45 @@ from apps.recommendations.services.query import RecommendationQueryService
 from apps.recommendations.services.saved_jobs import SavedJobService
 from apps.privacy.services.account_deletion import AccountDeletionService
 from allauth.socialaccount.models import SocialAccount
+from apps.notifications.forms import EmailPreferenceForm
+from apps.notifications.models import EmailPreference
+from types import SimpleNamespace
+
+
+def _settings_context(request, **extra):
+    social_accounts = SocialAccount.objects.filter(user=request.user)
+    providers = {}
+    for acc in social_accounts:
+        disconnect_token = signing.dumps(
+            {"account_id": acc.id},
+            salt=SOCIAL_DISCONNECT_SIGNING_SALT,
+        )
+        providers[acc.provider] = SimpleNamespace(
+            account=acc,
+            provider=acc.provider,
+            disconnect_token=disconnect_token,
+        )
+
+    try:
+        deletion_request = request.user.deletion_requests.filter(status__in=['pending', 'processing']).first()
+    except Exception:
+        deletion_request = None
+
+    context = {
+        "providers": providers,
+        "deletion_request": deletion_request,
+        "has_usable_password": request.user.has_usable_password(),
+        "settings_active": extra.pop("settings_active", "account"),
+    }
+    if "form" not in extra:
+        pref, _ = EmailPreference.objects.get_or_create(user=request.user)
+        context["form"] = EmailPreferenceForm(initial={
+            "weekly_digest_enabled": pref.weekly_digest_enabled,
+            "product_updates_enabled": pref.product_updates_enabled,
+            "cv_analysis_email_enabled": pref.cv_analysis_email_enabled,
+        })
+    context.update(extra)
+    return context
 
 @login_required
 def dashboard_recommendations(request):
@@ -73,6 +113,24 @@ def dashboard_profile(request):
             initial_data[key] = val
 
     if request.method == "POST":
+        if request.POST.get("skill_action") == "add":
+            skill_name = request.POST.get("skill_name", "")
+            try:
+                ProfileUpdateService.add_profile_skill(user, skill_name)
+                messages.success(request, "Skill added.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect(reverse("dashboard:profile") + "#profile-skills")
+
+        if request.POST.get("remove_skill"):
+            normalized_name = request.POST.get("remove_skill")
+            removed = ProfileUpdateService.remove_profile_skill(user, normalized_name)
+            if removed:
+                messages.success(request, "Skill removed.")
+            else:
+                messages.warning(request, "Skill not found.")
+            return redirect(reverse("dashboard:profile") + "#profile-skills")
+
         from apps.profiles.forms import ProfileForm
         form = ProfileForm(request.POST, instance=profile)
         if form.is_valid():
@@ -90,12 +148,22 @@ def dashboard_profile(request):
             suggestions[key] = val
 
     from apps.profiles.services.completeness import ProfileCompletenessService
-    missing_fields = []
+    missing_fields: list[str] = []
     is_complete_enough = False
+    completion_score = 0
     if profile:
         completeness_report = ProfileCompletenessService.get_report(profile)
-        is_complete_enough = completeness_report["score"] >= 50
-        missing_fields = completeness_report["missing"] + completeness_report["invalid"]
+
+        score_value = completeness_report.get("score", 0)
+        completion_score = score_value if isinstance(score_value, int) else 0
+        is_complete_enough = completion_score >= 50
+
+        missing_value = completeness_report.get("missing", [])
+        invalid_value = completeness_report.get("invalid", [])
+        missing = missing_value if isinstance(missing_value, list) else []
+        invalid = invalid_value if isinstance(invalid_value, list) else []
+        missing_fields = missing + invalid
+
         profile_skills = ProfileSkill.objects.filter(profile=profile).order_by("-is_confirmed", "normalized_name")
     else:
         profile_skills = ProfileSkill.objects.none()
@@ -104,9 +172,11 @@ def dashboard_profile(request):
         "form": form,
         "profile": profile,
         "profile_skills": profile_skills,
+        "has_active_cv": active_cv is not None,
         "suggestions": suggestions,
         "missing_fields": missing_fields,
-        "is_complete_enough": is_complete_enough
+        "is_complete_enough": is_complete_enough,
+        "completion_score": completion_score
     })
 
 @login_required
@@ -128,8 +198,7 @@ def dashboard_cv(request):
             try:
                 CVUploadService.upload_cv(
                     user,
-                    form.cleaned_data['file'],
-                    consent_accepted=form.cleaned_data['consent_accepted']
+                    form.cleaned_data['file']
                 )
                 messages.success(request, "Upload complete. Queued for analysis. Keep this page open or come back later.")
                 return redirect("dashboard:cv")
@@ -140,9 +209,22 @@ def dashboard_cv(request):
 
     active_cv = CVUpload.objects.filter(user=user, is_active=True).first()
 
+    profile = getattr(user, 'candidate_profile', None)
+    completion_score = 0
+    is_complete_enough = False
+    if profile:
+        from apps.profiles.services.completeness import ProfileCompletenessService
+        completeness_report = ProfileCompletenessService.get_report(profile)
+        score_value = completeness_report.get("score", 0)
+        completion_score = score_value if isinstance(score_value, int) else 0
+        is_complete_enough = completion_score >= 50
+
     return render(request, "dashboard/cv_manage.html", {
         "form": form,
-        "active_cv": active_cv
+        "active_cv": active_cv,
+        "completion_score": completion_score,
+        "is_complete_enough": is_complete_enough,
+        "has_active_cv": active_cv is not None
     })
 
 @login_required
@@ -154,15 +236,7 @@ def dashboard_cv_status(request, public_id):
 
 @login_required
 def dashboard_account(request):
-    try:
-        deletion_request = request.user.deletion_requests.filter(status__in=['pending', 'processing']).first()
-    except Exception:
-        deletion_request = None
-
-    return render(request, "dashboard/account.html", {
-        "deletion_request": deletion_request,
-        "has_usable_password": request.user.has_usable_password(),
-    })
+    return render(request, "dashboard/account.html", _settings_context(request, settings_active="account"))
 
 @login_required
 def dashboard_delete_account(request):
@@ -175,12 +249,12 @@ def dashboard_delete_account(request):
                 return redirect("dashboard:delete_account")
             from django.contrib.auth import logout
             logout(request)
-            return redirect("dashboard:delete_account_done")
+            return redirect("jobs:list")
         else:
             messages.error(request, "Please type DELETE to confirm.")
             return redirect("dashboard:delete_account")
 
-    return render(request, "dashboard/delete_account.html")
+    return render(request, "dashboard/delete_account.html", _settings_context(request, settings_active="danger"))
 
 @require_GET
 def dashboard_delete_account_done(request):
@@ -205,17 +279,6 @@ def dashboard_connections(request):
         except (BadSignature, ValueError):
             messages.error(request, "Requête de déconnexion invalide.")
 
-        return redirect("dashboard:connections")
+        return redirect(f"{reverse('dashboard:account')}#connections")
 
-    social_accounts = SocialAccount.objects.filter(user=request.user)
-    providers = {}
-    for acc in social_accounts:
-        acc.disconnect_token = signing.dumps(
-            {"account_id": acc.id},
-            salt=SOCIAL_DISCONNECT_SIGNING_SALT,
-        )
-        providers[acc.provider] = acc
-
-    return render(request, "dashboard/connections.html", {
-        "providers": providers
-    })
+    return redirect(f"{reverse('dashboard:account')}#connections")

@@ -112,6 +112,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.core.context_processors.email_verification_banner",
             ],
         },
     },
@@ -195,6 +196,10 @@ CELERY_TASK_ROUTES = {
 
 from celery.schedules import crontab
 
+ADMIN_ALERT_EMAIL = os.environ.get("ADMIN_ALERT_EMAIL", "")
+ADMIN_ALERT_CHECK_ENABLED = os.environ.get("ADMIN_ALERT_CHECK_ENABLED", "False") == "True"
+ADMIN_OPS_DIGEST_ENABLED = os.environ.get("ADMIN_OPS_DIGEST_ENABLED", "False") == "True"
+
 CELERY_BEAT_SCHEDULE = {
     "celery_heartbeat": {
         "task": "apps.jobs.tasks.celery_heartbeat",
@@ -202,7 +207,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "run_it_job_ingestion": {
         "task": "apps.jobs.tasks.run_it_job_ingestion",
-        "schedule": crontab(minute="0", hour="*/4"),
+        "schedule": crontab(minute="0", hour="*/6"),
     },
     "mark_stale_and_expired_jobs": {
         "task": "apps.jobs.tasks.mark_stale_and_expired_jobs",
@@ -226,6 +231,18 @@ if JOB_ENRICHMENT_RETRY_ENABLED:
     CELERY_BEAT_SCHEDULE["retry_eligible_job_enrichments"] = {
         "task": "apps.llm.tasks.retry_eligible_job_enrichments",
         "schedule": crontab(minute="15", hour="*/2"),
+    }
+
+if ADMIN_ALERT_CHECK_ENABLED:
+    CELERY_BEAT_SCHEDULE["run_admin_health_alerts"] = {
+        "task": "apps.core.tasks.run_admin_health_alerts",
+        "schedule": crontab(minute="*/15"),
+    }
+
+if ADMIN_OPS_DIGEST_ENABLED:
+    CELERY_BEAT_SCHEDULE["send_admin_ops_digest"] = {
+        "task": "apps.core.tasks.send_admin_ops_digest",
+        "schedule": crontab(minute="0", hour="7"),
     }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -276,10 +293,12 @@ AUTHENTICATION_BACKENDS = [
 
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-LOGIN_REDIRECT_URL = "/dashboard/"
-LOGOUT_REDIRECT_URL = "/"
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[TuniAtlas] "
+LOGIN_REDIRECT_URL = "/jobs/"
+LOGOUT_REDIRECT_URL = "/jobs/"
 
+ACCOUNT_ADAPTER = "apps.accounts.adapters.TuniTechAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "apps.accounts.adapters.TuniTechSocialAccountAdapter"
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = False
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
@@ -374,6 +393,12 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "webmaster@localhost")
 SERVER_EMAIL = os.environ.get("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
+
+CONTACT_EMAIL_RECIPIENTS = [
+    email.strip()
+    for email in os.environ.get("CONTACT_EMAIL_RECIPIENTS", "").split(",")
+    if email.strip()
+]
 
 # OAuth provider credentials
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")

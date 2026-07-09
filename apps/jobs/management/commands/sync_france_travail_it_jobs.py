@@ -27,7 +27,9 @@ class Command(BaseCommand):
                 'enabled': True,
                 'preset': 'broad_it',
                 'limit_per_keyword': 50,
-                'max_total_per_run': 1000,
+                'max_total_per_run': 250,
+                'max_jobs_per_run': 250,
+                'frequency_minutes': 360,
                 'enrichment_enabled': True,
             }
         )

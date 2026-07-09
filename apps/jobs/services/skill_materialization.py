@@ -42,6 +42,14 @@ def _candidate_confidence(candidate: Any) -> Decimal:
     return max(Decimal("0.000"), min(Decimal("1.000"), confidence)).quantize(Decimal("0.001"))
 
 
+def _coerce_confidence(value: Any) -> Decimal:
+    try:
+        confidence = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal("1.000")
+    return max(Decimal("0.000"), min(Decimal("1.000"), confidence)).quantize(Decimal("0.001"))
+
+
 def _requirement_priority(requirement_type: str) -> int:
     return {
         RequirementType.REQUIRED.value: 3,
@@ -64,16 +72,16 @@ class JobSkillMaterializationResult:
 class JobSkillMaterializationService:
     @classmethod
     def materialize_for_job(
-        cls, 
-        job: NormalizedJob, 
-        *, 
-        source: str = "rule", 
+        cls,
+        job: NormalizedJob,
+        *,
+        source: str = "rule",
         enrichment=None,
-        raw_skills_dict: Optional[Dict[str, str]] = None
+        raw_skills_dict: Optional[Dict[str, Any]] = None
     ) -> JobSkillMaterializationResult:
         """
         Materializes raw skills into canonical NormalizedJobSkill rows.
-        
+
         If `source="llm"`, it reads from `enrichment.validated_output_json`.
         If `source="rule"`, it reads from `job.required_skills_json` and `job.optional_skills_json`
         unless `raw_skills_dict` is explicitly provided by the extraction service.
@@ -93,12 +101,19 @@ class JobSkillMaterializationService:
             )
 
         if raw_skills_dict:
-            raw_skills_dict = {
-                str(skill).strip(): requirement_type
-                for skill, requirement_type in raw_skills_dict.items()
-                if str(skill).strip()
-            }
-            candidate_confidences = {skill: Decimal("1.000") for skill in raw_skills_dict}
+            processed_raw_skills = {}
+            for skill, val in raw_skills_dict.items():
+                if not str(skill).strip():
+                    continue
+                if isinstance(val, dict):
+                    req_type = val.get("type", RequirementType.DETECTED.value)
+                    conf = _coerce_confidence(val.get("confidence", "1.000"))
+                else:
+                    req_type = val
+                    conf = Decimal("1.000")
+                processed_raw_skills[str(skill).strip()] = req_type
+                candidate_confidences[str(skill).strip()] = conf
+            raw_skills_dict = processed_raw_skills
         else:
             raw_skills_dict = {}
 
@@ -150,9 +165,9 @@ class JobSkillMaterializationService:
         try:
             # Step 1: Normalize and match candidates
             result = SkillNormalizerService.normalize_many(
-                raw_skills=all_raw_skills,
-                source_type="job",
-                source_id=job.id,
+                all_raw_skills,
+                "job",
+                job.id,
             )
 
             with transaction.atomic():
@@ -160,7 +175,7 @@ class JobSkillMaterializationService:
                 admin_skills = list(NormalizedJobSkill.objects.filter(
                     job=job, source=SkillSource.ADMIN.value
                 ).values_list('skill_id', flat=True))
-                
+
                 NormalizedJobSkill.objects.filter(job=job).exclude(source=SkillSource.ADMIN.value).delete()
 
                 canonical_skills_saved = []
@@ -169,7 +184,7 @@ class JobSkillMaterializationService:
                 matched_required = 0
                 matched_optional = 0
 
-                skill_source_value = SkillSource.LLM.value if source == "llm" else SkillSource.RULE.value
+                skill_source_value = source if source in SkillSource.values else SkillSource.RULE.value
 
                 for skill in result.canonical_skills:
                     if skill.id in admin_skills:
@@ -181,7 +196,8 @@ class JobSkillMaterializationService:
                         normalize_skill_text(a.normalized_alias)
                         for a in SkillAlias.objects.filter(skill=skill)
                     }
-                    
+                    skill_aliases.add(normalize_skill_text(skill.canonical_name))
+
                     confidence = Decimal("0.000")
                     for raw, type_ in raw_skills_dict.items():
                         norm_raw = normalize_skill_text(raw)
@@ -222,10 +238,10 @@ class JobSkillMaterializationService:
 
                 job.required_skills_json = new_required
                 job.optional_skills_json = new_optional
-                
+
                 from apps.jobs.services.skill_signals import compute_deterministic_skill_signal_quality
                 signal_result = compute_deterministic_skill_signal_quality(job)
-                
+
                 job.skill_extraction_status = SkillExtractionStatus.SUCCESS
                 job.skill_signal_quality = signal_result.quality
                 job.save(update_fields=["required_skills_json", "optional_skills_json", "skill_extraction_status", "skill_signal_quality"])

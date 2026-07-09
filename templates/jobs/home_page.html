@@ -1,0 +1,48 @@
+{% load django_htmx %}
+{% load job_presentation %}
+
+<div id="main-content" class="shell" role="main">
+  <!-- Hero Search -->
+  <section class="section hero-v16" aria-label="{% trans 'Hero Search' %}">
+    <div class="hero-inner">
+      <h1>{% trans "Find Your Ideal Tech Role in France" %}</h1>
+      <p class="hero-sub">{{ total_offers|default:"0" }} {% trans "offers" %} · {{ matching_profiles|default:"0" }} {% trans "tech profiles ready for France" %}</p>
+      <form hx-get="{% url 'jobs:list' %}" hx-target="#job-results" hx-swap="innerHTML" hx-push-url="true" class="search-row" id="search-form" action="{% url 'jobs:list' %}" method="get" aria-label="{% trans 'Search jobs' %}">
+        <label for="search-input" class="sr-only">{% trans "Keyword, title, or company" %}</label>
+        <input id="search-input" name="q" value="{{ request.GET.q|default:'' }}" type="search" placeholder="{% trans 'Keyword, title, or company' %}" autocomplete="off">
+        <label for="location-input" class="sr-only">{% trans "Location" %}</label>
+        <input id="location-input" name="location" value="{{ request.GET.location|default:'' }}" type="search" placeholder="{% trans 'Remote, Paris, Lyon…' %}" autocomplete="off">
+        <button type="submit" class="btn primary" aria-label="{% trans 'Search' %}">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.8"/><path d="M15 15L19 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </form>
+    </div>
+    <div class="hero-cover"></div>
+  </section>
+
+  <!-- Filter Chips -->
+  <div class="filter-chips" aria-label="{% trans 'Filters' %}">
+    <a href="?remote=true" class="chip{% if request.GET.remote == 'true' %} is-on{% endif %}">{% trans "Remote" %}</a>
+    <a href="?visa=true" class="chip{% if request.GET.visa == 'true' %} is-on{% endif %}">{% trans "Visa sponsor" %}</a>
+    <a href="?salary=50" class="chip{% if request.GET.salary == '50' %} is-on{% endif %}">{% trans "50k+" %}</a>
+    <a href="?posted=7" class="chip{% if request.GET.posted == '7' %} is-on{% endif %}">{% trans "Last 7 days" %}</a>
+    <a href="?contract_type=CDI" class="chip{% if request.GET.contract_type == 'CDI' %} is-on{% endif %}">{% trans "CDI" %}</a>
+    <a href="?contract_type=Alternance" class="chip{% if request.GET.contract_type == 'Alternance' %} is-on{% endif %}">{% trans "Alternance" %}</a>
+    <a href="?contract_type=Stage" class="chip{% if request.GET.contract_type == 'Stage' %} is-on{% endif %}">{% trans "Stage" %}</a>
+    <a href="?lang=en" class="chip{% if request.GET.lang == 'en' %} is-on{% endif %}">{% trans "English OK" %}</a>
+    <a href="?fresh=true" class="chip{% if request.GET.fresh == 'true' %} is-on{% endif %}">{% trans "Junior-friendly" %}</a>
+    <a href="?skills=python" class="chip{% if request.GET.skills == 'python' %} is-on{% endif %}">Python</a>
+  </div>
+  <div class="results-bar" id="results-count">
+    {% if job_list %}
+      {{ paginator.count|default:job_list|length }} {% trans "offers" %}
+    {% else %}
+      0 {% trans "offers" %}
+    {% endif %}
+  </div>
+
+  <!-- Job Results -->
+  <div id="job-results" class="results">
+    {% include "jobs/partials/job_results.html" %}
+  </div>
+</div>

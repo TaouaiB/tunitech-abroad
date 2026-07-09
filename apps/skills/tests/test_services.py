@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
 from apps.skills.models import Skill, SkillAlias, UnmatchedSkillCandidate
+from apps.skills.services.alias_audit import SkillAliasAuditService
 from apps.skills.services.normalizer import SkillNormalizerService, normalize_skill_text
 from apps.skills.services.review import UnmatchedSkillReviewService
 
@@ -122,3 +123,51 @@ class ReviewServiceTests(TestCase):
     def test_non_staff_cannot_map(self):
         with self.assertRaises(PermissionError):
             UnmatchedSkillReviewService.map_candidate(self.candidate.id, self.skill.id, self.regular_user)
+
+
+class SkillAliasAuditServiceTests(TestCase):
+    def test_audit_returns_shared_diagnostics_shape(self):
+        active = Skill.objects.create(canonical_name="React", slug="react")
+        inactive = Skill.objects.create(canonical_name="Inactive", slug="inactive", is_active=False)
+        SkillAlias.objects.create(skill=active, alias="React", normalized_alias="react")
+        SkillAlias.objects.create(skill=inactive, alias="Inactive", normalized_alias="inactive")
+        UnmatchedSkillCandidate.objects.create(
+            raw_skill_text="Unknown Skill",
+            normalized_text="unknown skill",
+            source_type="quick_match",
+            occurrence_count=4,
+        )
+
+        result = SkillAliasAuditService.audit()
+
+        self.assertEqual(result["service"], "skill_alias_audit")
+        self.assertIn("generated_at", result)
+        self.assertIn("counts", result)
+        self.assertIn("statuses", result)
+        self.assertIn("top_items", result)
+        self.assertIn("warnings", result)
+        self.assertIn("errors", result)
+        self.assertEqual(result["counts"]["aliases_pointing_to_inactive_skills"], 1)
+        self.assertEqual(result["top_items"][0]["normalized_text"], "unknown skill")
+
+    def test_audit_fails_when_required_alias_maps_to_wrong_skill(self):
+        wrong = Skill.objects.create(canonical_name="Wrong .NET", slug="wrong-dotnet")
+        SkillAlias.objects.create(
+            skill=wrong,
+            alias=".NET",
+            normalized_alias=normalize_skill_text(".NET"),
+        )
+
+        result = SkillAliasAuditService.audit()
+
+        self.assertFalse(result["ok"])
+        self.assertIn("required_alias_mapping_failed", result["errors"])
+        self.assertIn(
+            {
+                "raw_alias": ".NET",
+                "normalized_alias": ".net",
+                "expected_canonical": ".NET",
+                "actual_canonical": "Wrong .NET",
+            },
+            result["statuses"]["required_alias_mapping_failures"],
+        )

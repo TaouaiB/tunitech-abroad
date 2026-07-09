@@ -41,6 +41,7 @@ class CandidateProfile(models.Model):
 
 class ProfileSkill(models.Model):
     profile = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name="profile_skills")
+    skill = models.ForeignKey('skills.Skill', on_delete=models.SET_NULL, null=True, blank=True, related_name='candidate_skills')
     raw_name = models.CharField(max_length=150)
     normalized_name = models.CharField(max_length=150, db_index=True)
     source = models.CharField(max_length=50, blank=True)

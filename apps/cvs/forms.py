@@ -3,11 +3,6 @@ from .models import CVUpload
 from django.conf import settings
 
 class CVUploadForm(forms.ModelForm):
-    consent_accepted = forms.BooleanField(
-        required=True,
-        label="Je consens au traitement de mon CV pour la création de mon profil."
-    )
-
     class Meta:
         model = CVUpload
         fields = ['file']

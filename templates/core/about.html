@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}À propos — TuniAtlas{% endblock %}
+
+{% block content %}
+<section class="section about-v16">
+  <div class="shell">
+    <h1 class="page-title small" data-i18n="About us">À propos</h1>
+
+    <div class="main-layout" style="margin-top:18px">
+      <section class="grid">
+        <form class="card grid" method="post" action="{% url 'core:about' %}">
+          {% csrf_token %}
+          <h2 class="h2" data-i18n="Contact">Contact</h2>
+
+          {% if form.non_field_errors %}
+            <div class="compact-state bad">
+              <span class="dot bad"></span>
+              <div>
+                {% for error in form.non_field_errors %}
+                  <p class="small">{{ error }}</p>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <div style="display:none">
+            {{ form.website }}
+          </div>
+
+          <div class="account-box">
+            <div class="field{% if form.name.errors %} has-error{% endif %}">
+              <label for="{{ form.name.id_for_label }}" data-i18n="Name">Nom</label>
+              {{ form.name }}
+              <div class="error" data-i18n="Required.">Requis.</div>
+            </div>
+            <div class="field{% if form.email.errors %} has-error{% endif %}">
+              <label for="{{ form.email.id_for_label }}" data-i18n="Email">Email</label>
+              {{ form.email }}
+              <div class="error" data-i18n="Valid email required.">Email valide requis.</div>
+            </div>
+          </div>
+
+          <div class="field{% if form.subject.errors %} has-error{% endif %}">
+            <label for="{{ form.subject.id_for_label }}" data-i18n="Reason">Motif</label>
+            {{ form.subject }}
+            {% if form.subject.errors %}<div class="error" style="display:block;">{{ form.subject.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="field{% if form.message.errors %} has-error{% endif %}">
+            <label for="{{ form.message.id_for_label }}" data-i18n="Message">Message</label>
+            {{ form.message }}
+            <div class="error" data-i18n="Message required.">Message requis.</div>
+            {% if form.message.errors %}<div class="error" style="display:block;">{{ form.message.errors.0 }}</div>{% endif %}
+          </div>
+
+          <button type="submit" class="btn primary" data-i18n="Send">Envoyer</button>
+        </form>
+
+        <div class="card">
+          <h2 class="h2" data-i18n="Links">Liens</h2>
+          <div class="notice-list">
+            <div class="notice">
+              <span class="dot"></span>
+              <div>
+                <b data-i18n="Contact">Contact</b>
+                <div class="small">contact@tuniatlas.com</div>
+              </div>
+            </div>
+            <div class="notice">
+              <span class="dot good"></span>
+              <div>
+                <b data-i18n="Jobs">Offres</b>
+              <div class="small"><a href="{% url 'jobs:list' %}" style="color:var(--brand);font-weight:900;text-decoration:none" data-i18n="Browse jobs">Parcourir les offres</a></div>
+              </div>
+            </div>
+            {% if user.is_authenticated %}
+              <div class="notice">
+                <span class="dot warn"></span>
+                <div>
+                  <b data-i18n="Account">Compte</b>
+                  <div class="small"><a href="{% url 'dashboard:account' %}" style="color:var(--brand);font-weight:900;text-decoration:none" data-i18n="Manage settings">Gérer les paramètres</a></div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+
+      <aside class="card sticky">
+        <h2 class="h2" data-fr="Confidentialité et conditions" data-en="Privacy & terms">Confidentialité et conditions</h2>
+        <div class="notice-list">
+          <button type="button" class="notice" data-modal-open="privacy-modal" style="width:100%;text-align:left;cursor:pointer;color:var(--text);">
+            <span class="dot"></span><span><b data-i18n="Privacy">Confidentialité</b></span>
+          </button>
+          <button type="button" class="notice" data-modal-open="terms-modal" style="width:100%;text-align:left;cursor:pointer;color:var(--text);">
+            <span class="dot good"></span><span><b data-i18n="Terms">CGU</b></span>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<div class="modal-backdrop" id="privacy-modal" data-modal="privacy-modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="privacy-title">
+    <div class="modal-header">
+      <h2 class="h2" id="privacy-title" data-fr="Confidentialité" data-en="Privacy">Confidentialité</h2>
+      <button
+        type="button"
+        class="modal-close"
+        data-modal-close
+        aria-label="Fermer"
+        data-fr-label="Fermer"
+        data-en-label="Close"
+      >
+        <span aria-hidden="true">×</span>
+      </button>
+    </div>
+    <div class="grid">
+      <p class="muted" data-fr="Nous utilisons votre profil, le texte de votre CV, vos offres sauvegardées et vos résultats de matching uniquement pour fournir le matching, les recommandations et les fonctionnalités du compte. Les fichiers CV restent privés et ne sont pas exposés publiquement. Vous pouvez supprimer votre CV ou votre compte depuis les paramètres."
+         data-en="We use your profile, CV text, saved jobs, and matching results only to provide job matching, recommendations, and account features. CV files stay private and are not publicly exposed. You can delete your CV or account from settings."
+      >Nous utilisons votre profil, le texte de votre CV, vos offres sauvegardées et vos résultats de matching uniquement pour fournir le matching, les recommandations et les fonctionnalités du compte. Les fichiers CV restent privés et ne sont pas exposés publiquement. Vous pouvez supprimer votre CV ou votre compte depuis les paramètres.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="terms-modal" data-modal="terms-modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="terms-title">
+    <div class="modal-header">
+      <h2 class="h2" id="terms-title" data-fr="Conditions" data-en="Terms">Conditions</h2>
+      <button
+        type="button"
+        class="modal-close"
+        data-modal-close
+        aria-label="Fermer"
+        data-fr-label="Fermer"
+        data-en-label="Close"
+      >
+        <span aria-hidden="true">×</span>
+      </button>
+    </div>
+    <div class="grid">
+      <p class="muted" data-fr="TuniAtlas vous aide à découvrir des opportunités tech et à comprendre l'adéquation avec votre profil. Les scores de matching et les recommandations sont indicatifs. Vous restez responsable de vos candidatures, du contenu de votre CV et de vos décisions."
+         data-en="TuniAtlas helps you discover tech job opportunities and understand profile fit. Matching scores and recommendations are guidance only. You remain responsible for applications, CV content, and decisions."
+      >TuniAtlas vous aide à découvrir des opportunités tech et à comprendre l'adéquation avec votre profil. Les scores de matching et les recommandations sont indicatifs. Vous restez responsable de vos candidatures, du contenu de votre CV et de vos décisions.</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -7,7 +7,6 @@ from .services.validation import (
     LANGUAGE_LEVEL_CHOICES,
     RELOCATION_PREFERENCE_CHOICES,
     REMOTE_PREFERENCE_CHOICES,
-    TARGET_JOB_TYPE_CHOICES,
     TARGET_TYPE_CHOICES,
     meaningful_list,
     normalize_profile_url,
@@ -17,53 +16,45 @@ class ProfileForm(forms.ModelForm):
     linkedin_url = forms.CharField(label="LinkedIn", required=False, widget=forms.URLInput)
     github_url = forms.CharField(label="GitHub", required=False, widget=forms.URLInput)
     portfolio_url = forms.CharField(label="Portfolio", required=False, widget=forms.URLInput)
-    website_url = forms.CharField(label="Site personnel", required=False, widget=forms.URLInput)
+    website_url = forms.CharField(label="Personal website", required=False, widget=forms.URLInput)
     target_roles = forms.CharField(
-        label="Rôles ciblés",
+        label="Target roles",
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "Développeur backend, DevOps, Data analyst"}),
-        help_text="Indiquez un ou plusieurs rôles IT séparés par des virgules.",
-    )
-    target_job_types = forms.MultipleChoiceField(
-        label="Types de contrat cibles",
-        choices=TARGET_JOB_TYPE_CHOICES,
-        required=False,
-        widget=forms.CheckboxSelectMultiple,
-        help_text="Sélectionnez les formats qui vous intéressent.",
+        widget=forms.TextInput(attrs={"placeholder": "Backend developer, DevOps, Data analyst"}),
+        help_text="Enter one or more IT roles separated by commas.",
     )
 
     class Meta:
         model = CandidateProfile
         fields = [
-            'full_name', 'phone', 'location', 'linkedin_url', 
-            'github_url', 'portfolio_url', 'website_url', 
+            'full_name', 'phone', 'location', 'linkedin_url',
+            'github_url', 'portfolio_url', 'website_url',
             'current_level', 'years_experience', 'target_roles',
-            'target_job_types', 'target_type',
+            'target_type',
             'french_level', 'english_level', 'relocation_preference', 'remote_preference'
         ]
         labels = {
-            'full_name': 'Nom complet',
-            'phone': 'Téléphone',
-            'location': 'Localisation',
-            'current_level': 'Niveau de carrière',
-            'years_experience': 'Années d’expérience',
-            'target_roles': 'Rôles ciblés',
-            'target_job_types': 'Types de contrat cibles',
-            'target_type': 'Type d’opportunité recherchée',
-            'french_level': 'Niveau de français',
-            'english_level': 'Niveau d’anglais',
-            'relocation_preference': 'Mobilité / relocalisation',
-            'remote_preference': 'Préférence télétravail'
+            'full_name': 'Full name',
+            'phone': 'Phone',
+            'location': 'Location',
+            'current_level': 'Career level',
+            'years_experience': 'Years of experience',
+            'target_roles': 'Target roles',
+            'target_type': 'Target opportunity type',
+            'french_level': 'French level',
+            'english_level': 'English level',
+            'relocation_preference': 'Mobility / relocation',
+            'remote_preference': 'Remote work preference',
         }
         help_texts = {
-            'phone': 'Numéro avec indicatif pays si possible.',
-            'location': 'Ville et pays, par exemple Tunis, Tunisia.',
-            'linkedin_url': 'URL complète commençant par https://.',
-            'github_url': 'URL complète commençant par https://.',
-            'portfolio_url': 'URL complète commençant par https://.',
-            'website_url': 'URL complète commençant par https://.',
-            'current_level': 'Choisissez le niveau qui décrit le mieux votre situation actuelle.',
-            'years_experience': 'Utilisez 0 pour un premier stage ou une première expérience.',
+            'phone': 'Include the country code if possible.',
+            'location': 'City and country, for example Tunis, Tunisia.',
+            'linkedin_url': 'Complete URL starting with https://.',
+            'github_url': 'Complete URL starting with https://.',
+            'portfolio_url': 'Complete URL starting with https://.',
+            'website_url': 'Complete URL starting with https://.',
+            'current_level': 'Choose the level that best describes your current situation.',
+            'years_experience': 'Use 0 for your first internship or first experience.',
         }
         widgets = {
             'current_level': forms.Select(choices=CURRENT_LEVEL_CHOICES),
@@ -79,7 +70,6 @@ class ProfileForm(forms.ModelForm):
         if not self.is_bound and self.instance and self.instance.pk:
             value = getattr(self.instance, "target_roles", [])
             self.initial["target_roles"] = ", ".join(value) if isinstance(value, list) else value
-            self.initial["target_job_types"] = getattr(self.instance, "target_job_types", [])
 
     def _clean_list_field(self, field_name: str) -> list[str]:
         value = self.cleaned_data.get(field_name, "")
@@ -94,14 +84,11 @@ class ProfileForm(forms.ModelForm):
             except json.JSONDecodeError:
                 parsed = None
             if isinstance(parsed, list):
-                return [str(item).strip() for item in parsed if str(item).strip()]
+                return [str(item).strip() for item in parsed if item.strip()]
         return [item.strip() for item in value.split(",") if item.strip()]
 
     def clean_target_roles(self):
         return meaningful_list(self._clean_list_field("target_roles"))
-
-    def clean_target_job_types(self):
-        return self.cleaned_data.get("target_job_types") or []
 
     def clean_current_level(self):
         return self._clean_choice("current_level", {value for value, _label in CURRENT_LEVEL_CHOICES})
@@ -124,7 +111,7 @@ class ProfileForm(forms.ModelForm):
     def _clean_choice(self, field_name: str, allowed_values: set[str]) -> str:
         value = self.cleaned_data.get(field_name) or ""
         if value not in allowed_values:
-            raise forms.ValidationError("Sélectionnez une valeur proposée.")
+            raise forms.ValidationError("Select one of the suggested values.")
         return value
 
     def _clean_url_field(self, field_name: str) -> str:

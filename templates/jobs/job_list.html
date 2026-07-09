@@ -1,52 +1,81 @@
 {% extends "base.html" %}
 
-{% block title %}Offres d'emploi en France - TuniAtlas{% endblock %}
+{% block title %}Offres - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="tta-section-head">
-    <div>
-        <span class="tta-eyebrow">Offres publiques</span>
-        <h1 class="tta-page-title" style="margin-top:12px">Offres IT en France</h1>
-        <p class="tta-muted">{{ total_count }} offres actives · Offres IT françaises actualisées</p>
+<div class="jobs-v16">
+<section class="mobile-index-tools">
+  <div class="shell">
+    <div class="tool-row jobs-mobile-actions">
+      <button class="btn primary full" type="button" data-mobile-search-toggle data-i18n="Search">Rechercher</button>
+      <button class="btn secondary full" type="button" data-mobile-filters-toggle data-i18n="Filters">Filtres</button>
     </div>
+  </div>
+</section>
 
-    <button class="tta-btn tta-btn-secondary tta-mobile-filter-button" data-drawer-open onclick="document.querySelector('[data-filter-drawer]').style.display='block'; document.querySelector('[data-drawer-backdrop]').style.display='block';">Filtres</button>
-    <div class="tta-drawer-backdrop" data-drawer-backdrop data-drawer-close onclick="document.querySelector('[data-filter-drawer]').style.display='none'; this.style.display='none';" style="display:none;"></div>
-
-    <div class="tta-filter-drawer" data-filter-drawer style="display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-            <h3 class="text-lg font-bold text-slate-950 dark:text-white" style="margin:0;">Filtres</h3>
-            <button class="tta-btn tta-btn-ghost" data-drawer-close onclick="document.querySelector('[data-filter-drawer]').style.display='none'; document.querySelector('[data-drawer-backdrop]').style.display='none';">Fermer</button>
-        </div>
-        {% include "jobs/partials/job_filter_panel.html" %}
+<section class="hero">
+  <div class="shell">
+    <div class="hero-card mobile-search-panel">
+      <h1 class="page-title" data-fr="Trouvez plus vite des offres tech en France" data-en="Find tech jobs in France faster">Trouvez plus vite des offres tech en France</h1>
+      <form method="get" action="{% url 'jobs:list' %}" class="toolbar" style="margin-top:28px;gap:18px">
+        <input name="q" class="input" placeholder="Rôle, entreprise, compétence" data-fr-placeholder="Rôle, entreprise, compétence" data-en-placeholder="Role, company, skill" value="{{ filters.q|default:'' }}">
+        <input name="location" class="input" placeholder="Ville : Paris, Nantes, Lyon" data-fr-placeholder="Ville : Paris, Nantes, Lyon" data-en-placeholder="City: Paris, Nantes, Lyon" value="{{ filters.location|default:'' }}">
+        <button type="submit" class="btn primary" data-i18n="Search">Rechercher</button>
+      </form>
     </div>
-</div>
+  </div>
+</section>
 
-<div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
-    <!-- Filter Panel Desktop -->
-    <aside class="tta-card tta-card-body desktop-only">
-        <h3 class="text-lg font-bold text-slate-950 dark:text-white" style="margin-top:0">Filtres</h3>
-        {% include "jobs/partials/job_filter_panel.html" %}
+<section class="section">
+  <div class="shell layout">
+    <button class="btn secondary mobile-filter-trigger full" type="button" data-mobile-filters-toggle>
+      <span data-i18n="Filters">Filtres</span><span>▾</span>
+    </button>
+
+    <aside id="mobileFiltres" class="card sticky">
+      <button class="btn secondary mobile-filter-close" type="button" onclick="closeAllMobilePanels()" data-i18n="Close">Fermer</button>
+      <h2 class="h3" data-i18n="Filters">Filtres</h2>
+      {% include "jobs/partials/job_filter_panel.html" %}
     </aside>
 
-    <!-- Results Section -->
     <section>
-        <div class="tta-card tta-card-body" style="margin-bottom:14px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
-            <strong class="text-slate-950 dark:text-white">
-                {% if filters.q %}
-                    Résultats pour {{ filters.q }}
-                {% else %}
-                    Toutes les offres
-                {% endif %}
-            </strong>
-            <select onchange="window.location.href=this.value" class="tta-select" style="max-width:220px">
-                <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=relevance" {% if sort == "relevance" %}selected{% endif %}>Plus pertinentes</option>
-                <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=newest" {% if sort == "newest" %}selected{% endif %}>Plus récentes</option>
-                <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=company" {% if sort == "company" %}selected{% endif %}>Entreprise</option>
-            </select>
+      <div class="sort-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
+        <div class="sort-title">
+          <h2 class="h2" data-i18n="Latest opportunities">Dernières opportunités</h2>
+          {% if filters.q %}
+          <p class="small">
+              Résultats pour {{ filters.q }}
+          </p>
+          {% endif %}
         </div>
+        <select class="select desktop-sort-select" style="max-width:180px" onchange="window.location.href=this.value">
+          <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=newest" {% if sort == "newest" or not sort %}selected{% endif %}>Plus récentes</option>
+          <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=relevance" {% if sort == "relevance" %}selected{% endif %}>Meilleure correspondance</option>
+          <option value="?{% for key, value in filters.items %}{% if key != 'sort' and value %}{{ key }}={{ value|urlencode }}&{% endif %}{% endfor %}sort=company" {% if sort == "company" %}selected{% endif %}>Entreprise</option>
+        </select>
+        <div class="mobile-sort" data-mobile-sort>
+          <button class="select mobile-sort-button"
+                  type="button"
+                  data-mobile-sort-button
+                  aria-expanded="false">
+            <span data-mobile-sort-label>
+              {% if sort == "relevance" %}Meilleure correspondance
+              {% elif sort == "company" %}Entreprise
+              {% else %}Plus récentes{% endif %}
+            </span>
+            <span>▾</span>
+          </button>
+          <div class="mobile-sort-menu" data-mobile-sort-menu hidden>
+            <button type="button" data-sort-value="newest" {% if sort == "newest" or not sort %}class="active"{% endif %} data-fr="Plus récentes" data-en="Newest">Plus récentes</button>
+            <button type="button" data-sort-value="relevance" {% if sort == "relevance" %}class="active"{% endif %} data-fr="Meilleure correspondance" data-en="Best match">Meilleure correspondance</button>
+            <button type="button" data-sort-value="company" {% if sort == "company" %}class="active"{% endif %} data-fr="Entreprise" data-en="Company">Entreprise</button>
+          </div>
+        </div>
+      </div>
 
-        {% include "jobs/partials/job_results.html" %}
+      {% include "jobs/partials/job_results.html" %}
     </section>
+  </div>
+</section>
 </div>
 {% endblock %}

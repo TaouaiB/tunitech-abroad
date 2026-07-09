@@ -1,7 +1,6 @@
 import traceback
 from dateutil import parser as date_parser
 
-from django.contrib.postgres.search import SearchVector
 from apps.jobs.models import (
     RawJobRecord,
     NormalizedJob,
@@ -29,9 +28,9 @@ class JobNormalizationService:
             return None
 
         description = payload.get("description", "")
-        
+
         from apps.jobs.services.it_classification import JobITClassificationService
-        
+
         try:
             classification = JobClassificationService.classify(payload, description, title)
             it_class_obj = JobITClassificationService.classify(payload, description, title)
@@ -107,20 +106,16 @@ class JobNormalizationService:
                 }
             )
 
-            NormalizedJob.objects.filter(id=job.id).update(
-                search_vector=(
-                    SearchVector("title", weight="A")
-                    + SearchVector("company_name", weight="B")
-                    + SearchVector("location", weight="C")
-                    + SearchVector("description", weight="D")
-                )
-            )
+            from apps.jobs.services.search_vector import JobSearchVectorService
+
+            JobSearchVectorService.update_search_vector(job)
+
             job.refresh_from_db()
 
             raw_record.normalization_status = NormalizationStatus.SUCCESS
             raw_record.normalization_error = ""
             raw_record.save(update_fields=["normalization_status", "normalization_error"])
-            
+
             return job
 
         except Exception:

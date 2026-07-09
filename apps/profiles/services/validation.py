@@ -3,35 +3,34 @@ from urllib.parse import urlparse
 
 
 CURRENT_LEVEL_CHOICES = [
-    ("", "Sélectionner"),
-    ("student", "Étudiant"),
-    ("intern", "Stagiaire"),
+    ("", "Select"),
+    ("student", "Student / Internship"),
     ("junior", "Junior"),
-    ("mid", "Confirmé"),
+    ("mid", "Mid-level"),
     ("senior", "Senior"),
 ]
 
 LANGUAGE_LEVEL_CHOICES = [
-    ("", "Sélectionner"),
-    ("basic", "Notions"),
-    ("intermediate", "Intermédiaire"),
-    ("fluent", "Professionnel / courant"),
-    ("native", "Natif"),
+    ("", "Select"),
+    ("basic", "Basic"),
+    ("intermediate", "Intermediate"),
+    ("fluent", "Professional / fluent"),
+    ("native", "Native"),
 ]
 
 REMOTE_PREFERENCE_CHOICES = [
-    ("", "Sélectionner"),
-    ("on_site", "Présentiel"),
-    ("hybrid", "Hybride"),
-    ("remote_only", "Télétravail"),
-    ("any", "Ouvert à plusieurs formats"),
+    ("", "Select"),
+    ("on_site", "On site"),
+    ("hybrid", "Hybrid"),
+    ("remote_only", "Remote"),
+    ("any", "Open to multiple formats"),
 ]
 
 RELOCATION_PREFERENCE_CHOICES = [
-    ("", "Sélectionner"),
-    ("yes", "Oui"),
-    ("no", "Non"),
-    ("open", "À discuter"),
+    ("", "Select"),
+    ("yes", "Yes"),
+    ("no", "No"),
+    ("open", "Open to discussion"),
 ]
 
 TARGET_TYPE_CHOICES = [
@@ -39,14 +38,8 @@ TARGET_TYPE_CHOICES = [
     ("job", "Emploi"),
     ("internship", "Stage"),
     ("apprenticeship", "Alternance"),
+    ("contract", "Freelance / Mission"),
     ("any", "Ouvert à plusieurs opportunités"),
-]
-
-TARGET_JOB_TYPE_CHOICES = [
-    ("full_time_job", "CDI / temps plein"),
-    ("contract", "Contrat / mission"),
-    ("internship", "Stage"),
-    ("apprenticeship", "Alternance"),
 ]
 
 MEANINGLESS_VALUES = {

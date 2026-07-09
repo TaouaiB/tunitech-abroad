@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib import messages
-from .models import CVUpload, CVParsedData
+from .models import CVUpload, CVParsedData, CVFieldCorrection
 from .tasks import parse_cv
 
 @admin.action(description="Reparse selected CVs")
@@ -53,3 +53,10 @@ class CVParsedDataAdmin(admin.ModelAdmin):
     search_fields = ('cv_upload__user__email', 'extracted_name', 'extracted_email')
     readonly_fields = ('cv_upload', 'created_at', 'updated_at', 'deterministic_json', 'llm_json', 'merged_json', 'confidence_json', 'warnings_json')
     exclude = ('raw_text',)
+
+@admin.register(CVFieldCorrection)
+class CVFieldCorrectionAdmin(admin.ModelAdmin):
+    list_display = ('cv_upload', 'field_name', 'confidence', 'source', 'source_user', 'created_at')
+    list_filter = ('field_name', 'confidence', 'source')
+    search_fields = ('cv_upload__user__email', 'field_name', 'extracted_value', 'corrected_value')
+    readonly_fields = ('cv_upload', 'field_name', 'extracted_value', 'corrected_value', 'confidence', 'source', 'source_user', 'created_at')

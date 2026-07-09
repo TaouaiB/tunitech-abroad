@@ -1,1 +1,1 @@
-{% load i18n %}Tentative d'inscription - TuniAtlas
+{% load i18n %}Tentative d'inscription

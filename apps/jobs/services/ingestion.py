@@ -11,6 +11,7 @@ from apps.jobs.models import (
     SourceType,
     RawJobRecord,
     NormalizedJob,
+    JobIngestionQueryRun,
 )
 from apps.jobs.services.france_travail.client import FranceTravailClient
 from apps.jobs.services.normalization import JobNormalizationService
@@ -37,7 +38,7 @@ class JobIngestionService:
             status="running",
             preset=overrides.get("preset", config.preset),
             limit_per_keyword=overrides.get("limit_per_keyword", config.limit_per_keyword),
-            max_total=overrides.get("max_total", config.max_total_per_run),
+            max_total=overrides.get("max_total", min(config.max_jobs_per_run, config.max_total_per_run)),
         )
 
         source = None
@@ -68,22 +69,17 @@ class JobIngestionService:
         preset = run_log.preset
         custom_kw_override = overrides.get("custom_keywords")
         if custom_kw_override:
-            # Explicit custom keywords from overrides take priority
             keywords = custom_kw_override
+        elif cls._is_scheduled_trigger(trigger) and config.queries_json:
+            keywords = config.queries_json
+        elif cls._is_scheduled_trigger(trigger):
+            keywords = get_scheduled_keywords()
         elif preset and preset == "broad_it":
             keywords = get_preset_keywords(preset)
         else:
-            keywords = config.custom_keywords
+            keywords = config.queries_json or config.custom_keywords
 
-        # For scheduled (Beat) runs, use conservative defaults:
-        # - Curated 8-keyword subset instead of full 58 keywords
-        # - Lower per-keyword limit to prevent runaway API calls
-        # - Fewer pages per keyword
-        # This keeps a 4-hourly schedule reasonable. Full preset stays
-        # available for manual syncs.
-        is_scheduled = trigger == "celery"
-        if is_scheduled and not custom_kw_override:
-            keywords = get_scheduled_keywords()
+        is_scheduled = cls._is_scheduled_trigger(trigger)
 
         run_log.keywords_json = keywords
         run_log.save(update_fields=["keywords_json"])
@@ -92,18 +88,34 @@ class JobIngestionService:
 
         limit_per_keyword = run_log.limit_per_keyword
         max_total = run_log.max_total
-        max_pages_per_keyword = overrides.get("max_pages_per_keyword", config.max_pages_per_keyword)
+        max_pages_per_keyword = overrides.get("max_pages_per_query", config.max_pages_per_query)
         max_provider_requests = overrides.get(
             "max_provider_requests",
             settings.FRANCE_TRAVAIL_MAX_REQUESTS_PER_RUN,
         )
+        run_log.config_snapshot_json = cls._build_config_snapshot(
+            config=config,
+            trigger=trigger,
+            preset=preset,
+            keywords=keywords,
+            limit_per_keyword=limit_per_keyword,
+            max_total=max_total,
+            max_provider_requests=max_provider_requests,
+            max_pages_per_keyword=max_pages_per_keyword,
+            page_size=config.page_size if hasattr(config, "page_size") else 50,
+        )
+        run_log.save(update_fields=["config_snapshot_json"])
         provider_request_count = 0
         provider_cap_reached = False
         provider_warning_count = 0
 
         if is_scheduled and not overrides:
-            limit_per_keyword = min(limit_per_keyword, 25)
-            max_pages_per_keyword = min(max_pages_per_keyword, 2)
+            max_total = min(config.target_daily_fetch_count, config.max_jobs_per_run, config.max_total_per_run)
+            run_log.max_total = max_total
+            run_log.config_snapshot_json["max_total_per_run"] = max_total
+            run_log.config_snapshot_json["target_daily_fetch_count"] = config.target_daily_fetch_count
+            run_log.config_snapshot_json["max_jobs_per_run"] = config.max_jobs_per_run
+            run_log.save(update_fields=["max_total", "config_snapshot_json"])
         normalize = overrides.get("normalize", config.normalize_after_fetch)
         enrichment_enabled = overrides.get("enrichment_enabled", config.enrichment_enabled)
         enrich_every_fetched_it_job = overrides.get(
@@ -126,7 +138,9 @@ class JobIngestionService:
 
         seen_source_ids: set[str] = set()
         total_fetched = 0
-        page_size = min(limit_per_keyword, 50)  # FT API limit is 150, but let's use up to 50
+        page_size = min(limit_per_keyword, config.page_size if hasattr(config, 'page_size') else 50)  # FT API limit is 150, but let's use up to page_size
+
+        query_stats = run_log.query_stats_json or {}
 
         for kw in keywords:
             if total_fetched >= max_total or provider_cap_reached:
@@ -134,6 +148,17 @@ class JobIngestionService:
 
             fetched_for_kw = 0
             page = 0
+            query_started_at = timezone.now()
+            query_error_message = ""
+            requested_ranges = []
+
+            # Snapshots for query tracking
+            kw_start_fetched = run_log.fetched_count
+            kw_start_created = run_log.created_raw_count
+            kw_start_updated = run_log.updated_raw_count
+            kw_start_skipped = run_log.duplicates_skipped_count
+            kw_start_error = run_log.error_count
+            kw_unchanged = 0
 
             while page < max_pages_per_keyword and fetched_for_kw < limit_per_keyword and total_fetched < max_total:
                 if provider_request_count >= max_provider_requests:
@@ -158,8 +183,10 @@ class JobIngestionService:
 
                 end = start + max_allowed_this_page - 1
 
+                params = {"motsCles": kw, "range": f"{start}-{end}"}
+                requested_ranges.append(params["range"])
+
                 try:
-                    params = {"motsCles": kw, "range": f"{start}-{end}"}
                     if provider_request_count > 0 and settings.FRANCE_TRAVAIL_REQUEST_DELAY_SECONDS > 0:
                         time.sleep(settings.FRANCE_TRAVAIL_REQUEST_DELAY_SECONDS)
                     provider_request_count += 1
@@ -177,6 +204,7 @@ class JobIngestionService:
                     else:
                         run_log.error_count += 1
                         run_log.error_summary += f"Error fetching {kw} page {page}: {safe_error}\n"
+                        query_error_message = safe_error
                     break # Skip to next keyword on error
 
                 jobs = result.get("resultats", [])
@@ -200,7 +228,7 @@ class JobIngestionService:
                     fetched_for_kw += 1
 
                     if not dry_run:
-                        cls._process_job(
+                        process_result = cls._process_job(
                             job_data,
                             job_id,
                             source,
@@ -211,6 +239,8 @@ class JobIngestionService:
                             sync_enrichment,
                             config,
                         )
+                        if process_result == "unchanged":
+                            kw_unchanged += 1
                     else:
                         run_log.fetched_count += 1
 
@@ -218,6 +248,35 @@ class JobIngestionService:
                     break # Last page
 
                 page += 1
+
+            query_stats[kw] = {
+                "fetched": run_log.fetched_count - kw_start_fetched,
+                "created": run_log.created_raw_count - kw_start_created,
+                "updated": run_log.updated_raw_count - kw_start_updated,
+                "unchanged": kw_unchanged,
+                "skipped": run_log.duplicates_skipped_count - kw_start_skipped,
+                "error": run_log.error_count - kw_start_error,
+                "params": {"motsCles": kw},
+                "requested_ranges": requested_ranges,
+            }
+            JobIngestionQueryRun.objects.create(
+                ingestion_run=run_log,
+                query_label=kw,
+                params_json={"motsCles": kw},
+                requested_range_json={"ranges": requested_ranges},
+                fetched_count=run_log.fetched_count - kw_start_fetched,
+                created_count=run_log.created_raw_count - kw_start_created,
+                updated_count=run_log.updated_raw_count - kw_start_updated,
+                unchanged_count=kw_unchanged,
+                skipped_count=run_log.duplicates_skipped_count - kw_start_skipped,
+                error_count=run_log.error_count - kw_start_error,
+                error_message=query_error_message,
+                started_at=query_started_at,
+                finished_at=timezone.now(),
+            )
+            # Save query stats progressively
+            run_log.query_stats_json = query_stats
+            run_log.save(update_fields=["query_stats_json"])
 
         status = "success" if run_log.error_count == 0 and provider_warning_count == 0 else "partial_success"
         if run_log.error_count > 0 and total_fetched == 0:
@@ -281,6 +340,44 @@ class JobIngestionService:
     def _append_warning(run_log: JobIngestionRun, message: str) -> None:
         run_log.error_summary = f"{run_log.error_summary or ''}WARNING: {message}\n"[:4000]
 
+    @staticmethod
+    def _is_scheduled_trigger(trigger: str) -> bool:
+        return trigger in {"celery", "scheduled"}
+
+    @staticmethod
+    def _build_config_snapshot(
+        *,
+        config: JobIngestionConfig,
+        trigger: str,
+        preset: str,
+        keywords: list[str],
+        limit_per_keyword: int,
+        max_total: int,
+        max_provider_requests: int,
+        max_pages_per_keyword: int,
+        page_size: int,
+    ) -> dict[str, Any]:
+        return {
+            "config_id": config.id,
+            "config_name": config.name,
+            "trigger": trigger,
+            "preset": preset,
+            "queries_count": len(keywords),
+            "keywords_count": len(keywords),
+            "queries": list(keywords),
+            "keywords": list(keywords),
+            "target_daily_fetch_count": config.target_daily_fetch_count,
+            "max_jobs_per_run": config.max_jobs_per_run,
+            "max_total_per_run": max_total,
+            "limit_per_keyword": limit_per_keyword,
+            "max_pages_per_query": max_pages_per_keyword,
+            "page_size": page_size,
+            "stale_after_hours": config.stale_after_hours,
+            "removed_after_hours": config.removed_after_hours,
+            "expire_grace_hours": config.expire_grace_hours,
+            "provider_request_cap": max_provider_requests,
+        }
+
     @classmethod
     def repair_france_travail_source_sync_from_runs(cls) -> bool:
         source = JobSource.objects.filter(slug="france_travail").first()
@@ -308,7 +405,7 @@ class JobIngestionService:
         enrich_every_fetched_it_job,
         sync_enrichment,
         config,
-    ):
+    ) -> str:
         run_log.fetched_count += 1
         now = timezone.now()
         payload_hash = hashlib.sha256(str(job_data).encode()).hexdigest()
@@ -321,11 +418,16 @@ class JobIngestionService:
         }
         try:
             raw_job = RawJobRecord.objects.get(source=source, source_job_id=job_id)
+            unchanged = raw_job.payload_hash == payload_hash
             for key, value in defaults.items():
                 setattr(raw_job, key, value)
             raw_job.save(update_fields=list(defaults.keys()) + ["updated_at"])
             created = False
-            run_log.updated_raw_count += 1
+            if unchanged:
+                result_status = "unchanged"
+            else:
+                run_log.updated_raw_count += 1
+                result_status = "updated"
         except RawJobRecord.DoesNotExist:
             from django.db import IntegrityError, transaction
             try:
@@ -335,9 +437,10 @@ class JobIngestionService:
                         source_job_id=job_id,
                         first_seen_at=now,
                         **defaults
-                    )
+                )
                 created = True
                 run_log.created_raw_count += 1
+                result_status = "created"
             except IntegrityError:
                 # Concurrent creation fallback
                 raw_job = RawJobRecord.objects.get(source=source, source_job_id=job_id)
@@ -346,6 +449,7 @@ class JobIngestionService:
                 raw_job.save(update_fields=list(defaults.keys()) + ["updated_at"])
                 created = False
                 run_log.updated_raw_count += 1
+                result_status = "updated"
 
         if normalize:
             try:
@@ -370,6 +474,8 @@ class JobIngestionService:
             except Exception as e:
                 run_log.error_count += 1
                 run_log.error_summary += f"Normalization error for {job_id}: {cls._safe_error(e)}\n"
+
+        return result_status
 
     @classmethod
     def _queue_enrichment(cls, norm_job, run_log, sync_enrichment, config):

@@ -117,7 +117,7 @@ class PrivacyDashboardRoutesTests(TestCase):
         with patch("os.path.exists", return_value=False):
             response = self.client.post("/dashboard/settings/delete-account/", {"confirmation": "DELETE"})
 
-        self.assertRedirects(response, "/dashboard/settings/delete-account/done/")
+        self.assertRedirects(response, "/jobs/")
         deletion_request = DeletionRequest.objects.get(status="completed")
         self.assertIsNotNone(deletion_request.processed_at)
         self.user.refresh_from_db()

@@ -4,7 +4,7 @@ Phase 14J — Ingestion observability tests.
 Tests that:
 - Successful ingestion updates JobSource.last_successful_sync_at
 - Failed ingestion does NOT update JobSource.last_successful_sync_at
-- Scheduled (celery) trigger uses conservative keyword defaults
+- Scheduled (celery) trigger uses configured queries, then conservative fallback keywords
 """
 from unittest.mock import patch, MagicMock
 from datetime import timedelta
@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from apps.jobs.models import (
     JobIngestionConfig,
+    JobIngestionQueryRun,
     JobIngestionRun,
     JobSource,
     SourceType,
@@ -119,6 +120,28 @@ class IngestionJobSourceSyncTest(TestCase):
         self.assertEqual(run_log.status, "success")
         self.assertIsNotNone(run_log.finished_at)
 
+    @patch("apps.jobs.services.ingestion.FranceTravailClient")
+    def test_ingestion_records_query_level_counts(self, MockClient):
+        mock_client = MockClient.return_value
+        mock_client.search_offers.side_effect = [
+            _make_ft_result(2),
+            {"resultats": [{"id": "FT-TEST-0", "intitule": "Duplicate"}]},
+        ]
+
+        run_log = JobIngestionService.run(
+            self.config,
+            trigger="manual",
+            overrides={"custom_keywords": ["python", "django"], "limit_per_keyword": 2},
+        )
+
+        query_runs = list(JobIngestionQueryRun.objects.filter(ingestion_run=run_log).order_by("started_at"))
+        self.assertEqual(len(query_runs), 2)
+        self.assertEqual(query_runs[0].query_label, "python")
+        self.assertEqual(query_runs[0].fetched_count, 2)
+        self.assertEqual(query_runs[0].created_count, 2)
+        self.assertEqual(query_runs[1].query_label, "django")
+        self.assertEqual(query_runs[1].skipped_count, 1)
+
     def test_exception_finalizes_run_as_failed(self):
         with patch.object(JobIngestionService, "_run_with_log", side_effect=RuntimeError("boom")):
             with self.assertRaises(RuntimeError):
@@ -217,7 +240,7 @@ class IngestionJobSourceSyncTest(TestCase):
 
 
 class ScheduledTriggerDefaultsTest(TestCase):
-    """Test that celery trigger uses conservative defaults."""
+    """Test scheduled ingestion query selection and safety defaults."""
 
     def setUp(self):
         self.config = JobIngestionConfig.objects.create(
@@ -242,15 +265,68 @@ class ScheduledTriggerDefaultsTest(TestCase):
         )
 
     @patch("apps.jobs.services.ingestion.FranceTravailClient")
-    def test_celery_trigger_uses_scheduled_keywords(self, MockClient):
-        """When trigger='celery', should use SCHEDULED_IT_KEYWORDS not full preset."""
+    def test_celery_trigger_uses_scheduled_keywords_when_queries_empty(self, MockClient):
+        """When no queries_json is configured, scheduled runs fall back to safe keywords."""
         mock_client = MockClient.return_value
         mock_client.search_offers.return_value = _make_ft_result(2)
 
         run_log = JobIngestionService.run(self.config, trigger="celery")
 
-        # The run should have used the scheduled keywords
         self.assertEqual(run_log.keywords_json, SCHEDULED_IT_KEYWORDS)
+
+    @patch("apps.jobs.services.ingestion.FranceTravailClient")
+    def test_celery_trigger_prefers_configured_queries_json(self, MockClient):
+        mock_client = MockClient.return_value
+        mock_client.search_offers.return_value = _make_ft_result(2)
+        self.config.queries_json = ["python tunisie", "django alternance"]
+        self.config.save(update_fields=["queries_json"])
+
+        run_log = JobIngestionService.run(self.config, trigger="celery")
+
+        self.assertEqual(run_log.keywords_json, ["python tunisie", "django alternance"])
+        self.assertEqual(
+            [call.args[0]["motsCles"] for call in mock_client.search_offers.call_args_list],
+            ["python tunisie", "django alternance"],
+        )
+
+    @patch("apps.jobs.services.ingestion.FranceTravailClient")
+    def test_ingestion_run_stores_runtime_config_snapshot(self, MockClient):
+        mock_client = MockClient.return_value
+        mock_client.search_offers.return_value = _make_ft_result(1)
+        self.config.queries_json = ["python"]
+        self.config.target_daily_fetch_count = 25
+        self.config.max_jobs_per_run = 20
+        self.config.max_total_per_run = 15
+        self.config.limit_per_keyword = 7
+        self.config.max_pages_per_query = 3
+        self.config.page_size = 40
+        self.config.stale_after_hours = 36
+        self.config.removed_after_hours = 144
+        self.config.expire_grace_hours = 12
+        self.config.save()
+
+        run_log = JobIngestionService.run(self.config, trigger="celery")
+        self.config.target_daily_fetch_count = 999
+        self.config.save(update_fields=["target_daily_fetch_count"])
+        run_log.refresh_from_db()
+
+        snapshot = run_log.config_snapshot_json
+        self.assertEqual(snapshot["config_id"], self.config.id)
+        self.assertEqual(snapshot["config_name"], "scheduled_test")
+        self.assertEqual(snapshot["trigger"], "celery")
+        self.assertEqual(snapshot["preset"], "broad_it")
+        self.assertEqual(snapshot["queries"], ["python"])
+        self.assertEqual(snapshot["queries_count"], 1)
+        self.assertEqual(snapshot["target_daily_fetch_count"], 25)
+        self.assertEqual(snapshot["max_jobs_per_run"], 20)
+        self.assertEqual(snapshot["max_total_per_run"], 15)
+        self.assertEqual(snapshot["limit_per_keyword"], 7)
+        self.assertEqual(snapshot["max_pages_per_query"], 3)
+        self.assertEqual(snapshot["page_size"], 40)
+        self.assertEqual(snapshot["stale_after_hours"], 36)
+        self.assertEqual(snapshot["removed_after_hours"], 144)
+        self.assertEqual(snapshot["expire_grace_hours"], 12)
+        self.assertIn("provider_request_cap", snapshot)
 
     @patch("apps.jobs.services.ingestion.FranceTravailClient")
     def test_manual_trigger_uses_full_preset(self, MockClient):

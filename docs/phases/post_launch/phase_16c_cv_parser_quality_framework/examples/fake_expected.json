@@ -1,0 +1,15 @@
+{
+  "fake_cv_01": {
+    "name": "Jane Doe",
+    "acceptable_names": ["Jane A. Doe"],
+    "email": "jane.doe@example.test",
+    "phone": "+33 6 12 34 56 78",
+    "skills": ["Python", "Django", "PostgreSQL"]
+  },
+  "fake_cv_02": {
+    "name": "John Smith",
+    "email": "john.smith@example.test",
+    "phone": "+216 22 123 456",
+    "skills": ["JavaScript", "React"]
+  }
+}

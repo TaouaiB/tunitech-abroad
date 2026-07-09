@@ -7,8 +7,10 @@ from apps.jobs.models import (
     RawJobRecord,
     NormalizedJob,
     NormalizedJobSkill,
+    JobQualityFeedback,
     JobIngestionConfig,
     JobIngestionRun,
+    JobIngestionQueryRun,
 )
 from apps.jobs.tasks import normalize_raw_job_record
 
@@ -48,6 +50,8 @@ class JobIngestionConfigAdmin(admin.ModelAdmin):
         "enrich_every_fetched_it_job",
         "enrichment_limit_per_run",
         "daily_enrichment_limit",
+        "target_daily_fetch_count",
+        "max_jobs_per_run",
         "last_run_at",
         "last_success_at",
     )
@@ -55,7 +59,21 @@ class JobIngestionConfigAdmin(admin.ModelAdmin):
     search_fields = ("name", "preset")
     fieldsets = (
         (None, {"fields": ("name", "enabled", "preset", "custom_keywords")}),
-        ("Fetch limits", {"fields": ("limit_per_keyword", "max_total_per_run", "max_pages_per_keyword")}),
+        (
+            "Fetch limits",
+            {
+                "fields": (
+                    "target_daily_fetch_count",
+                    "max_jobs_per_run",
+                    "max_pages_per_query",
+                    "page_size",
+                    "queries_json",
+                    "limit_per_keyword",
+                    "max_total_per_run",
+                    "max_pages_per_keyword",
+                )
+            },
+        ),
         ("Schedule", {"fields": ("frequency_minutes", "nightly_enabled", "nightly_max_total")}),
         (
             "Processing",
@@ -69,7 +87,18 @@ class JobIngestionConfigAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        ("Expiry", {"fields": ("expire_after_days", "mark_missing_as_stale_after_days")}),
+        (
+            "Freshness and expiry",
+            {
+                "fields": (
+                    "stale_after_hours",
+                    "removed_after_hours",
+                    "expire_grace_hours",
+                    "expire_after_days",
+                    "mark_missing_as_stale_after_days",
+                )
+            },
+        ),
         ("Runtime", {"fields": ("dry_run", "last_run_at", "last_success_at", "last_error")}),
     )
     readonly_fields = ("last_run_at", "last_success_at", "last_error")
@@ -92,7 +121,41 @@ class JobIngestionRunAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "trigger", "config")
     search_fields = ("public_id",)
-    readonly_fields = ("started_at", "finished_at", "public_id")
+    readonly_fields = ("started_at", "finished_at", "public_id", "query_stats_json", "config_snapshot_json")
+
+
+@admin.register(JobIngestionQueryRun)
+class JobIngestionQueryRunAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "ingestion_run",
+        "query_label",
+        "fetched_count",
+        "created_count",
+        "updated_count",
+        "unchanged_count",
+        "skipped_count",
+        "error_count",
+        "started_at",
+    )
+    list_filter = ("query_label", "error_count")
+    search_fields = ("query_label", "error_message")
+    readonly_fields = (
+        "ingestion_run",
+        "query_label",
+        "params_json",
+        "requested_range_json",
+        "fetched_count",
+        "created_count",
+        "updated_count",
+        "unchanged_count",
+        "skipped_count",
+        "error_count",
+        "error_message",
+        "started_at",
+        "finished_at",
+        "created_at",
+    )
 
 
 @admin.register(RawJobRecord)
@@ -159,6 +222,15 @@ class NormalizedJobSkillInline(admin.TabularInline):
     extra = 1
     fields = ('skill', 'requirement_type', 'source', 'confidence')
     autocomplete_fields = ('skill',)
+
+
+class JobQualityFeedbackInline(admin.TabularInline):
+    model = JobQualityFeedback
+    extra = 0
+    fields = ("reason", "notes", "reviewed_by", "created_at")
+    readonly_fields = ("created_at",)
+    autocomplete_fields = ("reviewed_by",)
+
 
 class NoSkillsFilter(admin.SimpleListFilter):
     title = "Has materialized skills"
@@ -232,6 +304,7 @@ class NormalizedJobAdmin(admin.ModelAdmin):
         "skill_signal_quality",
         "skill_extraction_status",
         "enrichment_status",
+        "quality_issue",
         "job_skill_count",
         "last_seen_at",
         "created_at",
@@ -246,11 +319,12 @@ class NormalizedJobAdmin(admin.ModelAdmin):
         "job_type",
         "remote_type",
         "experience_level",
+        "quality_issue",
     )
     search_fields = ("title", "company_name", "source_job_id", "public_id", "source__name", "source__slug")
     readonly_fields = ("public_id", "created_at", "updated_at", "first_seen_at", "last_seen_at", "last_fetched_at")
     actions = [mark_jobs_stale, mark_jobs_expired, queue_selected_eligible_job_enrichments, re_extract_skills_action, rematerialize_skills_action, recover_zero_skill_jobs_action]
-    inlines = [NormalizedJobSkillInline]
+    inlines = [NormalizedJobSkillInline, JobQualityFeedbackInline]
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -268,7 +342,16 @@ class NormalizedJobAdmin(admin.ModelAdmin):
 
 @admin.register(NormalizedJobSkill)
 class NormalizedJobSkillAdmin(admin.ModelAdmin):
-    list_display = ("job", "skill", "requirement_type", "source")
+    list_display = ("job", "skill", "requirement_type", "source", "confidence")
     list_filter = ("requirement_type", "source")
     search_fields = ("job__title", "skill__canonical_name")
+    readonly_fields = ("created_at",)
+
+
+@admin.register(JobQualityFeedback)
+class JobQualityFeedbackAdmin(admin.ModelAdmin):
+    list_display = ("job", "reason", "reviewed_by", "created_at")
+    list_filter = ("reason", "created_at")
+    search_fields = ("job__title", "job__company_name", "notes", "reviewed_by__email")
+    autocomplete_fields = ("job", "reviewed_by")
     readonly_fields = ("created_at",)

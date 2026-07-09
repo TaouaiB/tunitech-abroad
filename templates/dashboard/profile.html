@@ -3,198 +3,360 @@
 {% block title %}Mon Profil - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="tta-app-grid" style="margin-top: 2rem; margin-bottom: 3rem;">
-    {% include 'dashboard/sidebar.html' %}
-    <section>
-        <div class="tta-page-header">
-            <div>
-                <a href="{% url 'dashboard:home' %}" class="tta-back-link">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Retour au tableau de bord
-                </a>
-            </div>
-            <div>
-                <span class="tta-page-kicker">Profil</span>
-                <h1 class="tta-page-title" style="margin-top:8px">Mon profil candidat</h1>
-                <p class="tta-muted" style="margin-top:6px">Complétez votre profil pour améliorer la pertinence de vos recommandations.</p>
-            </div>
-        </div>
+<main class="profile-v16">
+  <section class="section">
+    <div class="shell">
+      <h1 class="page-title small" data-fr="Profil" data-en="Profile">Profil</h1>
 
-        <!-- Profile Completion Status -->
-        <div class="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-brand-900 dark:border-brand-900/50 dark:bg-brand-950/30 dark:text-brand-200" style="margin-bottom:18px">
-            <div class="flex justify-between items-center mb-1">
-                <strong class="text-sm font-bold">
-                    Progression
-                    {% if profile.profile_completion_score|default:0 >= 80 %}
-                        <span class="tta-badge tta-badge-success ml-2">Fort</span>
-                    {% elif profile.profile_completion_score|default:0 >= 50 %}
-                        <span class="tta-badge tta-badge-brand ml-2">Utilisable</span>
-                    {% else %}
-                        <span class="tta-badge tta-badge-warning ml-2">Incomplet</span>
-                    {% endif %}
-                </strong>
-                <span class="text-sm font-bold text-brand-700">{{ profile.profile_completion_score|default:0 }}%</span>
-            </div>
-            <div class="tta-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ profile.profile_completion_score|default:0 }}" style="margin-top:10px">
-                <div class="tta-progress-bar" style="width: {{ profile.profile_completion_score|default:0 }}%"></div>
-            </div>
-            <p class="text-sm mt-2 text-brand-700">Plus votre profil est complet, plus le matching est précis.</p>
-        </div>
-
-        {% if not is_complete_enough and missing_fields %}
-        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200" style="margin-bottom:18px">
-            <strong class="block mb-2">Complétez votre profil pour améliorer vos recommandations</strong>
-            <p class="text-sm mb-2">Les recommandations d'emploi sont actuellement bloquées (minimum 50% requis). Veuillez remplir ces champs pour débloquer le service :</p>
-            <ul class="list-disc list-inside text-sm font-medium space-y-1">
-                {% for field in missing_fields %}
-                <li>{{ field }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% elif is_complete_enough %}
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200" style="margin-bottom:18px">
-            <strong class="block mb-1">Profil prêt pour les recommandations</strong>
-            <p class="text-sm">Votre profil est suffisamment complet pour recevoir des recommandations pertinentes.</p>
+      <div class="stepper">
+        {% if not request.user.has_usable_password %}
+        <div class="step" data-profile-nav="{% url 'account_set_password' %}" style="cursor:pointer;">
+          <span class="step-num">1</span>
+          <div>
+            <b data-fr="Mot de passe" data-en="Password">Mot de passe</b>
+            <div class="small" data-fr="Non défini" data-en="Not set">Non défini</div>
+          </div>
         </div>
         {% endif %}
+        <div class="step" data-profile-nav="{% url 'dashboard:cv' %}" style="cursor:pointer;">
+          <span class="step-num">{% if not request.user.has_usable_password %}2{% else %}1{% endif %}</span>
+          <div>
+            <b>CV</b>
+            <div class="small" data-fr="Gérez votre CV" data-en="Manage your CV">Gérez votre CV</div>
+          </div>
+        </div>
+        <div class="step active">
+          <span class="step-num">{% if not request.user.has_usable_password %}3{% else %}2{% endif %}</span>
+          <div>
+            <b data-fr="Profil" data-en="Profile">Profil</b>
+            <div class="small" data-fr="Complétez vos infos" data-en="Complete your info">Complétez vos infos</div>
+          </div>
+        </div>
+      </div>
 
-        <form method="post" class="tta-card tta-card-body" style="padding:0">
+      <div class="main-layout">
+        <section class="grid">
+          <form method="post" class="card grid" style="padding:18px;">
             {% csrf_token %}
-            
+            <h2 class="h2" data-fr="Profil Candidat" data-en="Candidate profile">Profil Candidat</h2>
+
+            {% if not is_complete_enough and missing_fields %}
+            <div style="border:1px solid var(--warn); background:color-mix(in srgb, var(--warn) 6%, var(--panel)); border-radius:18px; padding:18px; margin-bottom:12px;">
+                <b style="color:var(--warn);">Complétez votre profil pour améliorer vos recommandations</b>
+                <div class="small" style="margin-top:4px;">Les recommandations d'emploi sont actuellement bloquées (minimum 50% requis). Veuillez remplir ces champs pour débloquer le service :</div>
+                <ul class="small" style="margin-top:8px; padding-left:16px;">
+                    {% for field in missing_fields %}
+                    <li>{{ field }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% elif is_complete_enough %}
+            <div style="border:1px solid var(--good); background:color-mix(in srgb, var(--good) 6%, var(--panel)); border-radius:18px; padding:18px; margin-bottom:12px;">
+                <b style="color:var(--good);" data-fr="Profil prêt pour les recommandations" data-en="Profile ready for recommendations">Profil prêt pour les recommandations</b>
+                <div class="small" style="margin-top:4px;" data-fr="Votre profil est suffisamment complet pour recevoir des recommandations pertinentes." data-en="Your profile is complete enough to receive relevant recommendations.">Votre profil est suffisamment complet pour recevoir des recommandations pertinentes.</div>
+            </div>
+            {% endif %}
+
             {% if form.non_field_errors %}
-                <div class="p-6 pb-0">
-                    <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
-                        <h3 class="text-sm font-medium">
-                            {{ form.non_field_errors|join:", " }}
-                        </h3>
+                <div class="field has-error"><div class="error" style="display:block;">{{ form.non_field_errors|join:", " }}</div></div>
+            {% endif %}
+
+            {% for field in form %}
+                {% if not field.is_hidden %}
+                    {% if field.name == 'full_name' %}
+                    <h3 class="h3" style="margin-top:16px;" data-fr="Identité" data-en="Identity">Identité</h3>
+                    <div class="account-box">
+                    {% elif field.name == 'linkedin_url' %}
+                    </div><h3 class="h3" style="margin-top:16px;" data-fr="Liens professionnels" data-en="Professional links">Liens professionnels</h3>
+                    <div class="account-box">
+                    {% elif field.name == 'current_level' %}
+                    </div><h3 class="h3" style="margin-top:16px;" data-fr="Expérience" data-en="Experience">Expérience</h3>
+                    <div class="account-box">
+                    {% elif field.name == 'target_roles' %}
+                    </div><h3 class="h3" style="margin-top:16px;" data-fr="Objectifs" data-en="Your goals">Objectifs</h3>
+                    <div class="account-box">
+                    {% elif field.name == 'french_level' %}
+                    </div><h3 class="h3" style="margin-top:16px;" data-fr="Langues" data-en="Languages">Langues</h3>
+                    <div class="account-box">
+                    {% elif field.name == 'relocation_preference' %}
+                    </div><h3 class="h3" style="margin-top:16px;" data-fr="Préférences" data-en="Preferences">Préférences</h3>
+                    <div class="account-box">
+                    {% endif %}
+
+                    <div class="field {% if field.errors %}has-error{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="small" style="margin-top:4px;">{{ field.help_text }}</div>
+                        {% endif %}
+
+                        {% for key, val in suggestions.items %}
+                            {% if key == field.name %}
+                                <div class="small" style="margin-top:4px; color:var(--brand); display:flex; gap:4px; align-items:center;">
+                                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span data-fr="Détecté sur votre CV :" data-en="Detected on your CV:">Détecté sur votre CV :</span> <strong>{{ val }}</strong>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if field.errors %}
+                            <div class="error" style="display:block;">{{ field.errors|join:", " }}</div>
+                        {% endif %}
                     </div>
+                {% else %}
+                    {{ field }}
+                {% endif %}
+                {% if forloop.last %}</div>{% endif %}
+            {% endfor %}
+
+            <h3 id="profile-skills" class="h3" style="margin-top:16px; scroll-margin-top:90px;" data-fr="Compétences confirmées" data-en="Confirmed skills">Compétences confirmées</h3>
+            <div class="small" style="margin-bottom:8px;" data-fr="Compétences confirmées et détectées depuis votre CV, utilisées pour le matching." data-en="Confirmed and CV-detected skills used for matching.">Compétences confirmées et détectées depuis votre CV, utilisées pour le matching.</div>
+
+            <div class="pill-row" style="align-items:center; gap:8px; margin-bottom:12px;">
+                <input type="text" name="skill_name" placeholder="Ajouter une compétence, ex. Python" data-fr-placeholder="Ajouter une compétence, ex. Python" data-en-placeholder="Add a skill, e.g. Python" style="flex:1; min-width:160px;">
+                <button type="submit" name="skill_action" value="add" class="btn secondary" data-fr="Ajouter" data-en="Add">Ajouter</button>
+            </div>
+
+            {% if profile_skills %}
+                <div class="pill-row">
+                    {% for skill in profile_skills %}
+                        <span class="skill {% if skill.is_confirmed %}ok{% else %}pill brand{% endif %}" style="display:inline-flex; align-items:center; gap:6px;">
+                            {{ skill.raw_name|default:skill.normalized_name }}
+                            <button type="submit" name="remove_skill" value="{{ skill.normalized_name }}" class="btn secondary" style="padding:2px 8px; font-size:14px; line-height:1;" aria-label="Remove {{ skill.raw_name|default:skill.normalized_name }}" data-fr-label="Retirer {{ skill.raw_name|default:skill.normalized_name }}" data-en-label="Remove {{ skill.raw_name|default:skill.normalized_name }}">-</button>
+                        </span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="small" style="border:1px dashed var(--line); padding:12px; border-radius:12px;">
+                    <span data-fr="Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section." data-en="No skills detected yet. Upload or replace your CV to fill this section.">Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section.</span>
                 </div>
             {% endif %}
 
-            <div class="p-6 space-y-6">
-                {% for field in form %}
-                    {% if not field.is_hidden %}
-                    {% if field.name == 'full_name' %}
-                    <div class="border-b border-slate-200 pb-3 dark:border-slate-800">
-                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Identité</h2>
-                        <p class="tta-muted text-sm">Informations de base utilisées pour présenter votre profil candidat.</p>
-                    </div>
-                    {% elif field.name == 'linkedin_url' %}
-                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
-                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Liens professionnels</h2>
-                        <p class="tta-muted text-sm">Ajoutez les liens qui renforcent vos signaux techniques.</p>
-                    </div>
-                    {% elif field.name == 'current_level' %}
-                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
-                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Expérience</h2>
-                        <p class="tta-muted text-sm">Aidez le matching à évaluer votre niveau actuel.</p>
-                    </div>
-                    {% elif field.name == 'target_roles' %}
-                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
-                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Objectif France</h2>
-                        <p class="tta-muted text-sm">Précisez les rôles et formats d'opportunités visés.</p>
-                    </div>
-                    {% elif field.name == 'french_level' %}
-                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
-                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Langues</h2>
-                        <p class="tta-muted text-sm">Ces niveaux aident à détecter les risques sur les offres françaises.</p>
-                    </div>
-                    {% elif field.name == 'relocation_preference' %}
-                    <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
-                        <h2 class="text-lg font-bold text-slate-950 dark:text-white">Préférences</h2>
-                        <p class="tta-muted text-sm">Indiquez votre mobilité et votre préférence télétravail.</p>
-                    </div>
-                    {% endif %}
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                        <div class="md:col-span-1">
-                            <label for="{{ field.id_for_label }}" class="tta-label font-bold">
-                                {{ field.label }}
-                            </label>
-                            {% if field.help_text %}
-                                <p class="mt-1 text-xs tta-muted">{{ field.help_text }}</p>
-                            {% endif %}
-                        </div>
-                        <div class="md:col-span-2">
-                            {{ field }}
-                            
-                            {% for key, val in suggestions.items %}
-                                {% if key == field.name %}
-                                    <div class="mt-2 text-xs text-brand-600 bg-brand-50 p-2 rounded flex items-center gap-1.5 border border-brand-100">
-                                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        Détecté sur votre CV : <strong>{{ val }}</strong>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-
-                            {% if field.errors %}
-                                <div class="text-sm text-red-600 mt-2 flex items-center gap-1">
-                                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    {{ field.errors|join:", " }}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% else %}
-                        {{ field }}
-                    {% endif %}
-                {% endfor %}
-
-                <div class="border-b border-slate-200 pb-3 pt-4 dark:border-slate-800">
-                    <h2 class="text-lg font-bold text-slate-950 dark:text-white">Compétences</h2>
-                    <p class="tta-muted text-sm">Compétences confirmées et détectées depuis votre CV, utilisées par le matching.</p>
-                </div>
-                {% if profile_skills %}
-                    <div class="tta-chip-row">
-                        {% for skill in profile_skills %}
-                            <span class="tta-skill-chip {% if skill.is_confirmed %}tta-skill-chip-required{% endif %}">
-                                {{ skill.raw_name|default:skill.normalized_name }}
-                                {% if skill.is_confirmed %}
-                                    <span class="tta-badge tta-badge-success">Confirmée</span>
-                                {% elif skill.source %}
-                                    <span class="tta-badge tta-badge-info">CV{% if skill.confidence %} {{ skill.confidence }}%{% endif %}</span>
-                                {% endif %}
-                            </span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
-                        Aucune compétence détectée pour le moment. Importez ou remplacez votre CV pour alimenter cette section.
-                    </div>
-                {% endif %}
+            <div id="profile-actions" class="pill-row" style="margin-top:16px; border-top:1px solid var(--line); padding-top:16px; scroll-margin-top:90px;">
+                <a class="btn secondary" href="{% url 'dashboard:cv' %}" data-fr="Retour au CV" data-en="Back to CV">Retour au CV</a>
+                <button type="submit" class="btn primary" data-fr="Enregistrer le profil" data-en="Save profile">Enregistrer le profil</button>
             </div>
+          </form>
+        </section>
 
-            <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    const textInputs = document.querySelectorAll('form input[type="text"], form input[type="url"], form input[type="email"], form input[type="tel"], form input[type="number"]');
-                    textInputs.forEach(input => {
-                        input.classList.add('tta-input');
-                    });
-                    
-                    const textareas = document.querySelectorAll('form textarea');
-                    textareas.forEach(ta => {
-                        ta.classList.add('tta-input');
-                        ta.setAttribute('rows', '4');
-                    });
+        <aside class="card sticky progression-aside">
+          <h2 class="h2" data-fr="Progression" data-en="Completion">Progression</h2>
 
-                    const selects = document.querySelectorAll('form select');
-                    selects.forEach(select => {
-                        select.classList.add('tta-select');
-                    });
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px;">
+            <strong style="font-size:24px; letter-spacing:-.04em;">{{ completion_score|default:0 }}%</strong>
+            <span class="pill {% if completion_score|default:0 >= 80 %}good{% elif completion_score|default:0 >= 50 %}brand{% else %}warn{% endif %}" style="padding:4px 8px; font-size:10px;">
+                <span data-fr="{% if completion_score|default:0 >= 80 %}Fort{% elif completion_score|default:0 >= 50 %}Utilisable{% else %}Incomplet{% endif %}" data-en="{% if completion_score|default:0 >= 80 %}Strong{% elif completion_score|default:0 >= 50 %}Usable{% else %}Incomplete{% endif %}">{% if completion_score|default:0 >= 80 %}Fort{% elif completion_score|default:0 >= 50 %}Utilisable{% else %}Incomplet{% endif %}</span>
+            </span>
+          </div>
+          <div class="bar {% if completion_score|default:0 >= 80 %}good{% elif completion_score|default:0 >= 50 %}brand{% else %}warn{% endif %}">
+              <span style="width:0%;" data-completion-width="{{ completion_score|default:0 }}"></span>
+          </div>
+          <div class="small" style="margin-top:8px;">Plus votre profil est complet, plus le matching est précis.</div>
 
-                    const checkboxes = document.querySelectorAll('form input[type="checkbox"]');
-                    checkboxes.forEach(cb => {
-                        cb.classList.add('h-4', 'w-4', 'text-brand-600', 'focus:ring-brand-500', 'border-gray-300', 'rounded', 'mt-1');
-                        cb.parentElement.classList.add('flex', 'items-start', 'gap-2');
-                    });
-                });
-            </script>
-
-            <div class="tta-sticky-save-bar flex justify-end">
-                <button type="submit" class="tta-btn tta-btn-primary w-full justify-center md:w-auto">
-                    Enregistrer le profil
-                </button>
+          <div class="notice-list" style="margin-top:16px">
+            {% if not request.user.has_usable_password %}
+            <div class="notice">
+              <span class="dot warn"></span>
+              <div><b data-fr="Mot de passe" data-en="Password">Mot de passe</b></div>
             </div>
-        </form>
-    </section>
-</div>
+            {% endif %}
+            <div class="notice">
+              <span class="dot {% if has_active_cv %}good{% else %}warn{% endif %}"></span>
+              <div><b data-fr="CV en ligne" data-en="Online CV">CV en ligne</b></div>
+            </div>
+            <div class="notice">
+              <span class="dot {% if is_complete_enough %}good{% else %}warn{% endif %}"></span>
+              <div><b data-fr="Profil complété" data-en="Profile completed">Profil complété</b></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const textInputs = document.querySelectorAll('form input[type="text"], form input[type="url"], form input[type="email"], form input[type="tel"], form input[type="number"]');
+        textInputs.forEach(input => { input.classList.add('input'); });
+
+        const textareas = document.querySelectorAll('form textarea');
+        textareas.forEach(ta => { ta.classList.add('textarea'); });
+
+        const selects = document.querySelectorAll('form select');
+        selects.forEach(select => { select.classList.add('select'); });
+
+        const checkboxes = document.querySelectorAll('form input[type="checkbox"]');
+        checkboxes.forEach(cb => { cb.style.marginTop = '4px'; });
+
+        document.querySelectorAll('[data-profile-nav]').forEach(el => {
+            el.addEventListener('click', () => {
+                window.location.href = el.dataset.profileNav;
+            });
+        });
+
+        document.querySelectorAll('[data-completion-width]').forEach(el => {
+            const width = Number(el.dataset.completionWidth || 0);
+            el.style.width = `${Math.max(0, Math.min(100, width))}%`;
+        });
+    });
+
+/* TUNIATLAS_PROFILE_PAGE_TRANSLATOR_V4 */
+(function(){
+  const MAP = {
+    "Profile": "Profil",
+    "Manage your CV": "Gérez votre CV",
+    "Complete your info": "Complétez vos infos",
+    "Candidate profile": "Profil candidat",
+    "Profile ready for recommendations": "Profil prêt pour les recommandations",
+    "Your profile is complete enough to receive relevant recommendations.": "Votre profil est suffisamment complet pour recevoir des recommandations pertinentes.",
+    "Identity": "Identité",
+    "Full name": "Nom complet",
+    "Detected on your CV:": "Détecté sur votre CV :",
+    "Phone": "Téléphone",
+    "Include the country code if possible.": "Numéro avec indicatif pays si possible.",
+    "Location": "Localisation",
+    "City and country, for example Tunis, Tunisia.": "Ville et pays, par exemple Tunis, Tunisia.",
+    "Professional links": "Liens professionnels",
+    "Personal website": "Site personnel",
+    "Experience": "Expérience",
+    "Career level": "Niveau de carrière",
+    "Choose the level that best describes your current situation.": "Choisissez le niveau qui décrit le mieux votre situation actuelle.",
+    "Years of experience": "Années d'expérience",
+    "Use 0 for your first internship or first experience.": "Utilisez 0 pour un premier stage ou une première expérience.",
+    "Your goals": "Objectifs",
+    "Target roles": "Rôles ciblés",
+    "Enter one or more IT roles separated by commas.": "Indiquez un ou plusieurs rôles IT séparés par des virgules.",
+    "Target opportunity type": "Type d'opportunité recherchée",
+    "Languages": "Langues",
+    "French level": "Niveau de français",
+    "English level": "Niveau d'anglais",
+    "Preferences": "Préférences",
+    "Mobility / relocation": "Mobilité / relocalisation",
+    "Remote work preference": "Préférence télétravail",
+    "Confirmed skills": "Compétences confirmées",
+    "Confirmed and CV-detected skills used for matching.": "Compétences confirmées et détectées depuis votre CV, utilisées pour le matching.",
+    "Back to CV": "Retour au CV",
+    "Save profile": "Enregistrer le profil",
+    "Completion": "Progression",
+    "Online CV": "CV en ligne",
+    "Profile completed": "Profil complété",
+    "The more complete your profile is, the more accurate matching becomes.": "Plus votre profil est complet, plus le matching est précis.",
+    "Strong": "Fort",
+    "Usable": "Utilisable",
+    "Incomplete": "Incomplet",
+
+    "Select": "Sélectionner",
+    "Student / Internship": "Étudiant / Stage",
+    "Junior": "Junior",
+    "Mid-level": "Confirmé",
+    "Senior": "Senior",
+    "Job": "Emploi",
+    "Internship": "Stage",
+    "Apprenticeship": "Alternance",
+    "Freelance / Contract": "Freelance / Mission",
+    "Open to multiple opportunities": "Ouvert à plusieurs opportunités",
+    "Basic": "Notions",
+    "Intermediate": "Intermédiaire",
+    "Professional / fluent": "Professionnel / courant",
+    "Native": "Natif",
+    "On site": "Présentiel",
+    "Hybrid": "Hybride",
+    "Remote": "Télétravail",
+    "Open to multiple formats": "Ouvert à plusieurs formats",
+    "Yes": "Oui",
+    "No": "Non",
+    "Open to discussion": "À discuter",
+    "Backend developer, DevOps, Data analyst": "Développeur backend, DevOps, Data analyst"
+  };
+
+  const REVERSE = {};
+  Object.entries(MAP).forEach(([en, fr]) => {
+    if (fr && !REVERSE[fr]) REVERSE[fr] = en;
+  });
+
+  function clean(text) {
+    return (text || "").replace(/\s+/g, " ").trim();
+  }
+
+  function currentLang() {
+    return localStorage.getItem("ta-lang") || document.documentElement.lang || "fr";
+  }
+
+  function translateValue(text, lang) {
+    const key = clean(text);
+    if (!key) return text;
+    return lang === "fr" ? (MAP[key] || key) : (REVERSE[key] || key);
+  }
+
+  function translateProfilePage() {
+    const root = document.querySelector("main.profile-v16");
+    if (!root) return;
+
+    const lang = currentLang();
+
+    root.querySelectorAll("[data-fr][data-en]").forEach((el) => {
+      const value = lang === "fr" ? el.getAttribute("data-fr") : el.getAttribute("data-en");
+      if (value) el.textContent = value;
+    });
+
+    const selector = [
+      "h1.page-title",
+      "h2.h2",
+      "h3.h3",
+      "label",
+      "option",
+      ".field > .small",
+      ".step b",
+      ".step .small",
+      ".notice b",
+      ".progression-aside .small",
+      "button.btn",
+      "form.card > div > b",
+      "form.card > div > .small"
+    ].join(",");
+
+    root.querySelectorAll(selector).forEach((el) => {
+      if (el.closest(".pill-row") && el.classList.contains("skill")) return;
+      if (el.childElementCount > 0 && el.tagName.toLowerCase() !== "option") return;
+
+      const current = clean(el.textContent);
+      const next = translateValue(current, lang);
+      if (next && next !== current) el.textContent = next;
+    });
+
+    root.querySelectorAll("input[placeholder], textarea[placeholder]").forEach((el) => {
+      const current = clean(el.getAttribute("placeholder"));
+      const next = translateValue(current, lang);
+      if (next && next !== current) el.setAttribute("placeholder", next);
+    });
+  }
+
+  window.TA_PROFILE_TRANSLATE_NOW = translateProfilePage;
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(translateProfilePage, 0);
+    setTimeout(translateProfilePage, 150);
+    setTimeout(translateProfilePage, 600);
+  });
+
+  window.addEventListener("load", function(){
+    setTimeout(translateProfilePage, 0);
+    setTimeout(translateProfilePage, 300);
+  });
+
+  document.addEventListener("click", function(e){
+    if (e.target.closest("[data-lang-toggle]")) {
+      setTimeout(translateProfilePage, 60);
+      setTimeout(translateProfilePage, 200);
+      setTimeout(translateProfilePage, 500);
+    }
+  }, true);
+
+  document.addEventListener("htmx:afterSwap", function(){
+    setTimeout(translateProfilePage, 50);
+  });
+})();
+/* /TUNIATLAS_PROFILE_PAGE_TRANSLATOR_V4 */
+
+</script>
 {% endblock %}

@@ -10,6 +10,7 @@ APPROVED_DECISION_FILE = (
     Path(settings.BASE_DIR)
     / "docs"
     / "phases"
+    / "mvp_launch"
     / "phase_15d_curated_taxonomy_and_zero_skill_recovery"
     / "taxonomy_review_decisions_phase_15d_approved.csv"
 )

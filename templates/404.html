@@ -1,15 +1,33 @@
 {% extends "base.html" %}
 
-{% block title %}Page introuvable - TuniAtlas{% endblock %}
+{% block title %}404 - TuniAtlas{% endblock %}
 
 {% block content %}
-<div class="tta-error-page py-16 text-center flex flex-col items-center">
-    <p class="tta-error-code text-6xl font-bold text-brand-600 mb-4">404</p>
-    <h1 class="tta-error-title text-3xl font-bold text-gray-900 mb-4">Page introuvable</h1>
-    <p class="tta-error-body text-gray-600 max-w-md mx-auto mb-8">Nous n’avons pas pu trouver la page demandée. L’offre ou la page a peut-être expiré, été retirée, ou déplacée. Vous pouvez revenir aux offres actives.</p>
-    <div class="tta-chip-row" style="justify-content:center">
-        <a class="tta-btn tta-btn-primary" href="{% url 'jobs:list' %}">Voir les offres</a>
-        <a class="tta-btn tta-btn-secondary" href="{% url 'core:home' %}">Retour à l’accueil</a>
+<section class="section">
+  <div class="shell">
+    <div class="card empty-state" style="text-align:center;">
+      <h1 class="code-title">404</h1>
+
+      <h2 class="h2"
+          data-fr="Page introuvable"
+          data-en="Page not found">
+        Page introuvable
+      </h2>
+
+      <p class="subtitle"
+         style="margin-bottom:16px;"
+         data-fr="Cette page n'existe pas ou a été déplacée."
+         data-en="This page does not exist or has been moved.">
+        Cette page n'existe pas ou a été déplacée.
+      </p>
+
+      <a class="btn primary"
+         href="{% url 'jobs:list' %}"
+         data-fr="Retour aux offres"
+         data-en="Back to jobs">
+        Retour aux offres
+      </a>
     </div>
-</div>
+  </div>
+</section>
 {% endblock %}

@@ -1,105 +1,104 @@
 {% extends "base.html" %}
-
-{% block title %}{{ job.title|default:"Offre IT sans titre" }} chez {{ job.company_name|default:"Entreprise non précisée" }} - TuniAtlas{% endblock %}
-
-{% block content %}
 {% load job_presentation %}
-<div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
-    <section>
-        <div class="tta-card tta-card-body">
-            <div class="tta-chip-row" style="margin-top:0">
-                {% for badge in job|job_badges %}
-                    <span class="tta-badge {{ badge.css_class }}">{{ badge.text }}</span>
-                {% endfor %}
-                {% if job.status == 'expired' %}
-                    <span class="tta-badge" style="background:#fee2e2;color:#991b1b">Expiré</span>
-                {% elif job.status != 'active' %}
-                    <span class="tta-badge tta-badge-muted">{{ job.get_status_display }}</span>
-                {% endif %}
-                <span class="tta-badge tta-badge-muted bg-transparent">Publiée le {{ job.published_at|date:"d M Y" }}</span>
-            </div>
-
-            <h1 class="tta-page-title" style="margin-top:18px">{{ job.title|default:"Offre IT sans titre" }}</h1>
-            <p class="tta-subtitle">{{ job.company_name|default:"Entreprise non précisée" }} · {{ job.location|default:job.city|default:"Lieu non précisé" }} · {{ job.source.name|default:"Source non précisée" }}</p>
-
-            <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
-                {% if job.status != 'expired' and job.source_url %}
-                    {% if "francetravail" in job.source.name|lower or "france travail" in job.source.name|lower %}
-                        <a class="tta-btn tta-btn-primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">Postuler sur France Travail</a>
-                    {% else %}
-                        <a class="tta-btn tta-btn-primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">Postuler sur la source</a>
+{% block title %}{{ job.title|default:"Offre IT sans titre" }} chez {{ job.company_name|default:"Entreprise non précisée" }} - TuniAtlas{% endblock %}
+{% block content %}
+<div class="jobs-v16">
+<section class="section">
+    <div class="shell main-layout">
+        <section class="grid">
+            <div class="card">
+                <div class="pill-row">
+                    {% for badge in job|job_badges %}
+                        {% if forloop.first %}
+                            <span class="pill brand">{{ badge.text }}</span>
+                        {% else %}
+                            <span class="pill">{{ badge.text }}</span>
+                        {% endif %}
+                    {% endfor %}
+                    {% if job.status == 'expired' %}
+                        <span class="pill bad">Expiré</span>
+                    {% elif job.status != 'active' %}
+                        <span class="pill">{{ job.get_status_display }}</span>
                     {% endif %}
+                    <span class="pill good">Publiée le {{ job.published_at|date:"d M Y" }}</span>
+                </div>
+                <h1 class="page-title small" style="margin-top:14px">{{ job.title|default:"Offre IT sans titre" }}</h1>
+                <p class="subtitle">{{ job.company_name|default:"Entreprise non précisée" }} · {{ job.location|default:job.city|default:"Lieu non précisé" }} · {{ job.source.name|default:"Source non précisée" }}</p>
+                <div class="pill-row" style="margin-top:16px">
+                    {% if job.status != 'expired' and job.source_url %}
+                        <a class="btn primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>
+                    {% endif %}
+                    {% if user.is_authenticated and job.status != 'expired' %}
+                        {% include "jobs/partials/save_button.html" with job=job is_saved=is_saved %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="h2">Description</h2>
+                <p class="job-desc">{{ job.description|linebreaksbr|default:"Description non disponible" }}</p>
+                <h3 class="h3" style="margin-top:18px">Compétences requises</h3>
+                {% if job.required_skills_json %}
+                    <div class="pill-row">
+                        {% for skill in job.required_skills_json %}
+                            <span class="skill {{ skill|skill_color }}">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="small">Aucune compétence spécifique extraite.</p>
                 {% endif %}
-
-                {% if user.is_authenticated and job.status != 'expired' %}
-                    {% include "jobs/partials/save_button.html" with job=job is_saved=is_saved %}
+                {% if job.optional_skills_json %}
+                    <h3 class="h3">Compétences optionnelles</h3>
+                    <div class="pill-row">
+                        {% for skill in job.optional_skills_json %}
+                            <span class="skill missing">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if valid_languages %}
+                    <h3 class="h3">Langues exigées</h3>
+                    <ul class="small" style="margin:0;padding-left:20px;">
+                        {% for lang, code in valid_languages.items %}
+                            <li>{{ lang }} ({{ code }})</li>
+                        {% endfor %}
+                    </ul>
                 {% endif %}
             </div>
-        </div>
-
-        <div class="tta-card tta-card-body" style="margin-top:18px">
-            <h2 class="text-xl font-bold text-slate-950 dark:text-white">Description de l’offre</h2>
-            <div class="mt-3 text-sm leading-6 text-slate-700 dark:text-slate-300" style="white-space:pre-wrap;margin-bottom:24px;">{{ job.description|safe|default:"Description non disponible" }}</div>
-
-            <h3 class="font-bold text-slate-950 dark:text-white" style="margin-top:0;">Compétences requises</h3>
-            {% if job.required_skills_json %}
-                <div class="tta-chip-row" style="margin-bottom:18px;">
-                    {% for skill in job.required_skills_json %}
-                        <span class="tta-chip">{{ skill }}</span>
-                    {% endfor %}
-                </div>
+        </section>
+        <aside class="card sticky">
+            {% if job.status == 'expired' %}
+                <h2 class="h2" style="color:var(--bad);">Offre expirée</h2>
+                <p class="small">Les tests de compatibilité ne sont plus disponibles pour cette offre.</p>
+            {% elif not job|is_matchable %}
+                <h2 class="h2" style="color:var(--bad);">Analyse indisponible</h2>
+                <p class="small">Cette offre ne peut pas être testée (données insuffisantes).</p>
             {% else %}
-                <p class="tta-muted">Aucune compétence spécifique extraite.</p>
-            {% endif %}
-
-            {% if job.optional_skills_json %}
-                <h3 class="font-bold text-slate-950 dark:text-white">Compétences optionnelles à renforcer</h3>
-                <div class="tta-chip-row" style="margin-bottom:18px;">
-                    {% for skill in job.optional_skills_json %}
-                        <span class="tta-chip border border-slate-300 bg-transparent text-slate-700 dark:border-slate-700 dark:text-slate-300">{{ skill }}</span>
-                    {% endfor %}
+                <h2 class="h2">Compatibilité</h2>
+                <div class="grid" style="margin-top:16px">
+                    {% if cta_context.state == "anonymous" %}
+                        <p class="small" style="margin-bottom:8px;">Connectez-vous pour voir votre compatibilité.</p>
+                        <a class="btn primary full" href="{% url 'account_login' %}?next={{ request.get_full_path|urlencode }}">Se connecter</a>
+                    {% elif cta_context.state == "no_profile" %}
+                        <p class="small" style="margin-bottom:8px;">Complétez votre profil pour tester la compatibilité.</p>
+                        <a class="btn primary full" href="{% url 'dashboard:profile' %}">Compléter profil / CV</a>
+                    {% elif cta_context.state == "no_match" %}
+                        <p class="small" style="margin-bottom:8px;">Lancez une analyse détaillée avec votre profil.</p>
+                        <form action="{% url 'matching:create' public_id=job.public_id %}" method="post">{% csrf_token %}<button type="submit" class="btn primary full">Calculer la compatibilité</button></form>
+                    {% elif cta_context.state == "match_exists" %}
+                        <div class="score-ring" style="width:140px;height:140px;margin-bottom:16px;"><strong>{{ cta_context.match.fit_score }}%</strong></div>
+                        <a class="btn primary full" href="{% url 'matching:detail' public_id=cta_context.match.public_id %}">Voir le score</a>
+                    {% endif %}
+                    <a class="btn secondary full" href="{% url 'jobs:list' %}">Retour aux offres</a>
                 </div>
             {% endif %}
-
-            {% if valid_languages %}
-                <h3 class="font-bold text-slate-950 dark:text-white">Langues exigées</h3>
-                <ul class="tta-muted" style="margin:0;padding-left:20px;">
-                    {% for lang, code in valid_languages.items %}
-                        <li>{{ lang }} ({{ code }})</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
-    </section>
-
-    <aside class="tta-card tta-card-body lg:sticky lg:top-24">
-        <span class="tta-eyebrow">Compatibilité</span>
-
-        {% if job.status == 'expired' %}
-            <h2 style="margin-bottom:8px;color:#991b1b;">Offre expirée</h2>
-            <p class="tta-muted">Les tests de compatibilité ne sont plus disponibles pour cette offre car elle n'accepte plus de candidatures.</p>
-        {% elif not job|is_matchable %}
-            <h2 style="margin-bottom:8px;color:#991b1b;">Analyse indisponible</h2>
-            <p class="tta-muted">Cette offre ne peut pas être testée (données insuffisantes ou non éligible).</p>
-        {% else %}
-            {% if user.is_authenticated %}
-                <h2 class="text-xl font-bold text-slate-950 dark:text-white" style="margin-bottom:8px">Test complet</h2>
-                <p class="tta-muted" style="margin-bottom:18px;">Lancez une analyse détaillée avec votre profil.</p>
-                <form action="{% url 'matching:create' public_id=job.public_id %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="tta-btn tta-btn-primary" style="width:100%">Lancer l'analyse détaillée</button>
-                </form>
-            {% else %}
-                <h2 class="text-xl font-bold text-slate-950 dark:text-white" style="margin-bottom:8px">Test rapide</h2>
-                <p class="tta-muted" style="margin-bottom:18px;">Sans compte, entrez vos compétences pour un test rapide.</p>
-                <div id="quick-match-container">
-                    {% include "matching/partials/quick_match_form.html" with job=job %}
-                </div>
-
-                <hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
-                <a class="tta-btn tta-btn-secondary" style="width:100%" href="{% url 'account_signup' %}">Créer un compte</a>
-            {% endif %}
-        {% endif %}
-    </aside>
+            <div class="stat" style="margin-top:24px"><span>Source</span><strong style="font-size:13px">{{ job.source.name|default:"Non précisée" }}</strong></div>
+            <div class="stat" style="margin-top:10px"><span>Publiée</span><strong style="font-size:13px">{{ job.published_at|date:"d M"|default:"Récente" }}</strong></div>
+        </aside>
+    </div>
+</section>
+{% if job.status != 'expired' %}
+<div class="mobile-action-bar">
+    {% if job.source_url %}<a class="btn primary" href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>{% endif %}
+</div>
+{% endif %}
 </div>
 {% endblock %}

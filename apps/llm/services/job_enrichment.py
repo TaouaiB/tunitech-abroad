@@ -734,6 +734,15 @@ Respond with a JSON object strictly matching this shape:
                     success = True
                     continue
 
+            if parsed_json.get("disabled") is True:
+                enrichment.status = JobEnrichment.Status.SKIPPED
+                enrichment.status_reason = "LLM disabled"
+                enrichment.last_error = ""
+                enrichment.validated_output_json = {}
+                enrichment.validation_errors_json = []
+                success = True
+                continue
+
             # Validate schema
             validated_data, errors = validate_enrichment_schema(parsed_json, job_text)
 

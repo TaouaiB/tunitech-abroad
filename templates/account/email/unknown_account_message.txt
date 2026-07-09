@@ -1,0 +1,13 @@
+{% load account %}
+Hello,
+
+You are receiving this email because someone tried to access a TuniAtlas account with the email {{ email }}. However, we do not have any record of such an account in our database.
+
+If this was you, you can sign up for an account using the link below:
+
+{{ signup_url }}
+
+If you did not initiate this action, you can safely ignore this email.
+
+Best regards,
+The TuniAtlas Team

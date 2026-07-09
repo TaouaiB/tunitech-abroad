@@ -147,17 +147,17 @@ class CVParsingService:
             cv_upload = CVUpload.all_objects.get(id=cv_upload_id)
         except CVUpload.DoesNotExist:
             return None
-            
+
         return cls.parse(cv_upload)
 
     @classmethod
     def parse(cls, cv_upload: CVUpload) -> CVParsedData | None:
         if not cv_upload.is_active or cv_upload.deleted_at is not None:
             return None
-            
+
         cv_upload.parse_status = 'processing'
         cv_upload.save(update_fields=['parse_status'])
-        
+
         text_result = CVTextExtractionService.extract_text(cv_upload)
         if not text_result['success']:
             cv_upload.parse_status = 'failed'
@@ -174,12 +174,18 @@ class CVParsingService:
             )
             cv_upload.save(update_fields=['parse_status', 'text_extraction_status', 'extracted_text_length', 'parse_error'])
             return None
-            
+
         raw_text = text_result['raw_text']
         cv_upload.text_extraction_status = 'success'
         cv_upload.extracted_text_length = len(raw_text)
-        
-        det_result = CVDeterministicExtractorService.extract(raw_text)
+
+        user = cv_upload.user
+        auth_user_name = getattr(user, "first_name", "") + " " + getattr(user, "last_name", "")
+        auth_user_name = auth_user_name.strip()
+        if not auth_user_name and hasattr(user, 'candidate_profile') and user.candidate_profile.full_name:
+            auth_user_name = user.candidate_profile.full_name
+
+        det_result = CVDeterministicExtractorService.extract(raw_text, auth_user_name=auth_user_name, user_email=user.email)
         if det_result.get('estimated_years_experience') is None:
             estimated_from_dates = cls._estimate_years_from_text(raw_text)
             if estimated_from_dates is not None:
@@ -192,7 +198,7 @@ class CVParsingService:
         if inferred_target_type:
             det_result['target_type'] = inferred_target_type
         llm_result = CVLLMExtractionService.extract_structured(cv_upload, raw_text)
-        
+
         with transaction.atomic():
             parsed_data, _ = CVParsedData.objects.update_or_create(
                 cv_upload=cv_upload,
@@ -210,43 +216,30 @@ class CVParsingService:
                     'extracted_github_url': det_result.get('extracted_github_url', ''),
                     'extracted_portfolio_url': det_result.get('extracted_portfolio_url', ''),
                     'estimated_years_experience': det_result.get('estimated_years_experience', None),
+                    'confidence_json': {
+                        'name': det_result.get('name_confidence', 0),
+                        'email': det_result.get('email_confidence', 0),
+                        'phone': det_result.get('phone_confidence', 0),
+                        'url': det_result.get('url_confidence', 0)
+                    },
                     'warnings_json': det_result.get('warnings', []) + llm_result.get('warnings', [])
                 }
             )
-            
+
             raw_skills = det_result.get('raw_skills', [])
             normalization_result = SkillNormalizerService.normalize_many(
                 raw_skills=raw_skills,
                 source_type='cv',
                 source_id=cv_upload.id
             )
-            
+
             canonical_skills = normalization_result.canonical_skills
-            
+
             user = cv_upload.user
             if hasattr(user, 'candidate_profile'):
                 profile = user.candidate_profile
-                
-                update_fields = []
-                extracted_name = det_result.get('extracted_name')
-                if extracted_name:
-                    if not profile.full_name:
-                        profile.full_name = extracted_name
-                        update_fields.append('full_name')
-                    elif profile.full_name != extracted_name:
-                        warning_msg = f"Profile name '{profile.full_name}' differs from CV name '{extracted_name}'."
-                        if not isinstance(parsed_data.warnings_json, list):
-                            parsed_data.warnings_json = []
-                        if warning_msg not in parsed_data.warnings_json:
-                            parsed_data.warnings_json.append(warning_msg)
-                            parsed_data.save(update_fields=['warnings_json'])
 
-                if not profile.phone and det_result.get('extracted_phone'):
-                    profile.phone = det_result.get('extracted_phone')
-                    update_fields.append('phone')
-                if not profile.location and det_result.get('extracted_location'):
-                    profile.location = det_result.get('extracted_location')
-                    update_fields.append('location')
+                update_fields = []
                 if not profile.linkedin_url and det_result.get('extracted_linkedin_url'):
                     profile.linkedin_url = det_result.get('extracted_linkedin_url')
                     update_fields.append('linkedin_url')
@@ -286,14 +279,14 @@ class CVParsingService:
                 if profile.years_experience is None and det_result.get('estimated_years_experience') is not None:
                     profile.years_experience = det_result.get('estimated_years_experience')
                     update_fields.append('years_experience')
-                    
+
                 if update_fields:
                     profile.save(update_fields=update_fields)
-                    
+
                 existing_normalized = set(
                     ProfileSkill.objects.filter(profile=profile).values_list('normalized_name', flat=True)
                 )
-                
+
                 new_profile_skills = []
                 for skill in canonical_skills:
                     normalized_name = normalize_skill_text(skill.canonical_name)
@@ -301,6 +294,7 @@ class CVParsingService:
                         new_profile_skills.append(
                             ProfileSkill(
                                 profile=profile,
+                                skill=skill,
                                 raw_name=skill.canonical_name,
                                 normalized_name=normalized_name,
                                 source='cv_upload',
@@ -309,21 +303,21 @@ class CVParsingService:
                             )
                         )
                         existing_normalized.add(normalized_name)
-                        
+
                 if new_profile_skills:
                     ProfileSkill.objects.bulk_create(new_profile_skills, ignore_conflicts=True)
-                    
+
                 ProfileCompletenessService.calculate(profile)
 
             status = 'parsed_with_warnings' if parsed_data.warnings_json else 'parsed'
             cv_upload.parse_status = status
             cv_upload.parsed_at = timezone.now()
             cv_upload.save(update_fields=['parse_status', 'parsed_at', 'text_extraction_status', 'extracted_text_length'])
-            
+
             try:
                 from apps.recommendations.services.staleness import RecommendationStalenessService
                 RecommendationStalenessService.mark_user_recommendations_stale(cv_upload.user, reason="cv_parsed")
             except ImportError:
                 pass
-                
+
             return parsed_data

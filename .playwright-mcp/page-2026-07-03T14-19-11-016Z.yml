@@ -1,0 +1,596 @@
+- generic [active] [ref=f43e1]:
+  - banner [ref=f43e2]:
+    - generic [ref=f43e3]:
+      - link "T TuniAtlas" [ref=f43e4] [cursor=pointer]:
+        - /url: /jobs/
+        - generic [ref=f43e5]: T
+        - generic [ref=f43e6]: TuniAtlas
+      - navigation [ref=f43e7]:
+        - link "Offres" [ref=f43e8] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f43e9] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f43e10] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f43e11] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f43e12] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f43e13] [cursor=pointer]:
+          - /url: /about/
+      - generic [ref=f43e14]:
+        - button "Switch theme" [ref=f43e15] [cursor=pointer]:
+          - img [ref=f43e16]
+          - img [ref=f43e20]
+        - button "Switch language" [ref=f43e22] [cursor=pointer]:
+          - generic [ref=f43e23]: EN
+          - generic [ref=f43e25]: FR
+        - button "T" [ref=f43e27] [cursor=pointer]
+  - main [ref=f43e28]:
+    - generic [ref=f43e29]:
+      - generic [ref=f43e31]:
+        - generic [ref=f43e32]:
+          - heading "Trouvez plus vite des offres tech en France" [level=1] [ref=f43e33]
+          - paragraph [ref=f43e34]: Jobs, stages et alternance au même endroit.
+          - generic [ref=f43e35]:
+            - textbox "Rôle, entreprise, compétence" [ref=f43e36]
+            - 'textbox "Ville : Paris, Nantes, Lyon" [ref=f43e37]'
+            - button "Rechercher" [ref=f43e38] [cursor=pointer]
+        - generic [ref=f43e39]:
+          - generic [ref=f43e40]:
+            - generic [ref=f43e41]:
+              - generic [ref=f43e42]: Offres
+              - strong [ref=f43e43]: "165"
+            - generic [ref=f43e44]:
+              - generic [ref=f43e45]: Aujourd'hui
+              - strong [ref=f43e46]: +
+            - generic [ref=f43e47]:
+              - generic [ref=f43e48]: Sauvegardées
+              - strong [ref=f43e49]: "-"
+          - generic [ref=f43e50]:
+            - generic [ref=f43e51]: France uniquement
+            - generic [ref=f43e52]: Matching CV prêt
+            - generic [ref=f43e53]: Télétravail + hybride
+      - generic [ref=f43e55]:
+        - complementary [ref=f43e56]:
+          - heading "Filtres" [level=2] [ref=f43e57]
+          - generic [ref=f43e58]:
+            - generic [ref=f43e59]:
+              - generic [ref=f43e60]: Pays
+              - generic [ref=f43e61]:
+                - checkbox "France" [checked] [disabled] [ref=f43e62]
+                - text: France
+            - generic [ref=f43e63]:
+              - generic [ref=f43e64]: Mots-clés
+              - textbox "Mots-clés" [ref=f43e65]:
+                - /placeholder: "ex: Python, Django, React"
+            - generic [ref=f43e66]:
+              - generic [ref=f43e67]: Ville
+              - textbox "Ville" [ref=f43e68]:
+                - /placeholder: Paris, Lyon...
+            - generic [ref=f43e69]:
+              - generic [ref=f43e70]:
+                - generic [ref=f43e71]: Contrat
+                - combobox "Contrat" [ref=f43e72]:
+                  - option "Tous" [selected]
+                  - option "CDI"
+                  - option "CDD"
+                  - option "Stage"
+                  - option "Alternance"
+              - generic [ref=f43e73]:
+                - generic [ref=f43e74]: Télétravail
+                - combobox "Télétravail" [ref=f43e75]:
+                  - option "Tous" [selected]
+                  - option "Remote"
+                  - option "Hybride"
+                  - option "Sur site"
+            - generic [ref=f43e76]:
+              - generic [ref=f43e77]: Type d'emploi
+              - combobox "Type d'emploi" [ref=f43e78]:
+                - option "Tous" [selected]
+                - option "Temps plein"
+                - option "Stage (PFE)"
+                - option "Alternance"
+                - option "Freelance / Contrat"
+            - generic [ref=f43e79]:
+              - generic [ref=f43e80]: Expérience
+              - combobox "Expérience" [ref=f43e81]:
+                - option "Tous niveaux" [selected]
+                - option "Stage"
+                - option "Junior"
+                - option "Confirmé"
+                - option "Senior"
+            - button "Appliquer les filtres" [ref=f43e82] [cursor=pointer]
+            - link "Réinitialiser" [ref=f43e83] [cursor=pointer]:
+              - /url: /jobs/
+        - generic [ref=f43e84]:
+          - generic [ref=f43e85]:
+            - generic [ref=f43e86]:
+              - heading "Dernières opportunités" [level=2] [ref=f43e87]
+              - paragraph [ref=f43e88]: Triées par nouveauté.
+            - combobox [ref=f43e89]:
+              - option "Plus récentes" [selected]
+              - option "Meilleure correspondance"
+              - option "Entreprise"
+          - generic [ref=f43e90]:
+            - article [ref=f43e91]:
+              - generic [ref=f43e92]:
+                - generic [ref=f43e93]:
+                  - generic [ref=f43e94]: CDI
+                  - generic [ref=f43e95]: Apprenticeship
+                  - generic [ref=f43e96]: Internship
+                  - generic [ref=f43e97]: 03 Jul
+                - heading "Développeur web Full Stack H/F" [level=3] [ref=f43e98]:
+                  - link "Développeur web Full Stack H/F" [ref=f43e99] [cursor=pointer]:
+                    - /url: /jobs/db50eb5c-5c55-475f-ad76-94d3b4892358/
+                - generic [ref=f43e100]:
+                  - generic [ref=f43e101]: P.B.O.
+                  - generic [ref=f43e102]: ·
+                  - generic [ref=f43e103]: 86 - CHASSENEUIL DU POITOU
+                  - generic [ref=f43e104]: ·
+                  - generic [ref=f43e105]: France Travail
+                - paragraph [ref=f43e106]: "Vos principales missions sont : Développer de nouvelles applications web avec des technologies récentes Concevoir et développer de nouvelles fonctionnalités côté front-end et back-end Maintenir, faire évoluer et …"
+                - generic [ref=f43e107]:
+                  - generic [ref=f43e108]: JavaScript
+                  - generic [ref=f43e109]: PHP
+                  - generic [ref=f43e110]: React
+                  - generic [ref=f43e111]: HTML5
+                  - generic [ref=f43e112]: CSS3
+              - button "Sauvegarder" [ref=f43e116] [cursor=pointer]
+            - article [ref=f43e117]:
+              - generic [ref=f43e118]:
+                - generic [ref=f43e119]:
+                  - generic [ref=f43e120]: CDI
+                  - generic [ref=f43e121]: Full-time Job
+                  - generic [ref=f43e122]: Senior
+                  - generic [ref=f43e123]: 03 Jul
+                - heading "Développeur informatique (F/H)" [level=3] [ref=f43e124]:
+                  - link "Développeur informatique (F/H)" [ref=f43e125] [cursor=pointer]:
+                    - /url: /jobs/892ffe28-2e48-4f2a-abe7-44347b1e8f03/
+                - generic [ref=f43e126]:
+                  - generic [ref=f43e127]: JBM BUREAU MEDICAL RANDSTAD PROFESSIONAL
+                  - generic [ref=f43e128]: ·
+                  - generic [ref=f43e129]: 13 - Rousset
+                  - generic [ref=f43e130]: ·
+                  - generic [ref=f43e131]: France Travail
+                - paragraph [ref=f43e132]: Nous recherchons un(e) Ingénieur(e) en informatique industrielle pour rejoindre notre équipe au sein du bureau d'étude Software. Vous serez en charge de développer, améliorer et maintenir les logiciels. …
+                - generic [ref=f43e134]: Teamwork
+              - button "Sauvegarder" [ref=f43e138] [cursor=pointer]
+            - article [ref=f43e139]:
+              - generic [ref=f43e140]:
+                - generic [ref=f43e141]:
+                  - generic [ref=f43e142]: CDD
+                  - generic [ref=f43e143]: Contrat
+                  - generic [ref=f43e144]: Junior
+                  - generic [ref=f43e145]: 03 Jul
+                - heading "Ingénieur en développement logiciel (H/F)" [level=3] [ref=f43e146]:
+                  - link "Ingénieur en développement logiciel (H/F)" [ref=f43e147] [cursor=pointer]:
+                    - /url: /jobs/80dfb749-700a-446e-8ea5-69102b285ae4/
+                - generic [ref=f43e148]:
+                  - generic [ref=f43e149]: UNIVERSITE GRENOBLE ALPES
+                  - generic [ref=f43e150]: ·
+                  - generic [ref=f43e151]: 38 - ST MARTIN D HERES
+                  - generic [ref=f43e152]: ·
+                  - generic [ref=f43e153]: France Travail
+                - paragraph [ref=f43e154]: "Présentation de la structure : Dans un contexte de modernisation des systèmes d'information, d'innovation et de transformation numérique, l'unité de service Direction du Numérique, DNUM, de l'UGA a …"
+                - generic [ref=f43e155]:
+                  - generic [ref=f43e156]: Python
+                  - generic [ref=f43e157]: JavaScript
+                  - generic [ref=f43e158]: Java
+                  - generic [ref=f43e159]: PHP
+                  - generic [ref=f43e160]: React
+              - button "Sauvegarder" [ref=f43e164] [cursor=pointer]
+            - article [ref=f43e165]:
+              - generic [ref=f43e166]:
+                - generic [ref=f43e167]:
+                  - generic [ref=f43e168]: CDI
+                  - generic [ref=f43e169]: Full-time Job
+                  - generic [ref=f43e170]: Senior
+                  - generic [ref=f43e171]: 03 Jul
+                - heading "Développeur Windev / Webdev (H/F)" [level=3] [ref=f43e172]:
+                  - link "Développeur Windev / Webdev (H/F)" [ref=f43e173] [cursor=pointer]:
+                    - /url: /jobs/a24060a3-056d-4759-ad47-8529eb39c0bd/
+                - generic [ref=f43e174]:
+                  - generic [ref=f43e175]: HOLENEK INGENIERIE
+                  - generic [ref=f43e176]: ·
+                  - generic [ref=f43e177]: 44 - Nantes
+                  - generic [ref=f43e178]: ·
+                  - generic [ref=f43e179]: France Travail
+                - paragraph [ref=f43e180]: Dans le cadre du renforcement de leur équipe, nous recherchons pour notre client, un(e) Développeur(se) WebDev / ERP JD Edwards basé(e) à Nantes. En tant que Développeur(se) WebDev …
+                - generic [ref=f43e181]:
+                  - generic [ref=f43e182]: WinDev
+                  - generic [ref=f43e183]: ERP
+              - button "Sauvegarder" [ref=f43e187] [cursor=pointer]
+            - article [ref=f43e188]:
+              - generic [ref=f43e189]:
+                - generic [ref=f43e190]:
+                  - generic [ref=f43e191]: CDI
+                  - generic [ref=f43e192]: Full-time Job
+                  - generic [ref=f43e193]: Senior
+                  - generic [ref=f43e194]: 03 Jul
+                - heading "Lead Développeur Web (H/F)" [level=3] [ref=f43e195]:
+                  - link "Lead Développeur Web (H/F)" [ref=f43e196] [cursor=pointer]:
+                    - /url: /jobs/116d6966-b616-48b7-9b98-b5800c84be2d/
+                - generic [ref=f43e197]:
+                  - generic [ref=f43e198]: SMART RECRUTEMENT
+                  - generic [ref=f43e199]: ·
+                  - generic [ref=f43e200]: 21 - DIJON
+                  - generic [ref=f43e201]: ·
+                  - generic [ref=f43e202]: France Travail
+                - paragraph [ref=f43e203]: Smart Recrutement, cabinet indépendant, accompagne les candidats dans leur recherche des meilleures opportunités professionnelles sur l'ensemble du territoire français. Nos consultants, aguerris à l'orientation de carrière, vous garantissent …
+                - generic [ref=f43e204]:
+                  - generic [ref=f43e205]: JavaScript
+                  - generic [ref=f43e206]: C#
+                  - generic [ref=f43e207]: PHP
+                  - generic [ref=f43e208]: Kotlin
+                  - generic [ref=f43e209]: Vue.js
+              - button "Sauvegarder" [ref=f43e213] [cursor=pointer]
+            - article [ref=f43e214]:
+              - generic [ref=f43e215]:
+                - generic [ref=f43e216]:
+                  - generic [ref=f43e217]: CDI
+                  - generic [ref=f43e218]: Full-time Job
+                  - generic [ref=f43e219]: Senior
+                  - generic [ref=f43e220]: 03 Jul
+                - heading "Développeur PHP Symfony Angular (H/F)" [level=3] [ref=f43e221]:
+                  - link "Développeur PHP Symfony Angular (H/F)" [ref=f43e222] [cursor=pointer]:
+                    - /url: /jobs/6ae04e17-2b9a-4d50-bac4-03496960e1ed/
+                - generic [ref=f43e223]:
+                  - generic [ref=f43e224]: AMILTONE
+                  - generic [ref=f43e225]: ·
+                  - generic [ref=f43e226]: 69 - Villeurbanne
+                  - generic [ref=f43e227]: ·
+                  - generic [ref=f43e228]: France Travail
+                - paragraph [ref=f43e229]: Qui sommes-nous ? Nous sommes passionnés par les nouvelles technologies, et vous ? Rejoindre Amiltone, c'est intégrer des équipes dynamiques et soudées dans le cadre de projets novateurs …
+                - generic [ref=f43e230]:
+                  - generic [ref=f43e231]: PHP
+                  - generic [ref=f43e232]: React
+                  - generic [ref=f43e233]: Vue.js
+                  - generic [ref=f43e234]: Angular
+                  - generic [ref=f43e235]: Laravel
+              - button "Sauvegarder" [ref=f43e239] [cursor=pointer]
+            - article [ref=f43e240]:
+              - generic [ref=f43e241]:
+                - generic [ref=f43e242]:
+                  - generic [ref=f43e243]: CDI
+                  - generic [ref=f43e244]: Full-time Job
+                  - generic [ref=f43e245]: 03 Jul
+                - heading "Développeur informatique C/C++ (H/F)" [level=3] [ref=f43e246]:
+                  - link "Développeur informatique C/C++ (H/F)" [ref=f43e247] [cursor=pointer]:
+                    - /url: /jobs/e199ec92-915a-4086-8d2a-e0258adcc52f/
+                - generic [ref=f43e248]:
+                  - generic [ref=f43e249]: MICROWAVE CHARACTERIZATION CENTER
+                  - generic [ref=f43e250]: ·
+                  - generic [ref=f43e251]: 59 - VILLENEUVE D ASCQ
+                  - generic [ref=f43e252]: ·
+                  - generic [ref=f43e253]: France Travail
+                - paragraph [ref=f43e254]: Rattaché(e) à l'équipe développement logiciel et sous la direction du département informatique, le développeur informatique (H/F) conçoit, développe et optimise les logiciels bas niveau intégrés dans des systèmes …
+                - generic [ref=f43e255]:
+                  - generic [ref=f43e256]: C++
+                  - generic [ref=f43e257]: Linux
+                  - generic [ref=f43e258]: Agile
+                  - generic [ref=f43e259]: Communication
+                  - generic [ref=f43e260]: Teamwork
+              - button "Sauvegarder" [ref=f43e264] [cursor=pointer]
+            - article [ref=f43e265]:
+              - generic [ref=f43e266]:
+                - generic [ref=f43e267]:
+                  - generic [ref=f43e268]: CDI
+                  - generic [ref=f43e269]: Full-time Job
+                  - generic [ref=f43e270]: 03 Jul
+                - heading "Ingénieur Test et Validation/QA (H/F)" [level=3] [ref=f43e271]:
+                  - link "Ingénieur Test et Validation/QA (H/F)" [ref=f43e272] [cursor=pointer]:
+                    - /url: /jobs/035ec32a-cf44-4370-bd66-d887b3d80c41/
+                - generic [ref=f43e273]:
+                  - generic [ref=f43e274]: MICROWAVE CHARACTERIZATION CENTER
+                  - generic [ref=f43e275]: ·
+                  - generic [ref=f43e276]: 59 - VILLENEUVE D ASCQ
+                  - generic [ref=f43e277]: ·
+                  - generic [ref=f43e278]: France Travail
+                - paragraph [ref=f43e279]: Dans un contexte de croissance, nous recherchons un(e) ingénieur(e) test et validation/QA pour rejoindre notre équipe informatique. Sous la responsabilité de Michael, notre DSI, vous réalisez la mise …
+                - generic [ref=f43e280]:
+                  - generic [ref=f43e281]: Python
+                  - generic [ref=f43e282]: C++
+                  - generic [ref=f43e283]: GitLab
+                  - generic [ref=f43e284]: Agile
+                  - generic [ref=f43e285]: Software Testing
+              - button "Sauvegarder" [ref=f43e289] [cursor=pointer]
+            - article [ref=f43e290]:
+              - generic [ref=f43e291]:
+                - generic [ref=f43e292]:
+                  - generic [ref=f43e293]: CDD
+                  - generic [ref=f43e294]: Contrat
+                  - generic [ref=f43e295]: Senior
+                  - generic [ref=f43e296]: 03 Jul
+                - heading "Lead Développeur H/F (H/F)" [level=3] [ref=f43e297]:
+                  - link "Lead Développeur H/F (H/F)" [ref=f43e298] [cursor=pointer]:
+                    - /url: /jobs/1317dd30-aa7e-4a33-b4a0-492b275214d6/
+                - generic [ref=f43e299]:
+                  - generic [ref=f43e300]: AGC MIDI MEDITERRANEE
+                  - generic [ref=f43e301]: ·
+                  - generic [ref=f43e302]: 11 - Carcassonne
+                  - generic [ref=f43e303]: ·
+                  - generic [ref=f43e304]: France Travail
+                - paragraph [ref=f43e305]: Qu'allons-nous faire ensemble ? Nous recherchons un Lead développeur H/F en CDD pour une durée de 6 mois. Le poste peut être basé à Lattes (34), Montpellier (34), …
+                - generic [ref=f43e306]:
+                  - generic [ref=f43e307]: Python
+                  - generic [ref=f43e308]: Angular
+                  - generic [ref=f43e309]: SQL Server
+                  - generic [ref=f43e310]: SQL
+                  - generic [ref=f43e311]: Linux
+              - button "Sauvegarder" [ref=f43e315] [cursor=pointer]
+            - article [ref=f43e316]:
+              - generic [ref=f43e317]:
+                - generic [ref=f43e318]:
+                  - generic [ref=f43e319]: CDD
+                  - generic [ref=f43e320]: Contrat
+                  - generic [ref=f43e321]: Senior
+                  - generic [ref=f43e322]: 03 Jul
+                - heading "Lead Développeur H/F (H/F)" [level=3] [ref=f43e323]:
+                  - link "Lead Développeur H/F (H/F)" [ref=f43e324] [cursor=pointer]:
+                    - /url: /jobs/f07aca66-95f1-47a9-8b44-71580dcf96d9/
+                - generic [ref=f43e325]:
+                  - generic [ref=f43e326]: AGC MIDI MEDITERRANEE
+                  - generic [ref=f43e327]: ·
+                  - generic [ref=f43e328]: 30 - Nîmes
+                  - generic [ref=f43e329]: ·
+                  - generic [ref=f43e330]: France Travail
+                - paragraph [ref=f43e331]: Qu'allons-nous faire ensemble ? Nous recherchons un Lead développeur H/F en CDD pour une durée de 6 mois. Le poste peut être basé à Lattes (34), Montpellier (34), …
+                - generic [ref=f43e332]:
+                  - generic [ref=f43e333]: Python
+                  - generic [ref=f43e334]: Angular
+                  - generic [ref=f43e335]: SQL Server
+                  - generic [ref=f43e336]: SQL
+                  - generic [ref=f43e337]: Linux
+              - button "Sauvegarder" [ref=f43e341] [cursor=pointer]
+            - article [ref=f43e342]:
+              - generic [ref=f43e343]:
+                - generic [ref=f43e344]:
+                  - generic [ref=f43e345]: CDD
+                  - generic [ref=f43e346]: Contrat
+                  - generic [ref=f43e347]: Senior
+                  - generic [ref=f43e348]: 03 Jul
+                - heading "Lead Développeur H/F (H/F)" [level=3] [ref=f43e349]:
+                  - link "Lead Développeur H/F (H/F)" [ref=f43e350] [cursor=pointer]:
+                    - /url: /jobs/65a06c49-8f6b-49f2-8076-6741d6fa914c/
+                - generic [ref=f43e351]:
+                  - generic [ref=f43e352]: AGC MIDI MEDITERRANEE
+                  - generic [ref=f43e353]: ·
+                  - generic [ref=f43e354]: 34 - Montpellier
+                  - generic [ref=f43e355]: ·
+                  - generic [ref=f43e356]: France Travail
+                - paragraph [ref=f43e357]: Qu'allons-nous faire ensemble ? Nous recherchons un Lead développeur H/F en CDD pour une durée de 6 mois. Le poste peut être basé à Lattes (34), Montpellier (34), …
+                - generic [ref=f43e358]:
+                  - generic [ref=f43e359]: Python
+                  - generic [ref=f43e360]: Angular
+                  - generic [ref=f43e361]: SQL Server
+                  - generic [ref=f43e362]: SQL
+                  - generic [ref=f43e363]: Linux
+              - button "Sauvegarder" [ref=f43e367] [cursor=pointer]
+            - article [ref=f43e368]:
+              - generic [ref=f43e369]:
+                - generic [ref=f43e370]:
+                  - generic [ref=f43e371]: CDD
+                  - generic [ref=f43e372]: Contrat
+                  - generic [ref=f43e373]: Senior
+                  - generic [ref=f43e374]: 03 Jul
+                - heading "Lead Développeur H/F (H/F)" [level=3] [ref=f43e375]:
+                  - link "Lead Développeur H/F (H/F)" [ref=f43e376] [cursor=pointer]:
+                    - /url: /jobs/feccd202-15a0-4efd-9829-6a838cf19652/
+                - generic [ref=f43e377]:
+                  - generic [ref=f43e378]: AGC MIDI MEDITERRANEE
+                  - generic [ref=f43e379]: ·
+                  - generic [ref=f43e380]: 34 - Lattes
+                  - generic [ref=f43e381]: ·
+                  - generic [ref=f43e382]: France Travail
+                - paragraph [ref=f43e383]: Qu'allons-nous faire ensemble ? Nous recherchons un Lead développeur H/F en CDD pour une durée de 6 mois. Le poste peut être basé à Lattes (34), Montpellier (34), …
+                - generic [ref=f43e384]:
+                  - generic [ref=f43e385]: Python
+                  - generic [ref=f43e386]: Angular
+                  - generic [ref=f43e387]: SQL Server
+                  - generic [ref=f43e388]: SQL
+                  - generic [ref=f43e389]: Linux
+              - button "Sauvegarder" [ref=f43e393] [cursor=pointer]
+            - article [ref=f43e394]:
+              - generic [ref=f43e395]:
+                - generic [ref=f43e396]:
+                  - generic [ref=f43e397]: CDD
+                  - generic [ref=f43e398]: Apprenticeship
+                  - generic [ref=f43e399]: Internship
+                  - generic [ref=f43e400]: 03 Jul
+                - heading "Alternance - Ingénieur(e) développement informatique (F/H) (H/F)" [level=3] [ref=f43e401]:
+                  - link "Alternance - Ingénieur(e) développement informatique (F/H) (H/F)" [ref=f43e402] [cursor=pointer]:
+                    - /url: /jobs/a7502fb9-a1be-4e5b-b2ff-7b59ec5cb73a/
+                - generic [ref=f43e403]:
+                  - generic [ref=f43e404]: COMPAGNIE DE SAINT-GOBAIN
+                  - generic [ref=f43e405]: ·
+                  - generic [ref=f43e406]: 60 - Thourotte
+                  - generic [ref=f43e407]: ·
+                  - generic [ref=f43e408]: France Travail
+                - paragraph [ref=f43e409]: Pourquoi a-t-on besoin de vous? Au sein de la direction TIP, l'équipe MDT (Manufacturing Digital Transformation) recherche un(e) alternant(e) Ingénieur(e) développement informatique (F/H) pour participer au développement et …
+                - generic [ref=f43e410]:
+                  - generic [ref=f43e411]: JavaScript
+                  - generic [ref=f43e412]: C#
+                  - generic [ref=f43e413]: React
+                  - generic [ref=f43e414]: HTML5
+                  - generic [ref=f43e415]: CSS3
+              - button "Sauvegarder" [ref=f43e419] [cursor=pointer]
+            - article [ref=f43e420]:
+              - generic [ref=f43e421]:
+                - generic [ref=f43e422]:
+                  - generic [ref=f43e423]: CDI
+                  - generic [ref=f43e424]: Full-time Job
+                  - generic [ref=f43e425]: Senior
+                  - generic [ref=f43e426]: 03 Jul
+                - heading "Ingénieur DevOps (H/F)" [level=3] [ref=f43e427]:
+                  - link "Ingénieur DevOps (H/F)" [ref=f43e428] [cursor=pointer]:
+                    - /url: /jobs/ea0b89a1-871b-459c-8707-efc21ac9e302/
+                - generic [ref=f43e429]:
+                  - generic [ref=f43e430]: EXPERTNOW
+                  - generic [ref=f43e431]: ·
+                  - generic [ref=f43e432]: 92 - LEVALLOIS PERRET
+                  - generic [ref=f43e433]: ·
+                  - generic [ref=f43e434]: France Travail
+                - paragraph [ref=f43e435]: "Nous sommes à la recherche d'un ingénieur DevOps pour une mission de longue durée chez un client du secteur public. Vos missions : Concevoir, déployer et maintenir les …"
+                - generic [ref=f43e436]:
+                  - generic [ref=f43e437]: JavaScript
+                  - generic [ref=f43e438]: Java
+                  - generic [ref=f43e439]: Kubernetes
+                  - generic [ref=f43e440]: Jenkins
+                  - generic [ref=f43e441]: Ansible
+              - button "Sauvegarder" [ref=f43e445] [cursor=pointer]
+            - article [ref=f43e446]:
+              - generic [ref=f43e447]:
+                - generic [ref=f43e448]:
+                  - generic [ref=f43e449]: CDD
+                  - generic [ref=f43e450]: Apprenticeship
+                  - generic [ref=f43e451]: Internship
+                  - generic [ref=f43e452]: 03 Jul
+                - heading "Alternant Informatique Réseau et Sécurité (H/F)" [level=3] [ref=f43e453]:
+                  - link "Alternant Informatique Réseau et Sécurité (H/F)" [ref=f43e454] [cursor=pointer]:
+                    - /url: /jobs/4ce17efe-e34b-4076-a0a4-a1720961dd33/
+                - generic [ref=f43e455]:
+                  - generic [ref=f43e456]: BRUNET
+                  - generic [ref=f43e457]: ·
+                  - generic [ref=f43e458]: 86 - CHASSENEUIL DU POITOU
+                  - generic [ref=f43e459]: ·
+                  - generic [ref=f43e460]: France Travail
+                - paragraph [ref=f43e461]: OFFRE À POURVOIR EN CONTRAT D'APPRENTISSAGE En collaboration avec le pôle Infrastructure et Sécurité, vous accompagnez les équipes dans la résolution des incidents et participez activement à la …
+                - generic [ref=f43e462]:
+                  - generic [ref=f43e463]: Teamwork
+                  - generic [ref=f43e464]: Windows
+                  - generic [ref=f43e465]: LAN
+                  - generic [ref=f43e466]: WAN
+                  - generic [ref=f43e467]: VLAN
+              - button "Sauvegarder" [ref=f43e471] [cursor=pointer]
+            - article [ref=f43e472]:
+              - generic [ref=f43e473]:
+                - generic [ref=f43e474]:
+                  - generic [ref=f43e475]: CDD
+                  - generic [ref=f43e476]: Apprenticeship
+                  - generic [ref=f43e477]: Internship
+                  - generic [ref=f43e478]: 03 Jul
+                - heading "Développeur Informatique en Alternance (H/F)" [level=3] [ref=f43e479]:
+                  - link "Développeur Informatique en Alternance (H/F)" [ref=f43e480] [cursor=pointer]:
+                    - /url: /jobs/8901dda6-24db-4793-bb0e-716bff4a0104/
+                - generic [ref=f43e481]:
+                  - generic [ref=f43e482]: MEWO
+                  - generic [ref=f43e483]: ·
+                  - generic [ref=f43e484]: 57 - Norroy-le-Veneur
+                  - generic [ref=f43e485]: ·
+                  - generic [ref=f43e486]: France Travail
+                - paragraph [ref=f43e487]: Les missions du poste Nous recherchons actuellement un développeur informatique (h/f). Ce poste est ouvert dans le cadre d'un contrat d'apprentissage ou de professionnalisation, d'une durée de 24 …
+                - generic [ref=f43e488]:
+                  - generic [ref=f43e489]: Artificial Intelligence
+                  - generic [ref=f43e490]: Technical Documentation
+              - button "Sauvegarder" [ref=f43e494] [cursor=pointer]
+            - article [ref=f43e495]:
+              - generic [ref=f43e496]:
+                - generic [ref=f43e497]:
+                  - generic [ref=f43e498]: CDD
+                  - generic [ref=f43e499]: Apprenticeship
+                  - generic [ref=f43e500]: Internship
+                  - generic [ref=f43e501]: 03 Jul
+                - heading "Développeur Logiciel en Alternance (H/F)" [level=3] [ref=f43e502]:
+                  - link "Développeur Logiciel en Alternance (H/F)" [ref=f43e503] [cursor=pointer]:
+                    - /url: /jobs/f964eb24-0186-429c-b81b-af2b2ce75831/
+                - generic [ref=f43e504]:
+                  - generic [ref=f43e505]: MEWO
+                  - generic [ref=f43e506]: ·
+                  - generic [ref=f43e507]: 57 - Phalsbourg
+                  - generic [ref=f43e508]: ·
+                  - generic [ref=f43e509]: France Travail
+                - paragraph [ref=f43e510]: Les missions du poste Nous recherchons actuellement un développeur logiciel (h/f). Ce poste est ouvert dans le cadre d'un contrat d'apprentissage ou de professionnalisation, d'une durée de 24 …
+                - generic [ref=f43e511]:
+                  - generic [ref=f43e512]: Agile
+                  - generic [ref=f43e513]: Technical Documentation
+                  - generic [ref=f43e514]: Requirements Analysis
+              - button "Sauvegarder" [ref=f43e518] [cursor=pointer]
+            - article [ref=f43e519]:
+              - generic [ref=f43e520]:
+                - generic [ref=f43e521]:
+                  - generic [ref=f43e522]: CDD
+                  - generic [ref=f43e523]: Apprenticeship
+                  - generic [ref=f43e524]: Internship
+                  - generic [ref=f43e525]: 03 Jul
+                - heading "Développeur Informatique en Alternance (H/F)" [level=3] [ref=f43e526]:
+                  - link "Développeur Informatique en Alternance (H/F)" [ref=f43e527] [cursor=pointer]:
+                    - /url: /jobs/152bb7fc-0b01-499a-a316-62dabf479125/
+                - generic [ref=f43e528]:
+                  - generic [ref=f43e529]: MEWO
+                  - generic [ref=f43e530]: ·
+                  - generic [ref=f43e531]: 54 - Valleroy
+                  - generic [ref=f43e532]: ·
+                  - generic [ref=f43e533]: France Travail
+                - paragraph [ref=f43e534]: Les missions du poste Nous recherchons actuellement un développeur web full stack (h/f). Ce poste est ouvert dans le cadre d'un contrat d'apprentissage ou de professionnalisation, d'une durée …
+                - generic [ref=f43e535]:
+                  - generic [ref=f43e536]: Git
+                  - generic [ref=f43e537]: Agile
+              - button "Sauvegarder" [ref=f43e541] [cursor=pointer]
+            - article [ref=f43e542]:
+              - generic [ref=f43e543]:
+                - generic [ref=f43e544]:
+                  - generic [ref=f43e545]: CDD
+                  - generic [ref=f43e546]: Apprenticeship
+                  - generic [ref=f43e547]: Internship
+                  - generic [ref=f43e548]: 03 Jul
+                - heading "ALTERNANT - DEVELOPPEUR INFORMATIQUE (H/F)" [level=3] [ref=f43e549]:
+                  - link "ALTERNANT - DEVELOPPEUR INFORMATIQUE (H/F)" [ref=f43e550] [cursor=pointer]:
+                    - /url: /jobs/dd9a546f-bb47-44f8-839a-06d00b1dfb4f/
+                - generic [ref=f43e551]:
+                  - generic [ref=f43e552]: CMAR GRAND EST
+                  - generic [ref=f43e553]: ·
+                  - generic [ref=f43e554]: 57 - METZ
+                  - generic [ref=f43e555]: ·
+                  - generic [ref=f43e556]: France Travail
+                - paragraph [ref=f43e557]: VOS MISSIONS EN QUELQUES MOTS En tant qu'alternant développeur informatique, vous participerez activement à la mise en œuvre, au développement et à l'évolution des applications métiers de l'entreprise. …
+                - generic [ref=f43e559]: Salesforce
+              - button "Sauvegarder" [ref=f43e563] [cursor=pointer]
+            - article [ref=f43e564]:
+              - generic [ref=f43e565]:
+                - generic [ref=f43e566]:
+                  - generic [ref=f43e567]: CDD
+                  - generic [ref=f43e568]: Contrat
+                  - generic [ref=f43e569]: 03 Jul
+                - heading "DEVELOPPEUR IA ET AUTOMATISATION (H/F)" [level=3] [ref=f43e570]:
+                  - link "DEVELOPPEUR IA ET AUTOMATISATION (H/F)" [ref=f43e571] [cursor=pointer]:
+                    - /url: /jobs/e8b07953-7361-4c2d-b71d-6f3a2526b809/
+                - generic [ref=f43e572]:
+                  - generic [ref=f43e573]: WORLDSKILLS FRANCE
+                  - generic [ref=f43e574]: ·
+                  - generic [ref=f43e575]: 75 - PARIS
+                  - generic [ref=f43e576]: ·
+                  - generic [ref=f43e577]: France Travail
+                - paragraph [ref=f43e578]: "Vous êtes chargé(e) de tester, construire et déployer des solutions concrètes basées sur l'IA et l'automatisation pour améliorer le fonctionnement des équipes. Votre rôle : - tester rapidement …"
+                - generic [ref=f43e579]:
+                  - generic [ref=f43e580]: Vite
+                  - generic [ref=f43e581]: Make
+                  - generic [ref=f43e582]: API
+              - button "Sauvegarder" [ref=f43e586] [cursor=pointer]
+          - navigation "Pagination" [ref=f43e587]:
+            - generic [ref=f43e588]: "1"
+            - link "2" [ref=f43e589] [cursor=pointer]:
+              - /url: "?sort=newest&page=2"
+            - link "3" [ref=f43e590] [cursor=pointer]:
+              - /url: "?sort=newest&page=3"
+            - link "Page suivante" [ref=f43e591] [cursor=pointer]:
+              - /url: "?sort=newest&page=2"
+              - text: ›
+  - contentinfo [ref=f43e592]:
+    - generic [ref=f43e593]:
+      - generic [ref=f43e594]:
+        - text: TuniAtlas
+        - generic [ref=f43e595]: Tech jobs abroad for Tunisian talent.
+      - generic [ref=f43e596]:
+        - link "Offres" [ref=f43e597] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f43e598] [cursor=pointer]:
+          - /url: /dashboard/recommendations/
+        - link "Favoris" [ref=f43e599] [cursor=pointer]:
+          - /url: /dashboard/saved-jobs/
+        - link "Profil" [ref=f43e600] [cursor=pointer]:
+          - /url: /dashboard/profile/
+        - link "Paramètres" [ref=f43e601] [cursor=pointer]:
+          - /url: /dashboard/account/
+        - link "À propos" [ref=f43e602] [cursor=pointer]:
+          - /url: /about/

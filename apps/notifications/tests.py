@@ -1,7 +1,14 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.db import IntegrityError
+from django.conf import settings
+import copy
+from unittest.mock import patch
+
 from apps.accounts.models import User
 from .models import EmailPreference, EmailBatch, EmailEvent, EmailUnsubscribeToken
+
+TEST_TEMPLATES = copy.deepcopy(settings.TEMPLATES)
+TEST_TEMPLATES[0]['DIRS'].append(str(settings.BASE_DIR / 'apps/notifications/tests/templates'))
 
 def create_test_user(username: str, email: str, password: str = "password123") -> User:
     user = User(username=username, email=email)
@@ -19,6 +26,7 @@ class EmailPreferenceTests(TestCase):
         self.assertFalse(pref.weekly_digest_enabled)
         self.assertTrue(pref.cv_analysis_email_enabled)
 
+@override_settings(TEMPLATES=TEST_TEMPLATES)
 class EmailModelsTests(TestCase):
     def setUp(self):
         self.user = create_test_user(username="testuser", email="test@example.test")
@@ -84,6 +92,7 @@ class EmailModelsTests(TestCase):
 from django.core import mail
 from apps.notifications.services.email_sender import EmailSenderService
 
+@override_settings(TEMPLATES=TEST_TEMPLATES)
 class EmailSenderServiceTests(TestCase):
     def setUp(self):
         self.user = create_test_user(username="sender", email="sender@example.test")
@@ -136,9 +145,22 @@ class EmailSenderServiceTests(TestCase):
         )
 
         self.assertEqual(event.status, "failed")
-        self.assertIn("missing_template", event.error_message)
+        self.assertEqual(event.error_message, "template_render_failed")
         self.assertEqual(len(mail.outbox), 0)
 
+    @patch("django.core.mail.EmailMultiAlternatives.send")
+    def test_send_email_smtp_failure_records_failed_event(self, mock_send):
+        mock_send.side_effect = Exception("SMTP connection refused")
+        event = EmailSenderService.send(
+            to="test@example.test",
+            subject="Test Subject",
+            template_name="test_template",
+            context={"name": "Bob"},
+            idempotency_key="key_smtp_fail"
+        )
+        self.assertEqual(event.status, "failed")
+        self.assertEqual(event.error_message, "email_send_failed")
+        self.assertEqual(len(mail.outbox), 0)
 from apps.notifications.services.preferences import EmailPreferenceService
 from apps.privacy.models import ConsentRecord
 from django.urls import reverse
@@ -248,6 +270,28 @@ class EmailPreferenceViewsTests(TestCase):
         
         pref = EmailPreference.objects.get(user=self.user)
         self.assertTrue(pref.weekly_digest_enabled)
+
+    def test_email_preferences_view_post_ignores_inactive_fields(self):
+        url = reverse("notifications:email_preferences")
+        pref, _ = EmailPreference.objects.get_or_create(user=self.user)
+        pref.product_updates_enabled = False
+        pref.cv_analysis_email_enabled = False
+        pref.save()
+
+        self.assertFalse(pref.product_updates_enabled)
+        self.assertFalse(pref.cv_analysis_email_enabled)
+
+        response = self.client.post(url, {
+            "weekly_digest_enabled": True,
+            "product_updates_enabled": True,
+            "cv_analysis_email_enabled": True
+        })
+        self.assertRedirects(response, url)
+
+        pref.refresh_from_db()
+        self.assertTrue(pref.weekly_digest_enabled)
+        self.assertFalse(pref.product_updates_enabled)
+        self.assertFalse(pref.cv_analysis_email_enabled)
         
     def test_unsubscribe_view_success(self):
         token = EmailUnsubscribeToken.objects.create(user=self.user, email_type="weekly_digest")
@@ -413,6 +457,25 @@ class WeeklyDigestServiceTests(TestCase):
         self.assertEqual(EmailEvent.objects.filter(email_type="weekly_digest").count(), 1)
         self.assertEqual(len(mail.outbox), 1)
 
+    def test_weekly_digest_prefers_primary_email(self):
+        EmailAddress.objects.create(user=self.user, email="secondary@example.test", verified=True, primary=False)
+        batch = WeeklyDigestService.send_weekly_digest()
+        self.assertEqual(batch.sent_count, 1)
+        event = EmailEvent.objects.filter(email_type="weekly_digest").first()
+        self.assertEqual(event.to_email, "digest@example.test")
+
+    def test_weekly_digest_subject_rendered_and_single_line(self):
+        WeeklyDigestService.send_weekly_digest()
+        event = EmailEvent.objects.filter(email_type="weekly_digest").first()
+        self.assertIn("Your TuniAtlas weekly job picks", event.subject)
+        self.assertNotIn("\n", event.subject)
+
+    @patch("apps.notifications.services.weekly_digest.ActiveUserRecommendationService.get_active_users")
+    def test_weekly_digest_safe_error_code(self, mock_get_users):
+        mock_get_users.side_effect = Exception("Database is down")
+        batch = WeeklyDigestService.send_weekly_digest()
+        self.assertEqual(batch.status, "failed")
+        self.assertEqual(batch.error_message, "weekly_digest_failed")
     @patch("apps.notifications.tasks.WeeklyDigestService.send_weekly_digest")
     def test_weekly_digest_task_delegates_to_service(self, mock_send):
         from apps.notifications.tasks import send_weekly_digest

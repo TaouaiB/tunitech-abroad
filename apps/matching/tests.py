@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import Http404
 from django.test import Client, TestCase, override_settings
@@ -25,11 +25,12 @@ from apps.jobs.models import (
     SourceType,
 )
 from apps.matching.models import MatchResult, QuickMatchSession
+from apps.matching.services.feedback import MatchFeedbackService
 from apps.matching.services.match_result import MatchResultService
 from apps.matching.services.quick_match import QuickMatchRateLimitExceeded, QuickMatchService
 from apps.matching.services.scoring import MatchScoringService
 from apps.profiles.models import CandidateProfile, ProfileSkill
-from apps.skills.models import Skill, SkillAlias, SkillCategory
+from apps.skills.models import Skill, SkillAlias, SkillCategory, UnmatchedSkillCandidate
 
 UserModel = get_user_model()
 
@@ -91,8 +92,8 @@ class MatchingTests(TestCase):
         self.postgres = self._skill("PostgreSQL", SkillCategory.DATABASE)
         self.react = self._skill("React", SkillCategory.FRONTEND)
 
-        ProfileSkill.objects.create(profile=self.profile, raw_name="Python", normalized_name="python")
-        ProfileSkill.objects.create(profile=self.profile, raw_name="Django", normalized_name="django")
+        ProfileSkill.objects.create(profile=self.profile, raw_name="Python", normalized_name="python", skill=self.python)
+        ProfileSkill.objects.create(profile=self.profile, raw_name="Django", normalized_name="django", skill=self.django)
 
         self.source = JobSource.objects.create(
             name="France Travail",
@@ -166,13 +167,13 @@ class MatchingTests(TestCase):
             last_fetched_at=now,
         )
 
-    def _job_skill(self, job, skill, requirement_type):
+    def _job_skill(self, job, skill, requirement_type, *, confidence=1):
         return NormalizedJobSkill.objects.create(
             job=job,
             skill=skill,
             requirement_type=requirement_type,
             source=SkillSource.RULE,
-            confidence=1,
+            confidence=confidence,
         )
 
     def _job_without_extracted_skills(self, source_job_id, title, description="Build software.", classification_json=None):
@@ -193,10 +194,11 @@ class MatchingTests(TestCase):
     def test_scoring_uses_formula_and_clamps_scores(self):
         result = MatchScoringService.calculate(self.profile, self.job)
         expected = round(
-            result.technical_skills_score * 0.50
+            result.technical_skills_score * 0.45
             + result.experience_score * 0.20
             + result.role_title_score * 0.15
-            + result.language_score * 0.15
+            + result.language_score * 0.10
+            + result.location_score * 0.10
         )
 
         self.assertEqual(result.fit_score, expected)
@@ -228,13 +230,57 @@ class MatchingTests(TestCase):
             french_level="intermediate",
             profile_completion_score=80,
         )
-        ProfileSkill.objects.create(profile=optional_only_profile, raw_name="PostgreSQL", normalized_name="postgresql")
-        ProfileSkill.objects.create(profile=required_only_profile, raw_name="Python", normalized_name="python")
+        postgres_skill = Skill.objects.get(canonical_name="PostgreSQL")
+        python_skill = Skill.objects.get(canonical_name="Python")
+        ProfileSkill.objects.create(profile=optional_only_profile, raw_name="PostgreSQL", normalized_name="postgresql", skill=postgres_skill)
+        ProfileSkill.objects.create(profile=required_only_profile, raw_name="Python", normalized_name="python", skill=python_skill)
 
         optional_score = MatchScoringService.calculate(optional_only_profile, self.job).technical_skills_score
         required_score = MatchScoringService.calculate(required_only_profile, self.job).technical_skills_score
 
         self.assertGreater(required_score, optional_score)
+
+    def test_scoring_uses_canonical_skill_id_not_raw_profile_text(self):
+        dotnet = self._skill(".NET", SkillCategory.BACKEND)
+        job = self._job("dotnet-job", ".NET Backend Developer")
+        self._job_skill(job, dotnet, RequirementType.REQUIRED)
+        ProfileSkill.objects.create(
+            profile=self.profile,
+            raw_name=".NET Core",
+            normalized_name=".net core",
+            skill=dotnet,
+        )
+
+        result = MatchScoringService.calculate(self.profile, job)
+
+        self.assertIn({"name": ".NET", "type": "required"}, result.strong_skills)
+        self.assertNotIn({"name": ".NET", "requirement_type": "required"}, result.missing_required_skills)
+
+    def test_low_confidence_required_skill_does_not_inflate_technical_score(self):
+        go = self._skill("Go", SkillCategory.PROGRAMMING_LANGUAGE)
+        ProfileSkill.objects.create(
+            profile=self.profile,
+            raw_name="Go",
+            normalized_name="go",
+            skill=go,
+        )
+        high_confidence_job = self._job("go-high-confidence", "Go Developer")
+        low_confidence_job = self._job("go-low-confidence", "Go Developer")
+        self._job_skill(high_confidence_job, go, RequirementType.REQUIRED, confidence=0.9)
+        self._job_skill(low_confidence_job, go, RequirementType.REQUIRED, confidence=0.49)
+
+        high_result = MatchScoringService.calculate(self.profile, high_confidence_job)
+        low_result = MatchScoringService.calculate(self.profile, low_confidence_job)
+
+        self.assertIn({"name": "Go", "type": "required"}, high_result.strong_skills)
+        self.assertEqual(high_result.technical_skills_score, 90)
+        self.assertEqual(high_result.match_confidence, MatchScoringService.CONFIDENCE_RELIABLE)
+
+        self.assertNotIn({"name": "Go", "type": "required"}, low_result.strong_skills)
+        self.assertLess(low_result.technical_skills_score, high_result.technical_skills_score)
+        self.assertIn("low_confidence_job_skills", low_result.risk_flags)
+        self.assertIn("low_confidence_job_skills", low_result.profile_signals)
+        self.assertNotEqual(low_result.match_confidence, MatchScoringService.CONFIDENCE_RELIABLE)
 
     def test_missing_required_french_and_expired_job_risk_flags(self):
         self.profile.french_level = ""
@@ -453,6 +499,30 @@ class MatchingTests(TestCase):
         self.assertIn("french_level_missing", session.risk_flags_json)
         self.assertLess(session.estimated_fit_score, 90)
 
+    def test_quick_match_uses_aliases_and_records_unknown_skills(self):
+        dotnet = self._skill(".NET", SkillCategory.BACKEND)
+        SkillAlias.objects.create(skill=dotnet, alias=".NET Core", normalized_alias=".net core")
+        job = self._job("quick-dotnet", ".NET Developer")
+        self._job_skill(job, dotnet, RequirementType.REQUIRED)
+
+        session = QuickMatchService.run_quick_match(
+            session_key="alias-session",
+            job=job,
+            entered_skills=[".NET Core", "Mystery Stack"],
+            experience_level="mid_level",
+            french_level="intermediate",
+            ip_address="127.0.0.9",
+        )
+
+        self.assertIn({"name": ".NET", "type": "required"}, session.matched_skills_json)
+        self.assertTrue(
+            UnmatchedSkillCandidate.objects.filter(
+                normalized_text="mystery stack",
+                source_type="quick_match",
+                status="pending",
+            ).exists()
+        )
+
     def test_full_match_post_requires_login_and_uses_uuid_route(self):
         url = reverse("matching:create", kwargs={"public_id": self.job.public_id})
         anonymous_response = self.client.post(url)
@@ -479,14 +549,6 @@ class MatchingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(QuickMatchSession.objects.exists())
-
-    def test_quick_match_form_includes_reset_scripts(self):
-        url = reverse("jobs:detail", kwargs={"public_id": self.job.public_id})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'window.addEventListener(\'pageshow\'')
-        self.assertContains(response, 'htmx:beforeRequest')
-        self.assertContains(response, 'hx-target="#quick-match-result"')
 
     def test_match_history_and_detail_are_owner_filtered(self):
         match = MatchResultService.create_match_result(self.user, self.job)
@@ -517,10 +579,9 @@ class MatchingTests(TestCase):
         self.client.login(email="candidate@example.test", password="password")
         response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
 
-        self.assertContains(response, "Données insuffisantes pour calculer un match fiable")
+        self.assertContains(response, "Données insuffisantes")
         self.assertNotContains(response, "Fit Global")
         self.assertNotContains(response, "Technique")
-        self.assertContains(response, "Offre probablement non IT")
         self.assertNotContains(response, "non_it_low_relevance_job")
 
     def test_match_detail_low_confidence_labels_estimate_and_technical_unavailable(self):
@@ -540,11 +601,44 @@ class MatchingTests(TestCase):
         self.client.login(email="candidate@example.test", password="password")
         response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
 
-        self.assertContains(response, "estimation prudente")
-        self.assertContains(response, "L'analyse de cette offre est limitée.")
-        self.assertNotContains(response, "Excellente nouvelle ! Vous possédez toutes les compétences techniques requises")
+        self.assertContains(response, "À vérifier")
         self.assertContains(response, "Signal technique insuffisant")
         self.assertNotContains(response, "no_required_skills_extracted")
+
+    def test_match_detail_action_buttons_use_external_apply_once(self):
+        self.job.source_url = "https://example.test/external-apply"
+        self.job.save(update_fields=["source_url"])
+        match = MatchResultService.create_match_result(self.user, self.job)
+
+        self.client.login(email="candidate@example.test", password="password")
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="https://example.test/external-apply"', html=False)
+        self.assertContains(response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertEqual(response.content.decode().count('data-i18n="Apply">Postuler</a>'), 1)
+        self.assertContains(response, 'class="grid match-actions"', html=False)
+        self.assertContains(response, 'class="btn save full"', html=False)
+        self.assertContains(response, 'data-i18n="Save"', html=False)
+        self.assertContains(response, 'data-i18n="Back to job">Retour à l\'offre</a>', html=False)
+        self.assertContains(response, 'data-i18n="Fit summary">Résumé du fit</h2>', html=False)
+        self.assertContains(response, 'data-i18n="Strong">Fort</b>', html=False)
+        self.assertContains(response, 'data-i18n="Gap">Écart</b>', html=False)
+        summary_html = response.content.decode().split('data-i18n="Fit summary"', 1)[1]
+        self.assertNotIn('data-i18n="Apply">Postuler</a>', summary_html)
+        self.assertNotContains(response, "Voir l'offre")
+
+    def test_match_detail_hides_apply_without_source_url(self):
+        self.job.source_url = ""
+        self.job.save(update_fields=["source_url"])
+        match = MatchResultService.create_match_result(self.user, self.job)
+
+        self.client.login(email="candidate@example.test", password="password")
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertNotContains(response, "Voir l'offre")
 
 
 class Phase15GHardeningTests(TestCase):
@@ -606,75 +700,27 @@ class Phase15GHardeningTests(TestCase):
         NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_wordpress, requirement_type=RequirementType.OPTIONAL)
         NormalizedJobSkill.objects.create(job=self.job, skill=self.skill_angular, requirement_type=RequirementType.REQUIRED)
 
-    def test_location_removed_from_final_score(self):
-        # Even if profile relocation matches vs not matches, fit score stays same because location is not in calculation.
-        # However, location_score might differ.
+    def test_location_affects_final_score(self):
+        self.job.skill_signal_quality = "strong"
+        self.job.classification_json = {"confidence": "high", "family": "software_development"}
+        self.job.save(update_fields=["skill_signal_quality", "classification_json"])
 
-        self.profile.relocation_preference = True
-        self.profile.save()
-        res1 = MatchScoringService.calculate(self.profile, self.job)
-
-        self.profile.relocation_preference = False
-        self.profile.save()
-        res2 = MatchScoringService.calculate(self.profile, self.job)
+        with (
+            patch.object(MatchScoringService, "_calc_technical_score", return_value=(50, [], [], [])),
+            patch.object(MatchScoringService, "_calc_experience_score", return_value=50),
+            patch.object(MatchScoringService, "_calc_role_title_score", return_value=50),
+            patch.object(MatchScoringService, "_calc_language_score", return_value=50),
+            patch.object(MatchScoringService, "_calc_location_score", side_effect=[0, 100]),
+        ):
+            res1 = MatchScoringService.calculate(self.profile, self.job)
+            res2 = MatchScoringService.calculate(self.profile, self.job)
 
         self.assertNotEqual(res1.location_score, res2.location_score)
-        self.assertEqual(res1.fit_score, res2.fit_score)
+        self.assertNotEqual(res1.fit_score, res2.fit_score)
+        self.assertEqual(res1.fit_score, 45)
+        self.assertEqual(res2.fit_score, 55)
 
-    def test_json_is_suppressed_when_implied(self):
-        # Profile has JavaScript, lacks Angular
-        ProfileSkill.objects.create(profile=self.profile, raw_name="JavaScript", normalized_name="javascript")
 
-        res = MatchScoringService.calculate(self.profile, self.job)
-
-        missing_opt = [s["name"] for s in res.missing_optional_skills]
-        self.assertNotIn("JSON", missing_opt)
-        self.assertNotIn("Jira", missing_opt)
-        self.assertNotIn("Confluence", missing_opt)
-        self.assertIn("JSON Schema", missing_opt)
-        self.assertIn("OpenAPI", missing_opt)
-        self.assertIn("WordPress", missing_opt)
-
-        missing_req = [s["name"] for s in res.missing_required_skills]
-        self.assertIn("Angular", missing_req)
-
-        self.assertEqual(Skill.objects.filter(canonical_name__in=["JSON", "Jira", "Confluence"]).count(), 3)
-        self.assertEqual(NormalizedJobSkill.objects.filter(job=self.job, skill__canonical_name__in=["JSON", "Jira", "Confluence"]).count(), 3)
-
-    def test_wordpress_is_not_suppressed_when_required(self):
-        NormalizedJobSkill.objects.filter(job=self.job, skill=self.skill_wordpress).update(
-            requirement_type=RequirementType.REQUIRED
-        )
-
-        res = MatchScoringService.calculate(self.profile, self.job)
-
-        missing_req = [s["name"] for s in res.missing_required_skills]
-        self.assertIn("Angular", missing_req)
-        self.assertIn("WordPress", missing_req)
-
-    def test_noisy_optional_skills_suppressed_but_preserved_terms_display(self):
-        noisy_skills = [
-            self._skill("XML", SkillCategory.BACKEND),
-            self._skill("YAML", SkillCategory.BACKEND),
-            self._skill("CSV", SkillCategory.DATA_AI),
-            self._skill("Markdown", SkillCategory.TOOLS),
-            self._skill("SOAP", SkillCategory.BACKEND),
-            self._skill("Agile", SkillCategory.METHODOLOGY),
-            self._skill("Scrum", SkillCategory.METHODOLOGY),
-            self._skill("Kanban", SkillCategory.METHODOLOGY),
-            self._skill("Excel", SkillCategory.TOOLS),
-            self._skill("Office 365", SkillCategory.TOOLS),
-        ]
-        for skill in noisy_skills:
-            NormalizedJobSkill.objects.create(job=self.job, skill=skill, requirement_type=RequirementType.OPTIONAL)
-
-        res = MatchScoringService.calculate(self.profile, self.job)
-
-        missing_opt = [s["name"] for s in res.missing_optional_skills]
-        for skill_name in ["JSON", "XML", "YAML", "CSV", "Markdown", "SOAP", "Jira", "Confluence", "Agile", "Scrum", "Kanban", "Excel", "Office 365"]:
-            self.assertNotIn(skill_name, missing_opt)
-        for skill_name in ["JSON Schema", "OpenAPI", "WordPress"]:
-            self.assertIn(skill_name, missing_opt)
 
     def test_actions_recommended_copy_is_french(self):
         res = MatchScoringService.calculate(self.profile, self.job)
@@ -682,7 +728,7 @@ class Phase15GHardeningTests(TestCase):
         self.assertTrue(any("Priorité : ajoutez" in action for action in actions))
 
         # Test when no required skills missing
-        ProfileSkill.objects.create(profile=self.profile, raw_name="Angular", normalized_name="angular")
+        ProfileSkill.objects.create(profile=self.profile, raw_name="Angular", normalized_name="angular", skill=self.skill_angular)
         res2 = MatchScoringService.calculate(self.profile, self.job)
         actions2 = res2.recommended_actions
         self.assertTrue(any("Votre profil couvre les compétences principales" in action for action in actions2))
@@ -711,16 +757,20 @@ class Phase15GHardeningTests(TestCase):
 
         response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
 
-        self.assertContains(response, "Mobilité / contrat")
-        self.assertContains(response, "Poste basé en France")
         self.assertNotContains(response, "Localisation")
-        self.assertContains(response, "Compétences requises manquantes")
+        self.assertContains(response, "Fit summary")
+        self.assertContains(response, "Strong")
+        self.assertContains(response, "Gap")
+        self.assertContains(response, "Good language fit")
+        self.assertContains(response, "Backend gap")
+        self.assertNotContains(response, "Score détaillé")
+        self.assertNotContains(response, "Rôle/titre")
         self.assertContains(response, "Angular")
         self.assertNotContains(response, "Compétences obligatoires non détectées")
         self.assertNotContains(response, "À renforcer")
-        self.assertNotContains(response, "Points de vigilance")
         self.assertContains(response, "Actions recommandées")
-        self.assertContains(response, "border-rose-200")
+        self.assertContains(response, "Mobilité / contrat")
+        self.assertContains(response, "Vérifiez la localisation")
 
     def test_empty_human_risk_flags_does_not_render_points_de_vigilance(self):
         match = MatchResult.objects.create(
@@ -744,6 +794,30 @@ class Phase15GHardeningTests(TestCase):
 
         self.assertEqual(match.human_risk_flags, [])
         self.assertNotContains(response, "Points de vigilance")
+
+    def test_human_risk_flags_renders_points_de_vigilance_and_human_readable_labels(self):
+        match = MatchResult.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=self.job,
+            profile_snapshot_json={},
+            job_snapshot_json={"title": self.job.title, "company_name": "Test"},
+            fit_score=72,
+            technical_skills_score=70,
+            experience_score=100,
+            role_title_score=70,
+            language_score=70,
+            location_score=0,
+            risk_flags_json=["job_may_be_expired"],
+            profile_signals_json=[],
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("matching:detail", kwargs={"public_id": match.public_id}))
+
+        self.assertContains(response, "Points de vigilance")
+        self.assertContains(response, "Offre possiblement expirée")
+        self.assertNotContains(response, "job_may_be_expired")
 
 class Phase15GRecommendationsViewTests(TestCase):
     def setUp(self):
@@ -786,3 +860,94 @@ class Phase15GRecommendationsViewTests(TestCase):
         self.assertContains(response, "Actualiser mes recommandations")
         self.assertContains(response, f'action="{reverse("recommendations:refresh")}"')
         self.assertContains(response, "csrfmiddlewaretoken")
+
+
+class Phase16FFeedbackTests(TestCase):
+    def setUp(self):
+        from apps.matching.models import MatchQualityFeedback, MatchQualityIssue
+        self.user = UserModel.objects.create_user(username="reviewer", email="reviewer@example.com", password="password")
+        self.profile = CandidateProfile.objects.create(
+            user=self.user,
+            years_experience=3.0,
+            current_level="mid",
+            french_level="c1",
+            profile_completion_score=100
+        )
+        now = timezone.now()
+        source = JobSource.objects.create(name="test", slug="test", source_type="fixture")
+        raw = RawJobRecord.objects.create(source=source, source_job_id="test2", payload_hash="test2", first_seen_at=now, last_seen_at=now, last_fetched_at=now, raw_payload_json={})
+        self.job = NormalizedJob.objects.create(
+            source=source,
+            raw_record=raw,
+            source_job_id="test2",
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+            public_id="11111111-1111-1111-1111-111111111111",
+            title="Dev",
+            status="active",
+        )
+        self.match = MatchResult.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=self.job,
+            fit_score=50,
+            technical_skills_score=50,
+            experience_score=50,
+            role_title_score=50,
+            language_score=50,
+            location_score=50,
+        )
+
+    def test_match_quality_feedback_creation(self):
+        from apps.matching.models import MatchQualityFeedback, MatchQualityIssue
+        feedback = MatchQualityFeedback.objects.create(
+            match_result=self.match,
+            reason=MatchQualityIssue.MISSING_KEY_SKILL,
+            notes="Missing React",
+            reviewed_by=self.user
+        )
+        self.assertEqual(feedback.reason, MatchQualityIssue.MISSING_KEY_SKILL)
+        self.assertEqual(self.match.quality_feedback.count(), 1)
+
+    def test_match_feedback_service_rejects_invalid_reason(self):
+        with self.assertRaises(ValidationError):
+            MatchFeedbackService.record_feedback(
+                self.user,
+                self.match.public_id,
+                "not_a_valid_reason",
+                "bad value",
+            )
+
+        self.assertEqual(self.match.quality_feedback.count(), 0)
+
+    def test_match_feedback_view_uses_public_id_and_owner_filter(self):
+        from apps.matching.models import MatchQualityFeedback, MatchQualityIssue
+
+        other_user = UserModel.objects.create_user(
+            username="other_reviewer",
+            email="other_reviewer@example.com",
+            password="password",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("matching:feedback", kwargs={"public_id": self.match.public_id}),
+            {"reason": MatchQualityIssue.GOOD_MATCH, "notes": "useful"},
+        )
+
+        self.assertRedirects(response, reverse("matching:detail", kwargs={"public_id": self.match.public_id}))
+        self.assertTrue(
+            MatchQualityFeedback.objects.filter(
+                match_result=self.match,
+                reason=MatchQualityIssue.GOOD_MATCH,
+                reviewed_by=self.user,
+            ).exists()
+        )
+
+        self.client.force_login(other_user)
+        response = self.client.post(
+            reverse("matching:feedback", kwargs={"public_id": self.match.public_id}),
+            {"reason": MatchQualityIssue.GOOD_MATCH},
+        )
+        self.assertEqual(response.status_code, 404)

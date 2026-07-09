@@ -2,6 +2,7 @@ import re
 import unicodedata
 
 from apps.skills.services.phase_15d_decisions import approved_ignore_terms
+from apps.skills.services.ambiguity import METADATA_NOISE_TERMS
 
 
 def _normalize_for_ignore(text: str) -> str:
@@ -14,6 +15,9 @@ def _normalize_for_ignore(text: str) -> str:
 class IgnoredSkillService:
     # Exact normalized terms to ignore
     EXACT_TERMS = {
+        *METADATA_NOISE_TERMS,
+        "a verifier",
+        "à vérifier",
         "cnil eds",
         "documentation",
         "e commerce",

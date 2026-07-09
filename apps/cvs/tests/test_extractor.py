@@ -134,3 +134,26 @@ English: Fluent
                 result = CVDeterministicExtractorService.extract(text)
                 self.assertEqual(result["current_level"], expected_level)
                 self.assertNotIn(result["current_level"], {"Junior", "Intermédiaire", "Senior"})
+
+    def test_metadata_noise_is_not_extracted_as_cv_skills(self):
+        text = """
+Name Example
+Skills: Python, source, status, vérifié, verified, badge, certifié
+        """
+        result = CVDeterministicExtractorService.extract(text)
+        skills = {skill.lower() for skill in result["raw_skills"]}
+
+        self.assertIn("python", skills)
+        self.assertFalse({"source", "status", "vérifié", "verified", "badge", "certifié"} & skills)
+
+    def test_work_history_chef_de_projet_does_not_become_cv_skill_candidate(self):
+        text = """
+Amina Ben Ali
+Experience
+Chef de Projet - Web migration
+Skills: Python, Django
+        """
+        result = CVDeterministicExtractorService.extract(text)
+        skills = {skill.lower() for skill in result["raw_skills"]}
+
+        self.assertNotIn("chef de projet", skills)

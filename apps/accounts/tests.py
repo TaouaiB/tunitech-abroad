@@ -6,7 +6,10 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from allauth.account.models import EmailAddress
+from allauth.core.exceptions import ImmediateHttpResponse
 from allauth.socialaccount.models import SocialAccount, SocialLogin
+from django.contrib.messages import get_messages
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.backends.db import SessionStore
 from django.test import RequestFactory
 
@@ -24,7 +27,7 @@ class UserModelTests(TestCase):
     def test_custom_user_model(self):
         self.assertEqual(User.__name__, 'User')
         self.assertEqual(User._meta.app_label, 'accounts')
-    
+
     def test_user_creation(self):
         user = create_test_user(username="testuser", email="test@example.test", password="password123")
         self.assertEqual(user.email, "test@example.test")
@@ -45,15 +48,15 @@ class UserModelTests(TestCase):
 class AccountProvisioningServiceTests(TestCase):
     def test_idempotent_provisioning(self):
         user = create_test_user(username="provuser", email="prov@example.test", password="password123")
-        
+
         # Test Phase 2: Creates CandidateProfile and EmailPreference idempotently
         from apps.profiles.models import CandidateProfile
         from apps.notifications.models import EmailPreference
-        
+
         AccountProvisioningService.provision_new_user(user)
         self.assertTrue(CandidateProfile.objects.filter(user=user).exists())
         self.assertTrue(EmailPreference.objects.filter(user=user).exists())
-        
+
         # Call again to test idempotency
         AccountProvisioningService.provision_new_user(user)
         self.assertEqual(CandidateProfile.objects.filter(user=user).count(), 1)
@@ -64,15 +67,15 @@ class AccountProvisioningServiceTests(TestCase):
         try:
             from allauth.socialaccount.models import SocialAccount
             SocialAccount.objects.create(
-                user=user, 
-                provider='github', 
+                user=user,
+                provider='github',
                 uid='12345',
                 extra_data={'name': 'Github User', 'html_url': 'https://github.com/ghuser', 'location': 'Tunis'}
             )
-            
+
             from apps.profiles.models import CandidateProfile
             AccountProvisioningService.provision_new_user(user)
-            
+
             profile = CandidateProfile.objects.get(user=user)
             self.assertEqual(profile.full_name, 'Github User')
             self.assertEqual(profile.github_url, 'https://github.com/ghuser')
@@ -87,6 +90,7 @@ class SocialAccountAdapterTests(TestCase):
     def _request(self):
         request = self.request_factory.get("/")
         request.session = SessionStore()
+        request._messages = FallbackStorage(request)
         return request
 
     def _social_login(self, provider="google", email="oauth@example.test", verified=True):
@@ -161,6 +165,52 @@ class SocialAccountAdapterTests(TestCase):
         self.assertEqual(send_mail.call_count, 0)
         self.assertEqual(login._did_authenticate_by_email, "warning@gmail.test")
 
+    def test_pre_social_login_links_google_to_verified_local_email(self):
+        existing_user = create_test_user(username="verifiedlocal", email="verified-local@gmail.test")
+        EmailAddress.objects.create(user=existing_user, email=existing_user.email, verified=True, primary=True)
+        login = self._social_login(provider="google", email=existing_user.email, verified=True)
+
+        with patch.object(login, "connect") as connect:
+            TuniTechSocialAccountAdapter().pre_social_login(self._request(), login)
+
+        connect.assert_called_once()
+        self.assertEqual(connect.call_args.args[1], existing_user)
+
+    def test_pre_social_login_unverified_provider_collision_is_unsafe(self):
+        existing_user = create_test_user(username="unverifiedprovider", email="unverified-provider@gmail.test")
+        EmailAddress.objects.create(user=existing_user, email=existing_user.email, verified=True, primary=True)
+        login = self._social_login(provider="google", email=existing_user.email, verified=False)
+
+        with self.assertRaises(ImmediateHttpResponse), patch.object(login, "connect") as connect:
+            TuniTechSocialAccountAdapter().pre_social_login(self._request(), login)
+
+        connect.assert_not_called()
+
+    def test_pre_social_login_unverified_local_collision_is_unsafe(self):
+        existing_user = create_test_user(username="unverifiedlocal", email="unverified-local@gmail.test")
+        EmailAddress.objects.create(user=existing_user, email=existing_user.email, verified=False, primary=True)
+        login = self._social_login(provider="google", email=existing_user.email, verified=True)
+
+        with self.assertRaises(ImmediateHttpResponse), patch.object(login, "connect") as connect:
+            TuniTechSocialAccountAdapter().pre_social_login(self._request(), login)
+
+        connect.assert_not_called()
+
+    def test_pre_social_login_unsafe_collision_message_is_provider_neutral(self):
+        existing_user = create_test_user(username="githubcollision", email="github-collision@example.test")
+        EmailAddress.objects.create(user=existing_user, email=existing_user.email, verified=False, primary=True)
+        login = self._social_login(provider="github", email=existing_user.email, verified=True)
+        request = self._request()
+
+        with self.assertRaises(ImmediateHttpResponse):
+            TuniTechSocialAccountAdapter().pre_social_login(request, login)
+
+        messages = [str(message) for message in get_messages(request)]
+        self.assertIn(
+            "Connexion sociale non liée automatiquement : vérifiez d'abord votre adresse email locale.",
+            messages,
+        )
+
     def test_oauth_socialaccount_extra_data_mapping(self):
         user = create_test_user(username="oauthuser", email="oauth@example.test", password="password123")
         AccountProvisioningService.provision_new_user(user)
@@ -214,6 +264,45 @@ class AuthViewsTests(TestCase):
         response = self.client.get('/accounts/signup/')
         self.assertEqual(response.status_code, 200)
 
+    def test_auth_templates_do_not_include_fake_success_toasts(self):
+        login_response = self.client.get("/accounts/login/")
+        signup_response = self.client.get("/accounts/signup/", follow=True)
+
+        self.assertEqual(login_response.status_code, 200)
+        self.assertEqual(signup_response.status_code, 200)
+        self.assertNotContains(login_response, "data-success")
+        self.assertNotContains(signup_response, "data-success")
+        self.assertContains(login_response, 'data-auth-form="true"')
+        self.assertContains(signup_response, 'data-auth-form="true"')
+
+    def test_login_and_signup_pages_are_split(self):
+        login_response = self.client.get("/accounts/login/")
+        signup_response = self.client.get("/accounts/signup/")
+
+        self.assertContains(login_response, 'action="/accounts/login/"', html=False)
+        self.assertNotContains(login_response, 'action="/accounts/signup/"', html=False)
+        self.assertContains(login_response, "Pas encore de compte ? Créer un compte")
+
+        self.assertContains(signup_response, 'action="/accounts/signup/"', html=False)
+        self.assertNotContains(signup_response, 'action="/accounts/login/"', html=False)
+        self.assertContains(signup_response, "Déjà un compte ? Connexion")
+
+    def test_wrong_email_password_login_does_not_authenticate(self):
+        user = create_test_user(username="wrong-login", email="wrong-login@example.test", password="password123")
+        EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+
+        response = self.client.post(
+            "/accounts/login/",
+            {"login": "wrong-login@example.test", "password": "not-the-password"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertNotContains(response, "Signed in")
+        self.assertNotContains(response, "Connecté")
+        self.assertContains(response, "has-error")
+        self.assertContains(response, "toast bad")
+
     def test_existing_normal_email_password_login_still_works(self):
         user = create_test_user(username="normal-login", email="normal-login@example.test", password="password123")
         EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
@@ -224,9 +313,26 @@ class AuthViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response["Location"], "/dashboard/")
+        self.assertEqual(response["Location"], "/jobs/")
 
-    def test_normal_email_signup_still_requires_email_confirmation(self):
+    def test_invalid_signup_post_reaches_allauth_without_fake_success(self):
+        response = self.client.post(
+            "/accounts/signup/",
+            {
+                "email": "bad-email",
+                "password1": "short",
+                "password2": "different",
+                "first_name": "Bad",
+                "last_name": "Signup",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "data-success")
+        self.assertNotContains(response, "Account created")
+        self.assertContains(response, "has-error")
+
+    def test_normal_email_signup_redirects_to_jobs_and_sends_verification_email(self):
         response = self.client.post(
             "/accounts/signup/",
             {
@@ -237,7 +343,7 @@ class AuthViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/accounts/confirm-email/", response["Location"])
+        self.assertIn("/jobs/", response["Location"])
         user = User.objects.get(email="normal-signup@example.test")
         email_address = EmailAddress.objects.get(user=user, email=user.email)
         self.assertFalse(email_address.verified)
@@ -251,3 +357,51 @@ class AuthViewsTests(TestCase):
         self.assertIn('data-project-layout="tunitech-abroad"', html)
         self.assertIn("TuniAtlas", html)
         self.assertNotIn("<h1>Verify Your Email Address</h1>", html)
+
+from django.template.loader import render_to_string
+
+class AccountEmailTemplateTests(TestCase):
+    def setUp(self):
+        self.user = create_test_user("emailtester", "emailtester@example.com")
+
+    def test_password_reset_email_renders_with_branded_content(self):
+        context = {
+            "user": self.user,
+            "password_reset_url": "http://example.com/reset/xyz"
+        }
+
+        # Test subject
+        subject = render_to_string("account/email/password_reset_key_subject.txt", context).strip("\n")
+        self.assertEqual(subject, "Reset your TuniAtlas password")
+        self.assertNotIn("\n", subject)
+
+        # Test text message
+        txt_body = render_to_string("account/email/password_reset_key_message.txt", context)
+        self.assertIn("TuniAtlas", txt_body)
+        self.assertIn("http://example.com/reset/xyz", txt_body)
+
+        # Test html message
+        html_body = render_to_string("account/email/password_reset_key_message.html", context)
+        self.assertIn("TuniAtlas", html_body)
+        self.assertIn("http://example.com/reset/xyz", html_body)
+
+    def test_confirmation_email_renders_with_branded_content(self):
+        context = {
+            "user": self.user,
+            "activate_url": "http://example.com/activate/xyz"
+        }
+
+        # Test subject
+        subject = render_to_string("account/email/email_confirmation_signup_subject.txt", context).strip("\n")
+        self.assertEqual(subject, "Confirm your TuniAtlas account")
+        self.assertNotIn("\n", subject)
+
+        # Test text message
+        txt_body = render_to_string("account/email/email_confirmation_signup_message.txt", context)
+        self.assertIn("TuniAtlas", txt_body)
+        self.assertIn("http://example.com/activate/xyz", txt_body)
+
+        # Test html message
+        html_body = render_to_string("account/email/email_confirmation_signup_message.html", context)
+        self.assertIn("TuniAtlas", html_body)
+        self.assertIn("http://example.com/activate/xyz", html_body)

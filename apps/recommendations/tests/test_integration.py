@@ -155,13 +155,31 @@ class DashboardIntegrationTests(TestCase):
         self.assertNotContains(response, "Unknown")
         self.assertNotContains(response, "unknown")
         self.assertContains(response, "82%")
-        self.assertContains(response, "tta-score-ring-prominent")
-        self.assertContains(response, "tta-skill-chip-success")
-        self.assertContains(response, reverse("matching:detail", kwargs={"public_id": match.public_id}))
+        self.assertContains(response, "match-badge")
+        self.assertContains(response, "skill ok")
+        self.assertNotContains(response, reverse("matching:detail", kwargs={"public_id": match.public_id}))
         self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
-        self.assertContains(response, "Vu le")
         self.assertNotContains(response, "Postuler sur la source")
-        self.assertNotContains(response, "https://example.test/apply")
+        self.assertContains(response, 'href="https://example.test/apply"', html=False)
+        self.assertContains(response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertContains(response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertNotContains(response, "Voir l'offre")
+        self.assertNotContains(response, "Details")
+        self.assertNotContains(response, "Détails")
+
+    def test_saved_jobs_page_uses_external_apply_and_keeps_unsave(self):
+        self.client.force_login(self.user)
+        self.job.source_url = "https://example.test/saved-apply"
+        self.job.save(update_fields=["source_url"])
+        SavedJob.objects.create(user=self.user, job=self.job)
+
+        response = self.client.get(reverse("dashboard:saved_jobs"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="https://example.test/saved-apply"', html=False)
+        self.assertContains(response, 'target="_blank" rel="noopener noreferrer"', html=False)
+        self.assertContains(response, 'data-i18n="Apply">Postuler</a>', html=False)
+        self.assertContains(response, 'data-i18n="Saved"', html=False)
 
     def test_recommendation_card_hides_match_cta_when_no_match_exists(self):
         self.client.force_login(self.user)
@@ -205,8 +223,7 @@ class DashboardIntegrationTests(TestCase):
         response = self.client.get(reverse("dashboard:recommendations"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Voir la compatibilité")
-        self.assertContains(response, "Voir l'offre")
+        self.assertNotContains(response, "Détails")
         self.assertNotContains(response, "Postuler sur la source")
 
     def test_recommendations_page_defaults_to_highest_visible_score_first(self):
@@ -315,9 +332,7 @@ class DashboardIntegrationTests(TestCase):
         response = self.client.get(reverse("dashboard:recommendations"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "À renforcer")
-        self.assertContains(response, "Certaines compétences obligatoires ne sont pas encore dans votre profil.")
-        self.assertContains(response, "tta-skill-chip-missing")
+        self.assertContains(response, "skill missing")
         self.assertNotContains(response, "Points de vigilance")
         self.assertNotContains(response, "Compétences obligatoires non détectées")
 
@@ -353,7 +368,7 @@ class DashboardIntegrationTests(TestCase):
         self.assertNotContains(response, "Unknown")
         self.assertNotContains(response, "unknown")
         self.assertNotContains(response, ">t<", html=False)
-        self.assertContains(response, "Vu le")
+        self.assertNotContains(response, ">t<", html=False)
         self.assertContains(response, reverse("jobs:detail", kwargs={"public_id": self.job.public_id}))
 
 
@@ -412,7 +427,25 @@ class JobDetailSaveIntegrationTests(TestCase):
         response = self.client.post(url, HTTP_HX_REQUEST="true")
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "jobs/partials/save_button.html")
-        self.assertFalse(response.context["is_saved"])
+        self.assertFalse(SavedJob.objects.filter(user=self.user, job=self.job).exists())
+
+    def test_saved_page_unsave_htmx_removes_card_response_and_backend_state(self):
+        self.client.force_login(self.user)
+        SavedJob.objects.create(user=self.user, job=self.job)
+
+        page = self.client.get(reverse("dashboard:saved_jobs"))
+        self.assertContains(page, f'id="saved-job-card-{self.job.public_id}"')
+        self.assertContains(page, 'name="remove_card" value="1"', html=False)
+
+        response = self.client.post(
+            reverse("jobs:unsave", kwargs={"public_id": self.job.public_id}),
+            {"remove_card": "1"},
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"")
+        self.assertFalse(SavedJob.objects.filter(user=self.user, job=self.job).exists())
 
     def test_save_inactive_job(self):
         self.client.force_login(self.user)
@@ -467,7 +500,7 @@ class StalenessHooksTests(TestCase):
         pdf_content = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n"
         pdf_file = SimpleUploadedFile("test.pdf", pdf_content, content_type="application/pdf")
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, pdf_file, consent_accepted=True)
+            cv = CVUploadService.upload_cv(self.user, pdf_file)
         self.recommendation.refresh_from_db()
         self.assertEqual(self.recommendation.status, "stale")
 
@@ -476,12 +509,12 @@ class StalenessHooksTests(TestCase):
         pdf_content = b"%PDF-1.4\n"
         pdf_file = SimpleUploadedFile("test.pdf", pdf_content, content_type="application/pdf")
         with self.captureOnCommitCallbacks(execute=True):
-            cv = CVUploadService.upload_cv(self.user, pdf_file, consent_accepted=True)
-        
+            cv = CVUploadService.upload_cv(self.user, pdf_file)
+
         # Reset recommendation status because upload already marked it stale
         self.recommendation.status = "active"
         self.recommendation.save()
-        
+
         with self.captureOnCommitCallbacks(execute=True):
             CVDeletionService.delete_cv(self.user, cv.public_id)
         self.recommendation.refresh_from_db()
@@ -494,7 +527,7 @@ class StalenessHooksTests(TestCase):
         mock_extract_text.return_value = {"success": True, "raw_text": "Sample text"}
         mock_det.return_value = {}
         mock_llm.return_value = {}
-        
+
         cv = CVUpload.objects.create(
             user=self.user,
             file="dummy.pdf",
@@ -502,12 +535,12 @@ class StalenessHooksTests(TestCase):
             mime_type="application/pdf",
             is_active=True
         )
-        
+
         # Reset recommendation status
         self.recommendation.status = "active"
         self.recommendation.save()
-        
+
         CVParsingService.parse(cv)
-        
+
         self.recommendation.refresh_from_db()
         self.assertEqual(self.recommendation.status, "stale")

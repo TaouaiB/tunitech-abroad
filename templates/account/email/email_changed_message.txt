@@ -1,0 +1,10 @@
+{% load account %}
+{% user_display user as user_display %}
+Hello {{ user_display }},
+
+Your TuniAtlas email address was changed from {{ from_email }} to {{ to_email }}.
+
+If you did not make this change, please contact our support team immediately.
+
+Best regards,
+The TuniAtlas Team

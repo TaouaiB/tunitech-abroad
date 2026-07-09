@@ -30,6 +30,14 @@ class JobPresentationService:
         return val_str not in JobPresentationService.UNKNOWN_LANGUAGE_VALUES
 
 
+    JOB_TYPE_LABELS = {
+        "full_time_job": "Emploi",
+        "internship": "Stage",
+        "apprenticeship": "Alternance",
+        "contract": "Freelance / Mission",
+        "unknown": "Type non précisé",
+    }
+
     @staticmethod
     def get_deduplicated_badges(job):
         badges = []
@@ -43,9 +51,12 @@ class JobPresentationService:
                 seen.add(val_lower)
                 badges.append({"text": text, "css_class": css_class})
 
-        add_badge(job.contract_type, "tta-badge-brand")
+        job_type_val = getattr(job, "job_type", "")
+        if job_type_val:
+            job_type_label = JobPresentationService.JOB_TYPE_LABELS.get(str(job_type_val), "Type non précisé")
+            add_badge(job_type_label, "tta-badge-brand")
+
         add_badge(getattr(job, 'get_remote_type_display', lambda: job.remote_type)(), "tta-badge-muted")
-        add_badge(getattr(job, 'get_job_type_display', lambda: job.job_type)(), "tta-badge-muted")
         add_badge(getattr(job, 'get_experience_level_display', lambda: job.experience_level)(), "tta-badge-muted")
 
         return badges

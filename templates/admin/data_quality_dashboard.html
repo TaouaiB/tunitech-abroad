@@ -1,0 +1,129 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+    <h1>TuniAtlas Data Quality Dashboard</h1>
+
+    <div class="module">
+        <h2>Jobs with Zero/Weak Skills</h2>
+        <table>
+            <tr><th>Public ID</th><th>Title</th><th>Source</th></tr>
+            {% for job in jobs_zero_skills %}
+            <tr>
+                <td><a href="/admin/jobs/normalizedjob/{{ job.id }}/change/">{{ job.public_id }}</a></td>
+                <td>{{ job.title }}</td>
+                <td>{{ job.source.slug }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No jobs found with zero skills.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Weak Skill Signals</h2>
+        <table>
+            <tr><th>Public ID</th><th>Title</th><th>Signal Quality</th></tr>
+            {% for job in weak_skill_jobs %}
+            <tr>
+                <td><a href="/admin/jobs/normalizedjob/{{ job.id }}/change/">{{ job.public_id }}</a></td>
+                <td>{{ job.title }}</td>
+                <td>{{ job.skill_signal_quality }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No weak skill signal jobs found.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Unknown Skill Candidates</h2>
+        <table>
+            <tr><th>Raw Skill</th><th>Occurrences</th><th>Updated</th></tr>
+            {% for skill in unknown_skills %}
+            <tr>
+                <td><a href="/admin/skills/unmatchedskillcandidate/{{ skill.id }}/change/">{{ skill.raw_skill_text }}</a></td>
+                <td>{{ skill.occurrence_count }}</td>
+                <td>{{ skill.updated_at }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No unknown skill candidates.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Hidden Public Eligibility Reasons (Jobs)</h2>
+        <table>
+            <tr><th>Public ID</th><th>Title</th><th>Status Reason</th></tr>
+            {% for job in hidden_jobs %}
+            <tr>
+                <td><a href="/admin/jobs/normalizedjob/{{ job.id }}/change/">{{ job.public_id }}</a></td>
+                <td>{{ job.title }}</td>
+                <td>{{ job.admin_public_eligibility_reason|default:"Unknown" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No active hidden jobs.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>CV Parse Warnings</h2>
+        <table>
+            <tr><th>Public ID</th><th>Uploaded At</th><th>Parse Status</th><th>Download</th></tr>
+            {% for cv in cvs_with_warnings %}
+            <tr>
+                <td><a href="/admin/cvs/cvupload/{{ cv.id }}/change/">{{ cv.public_id }}</a></td>
+                <td>{{ cv.uploaded_at }}</td>
+                <td>{{ cv.parse_status }}</td>
+                <td><a href="{% url 'admin_cv_download' cv.public_id %}" target="_blank">Download CV</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No recent CVs with warnings.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Low Confidence CV Fields</h2>
+        <table>
+            <tr><th>Public ID</th><th>Uploaded At</th><th>Parse Status</th></tr>
+            {% for cv in low_confidence_cvs %}
+            <tr>
+                <td><a href="/admin/cvs/cvupload/{{ cv.id }}/change/">{{ cv.public_id }}</a></td>
+                <td>{{ cv.uploaded_at }}</td>
+                <td>{{ cv.parse_status }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No low-confidence CV fields found.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Zero Result Search Buckets</h2>
+        <table>
+            <tr><th>Query</th><th>Company</th><th>Skill</th><th>Count</th></tr>
+            {% for row in zero_result_searches %}
+            <tr>
+                <td>{{ row.normalized_query|default:"-" }}</td>
+                <td>{{ row.normalized_company|default:"-" }}</td>
+                <td>{{ row.skill|default:"-" }}</td>
+                <td>{{ row.count }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No zero-result search buckets.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<style>
+    .module { margin-bottom: 20px; background: #fff; border: 1px solid #ccc; border-radius: 4px; }
+    .module h2 { margin: 0; padding: 10px; background: #f8f8f8; border-bottom: 1px solid #ccc; font-size: 14px; color: #666; }
+    .module table { width: 100%; border-collapse: collapse; }
+    .module th, .module td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+    .module th { font-weight: normal; color: #333; }
+</style>
+{% endblock %}

@@ -1,0 +1,95 @@
+- generic [active] [ref=f61e1]:
+  - banner [ref=f61e2]:
+    - generic [ref=f61e3]:
+      - link "T TuniAtlas" [ref=f61e4] [cursor=pointer]:
+        - /url: /jobs/
+        - generic [ref=f61e5]: T
+        - generic [ref=f61e6]: TuniAtlas
+      - navigation [ref=f61e7]:
+        - link "Offres" [ref=f61e8] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f61e9] [cursor=pointer]:
+          - /url: /accounts/login/?next=/dashboard/recommendations/
+        - link "À propos" [ref=f61e10] [cursor=pointer]:
+          - /url: /about/
+        - link "Connexion" [ref=f61e11] [cursor=pointer]:
+          - /url: /accounts/login/
+      - generic [ref=f61e12]:
+        - button "Switch theme" [ref=f61e13] [cursor=pointer]:
+          - img [ref=f61e14]
+          - img [ref=f61e18]
+        - button "Switch language" [ref=f61e20] [cursor=pointer]:
+          - generic [ref=f61e21]: EN
+          - generic [ref=f61e23]: FR
+        - button "Menu" [ref=f61e24] [cursor=pointer]:
+          - img [ref=f61e25]
+  - main [ref=f61e27]:
+    - generic [ref=f61e29]:
+      - heading "À propos" [level=1] [ref=f61e30]
+      - generic [ref=f61e31]:
+        - generic [ref=f61e32]:
+          - generic [ref=f61e33]:
+            - heading "Notre mission" [level=2] [ref=f61e34]
+            - paragraph [ref=f61e35]: TuniAtlas Jobs aide les talents IT tunisiens à trouver des opportunités à l'étranger, en commençant par la France.
+            - list [ref=f61e36]:
+              - listitem [ref=f61e37]:
+                - strong [ref=f61e38]: "Recherche locale :"
+                - text: Les offres et la recherche sont basées sur notre base de données PostgreSQL locale. Il n'y a pas d'appels API en direct à France Travail pendant votre recherche.
+              - listitem [ref=f61e39]:
+                - strong [ref=f61e40]: "Match personnalisé :"
+                - text: Les données de votre CV et de votre profil aident au matching et aux recommandations.
+              - listitem [ref=f61e41]:
+                - strong [ref=f61e42]: "Algorithme déterministe :"
+                - text: Le matching est basé sur des règles déterministes. Un LLM peut aider à expliquer ou suggérer des pistes, mais il ne décide pas du score final.
+              - listitem [ref=f61e43]:
+                - strong [ref=f61e44]: "Confidentialité :"
+                - text: Vos fichiers CV restent strictement privés.
+          - generic [ref=f61e45]:
+            - heading "Contact" [level=2] [ref=f61e46]
+            - generic [ref=f61e48]:
+              - generic [ref=f61e49]:
+                - generic [ref=f61e50]: Nom complet
+                - textbox "Nom complet" [ref=f61e51]
+              - generic [ref=f61e52]:
+                - generic [ref=f61e53]: Email
+                - textbox "Email" [ref=f61e54]
+            - generic [ref=f61e55]:
+              - generic [ref=f61e56]: Motif
+              - combobox "Motif" [ref=f61e57]:
+                - option "Sélectionnez un motif" [selected]
+                - option "Compte"
+                - option "Analyse CV"
+                - option "Problème d'offre"
+                - option "Partenariat"
+                - option "Autre"
+            - generic [ref=f61e58]:
+              - generic [ref=f61e59]: Message
+              - textbox "Message" [ref=f61e60]:
+                - /placeholder: Écrivez votre message ici...
+            - button "Envoyer" [ref=f61e62] [cursor=pointer]
+        - complementary [ref=f61e63]:
+          - heading "Liens" [level=2] [ref=f61e64]
+          - generic [ref=f61e65]:
+            - generic [ref=f61e68]:
+              - text: Contact direct
+              - generic [ref=f61e69]: Utilisez le formulaire sécurisé.
+            - generic [ref=f61e72]:
+              - text: Offres
+              - link "Parcourir les offres" [ref=f61e73] [cursor=pointer]:
+                - /url: /jobs/
+            - generic [ref=f61e76]:
+              - text: Compte
+              - link "Gérer les paramètres" [ref=f61e77] [cursor=pointer]:
+                - /url: /accounts/login/
+  - contentinfo [ref=f61e78]:
+    - generic [ref=f61e79]:
+      - generic [ref=f61e80]:
+        - text: TuniAtlas
+        - generic [ref=f61e81]: Tech jobs abroad for Tunisian talent.
+      - generic [ref=f61e82]:
+        - link "Offres" [ref=f61e83] [cursor=pointer]:
+          - /url: /jobs/
+        - link "Recommandations" [ref=f61e84] [cursor=pointer]:
+          - /url: /accounts/login/?next=/dashboard/recommendations/
+        - link "À propos" [ref=f61e85] [cursor=pointer]:
+          - /url: /about/

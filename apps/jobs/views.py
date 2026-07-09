@@ -3,12 +3,15 @@ import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.http import HttpResponse
 
 from apps.jobs.forms import JobSearchForm
 from apps.jobs.services.search import JobSearchService
 from apps.jobs.services.query import JobQueryService
 from apps.jobs.services.revalidation import JobRevalidationService
 from apps.recommendations.services.saved_jobs import SavedJobService
+from apps.jobs.services.cta_context import CTAContextService
+
 from apps.jobs.services.presentation import JobPresentationService
 
 try:
@@ -38,7 +41,17 @@ def job_list(request):
     if form.is_valid():
         filters = form.cleaned_data
 
-    result = JobSearchService.search(filters, user=request.user)
+    result = JobSearchService.search(filters, request=request)
+    if request.user.is_authenticated:
+        jobs = list(result.page_obj.object_list)
+        saved_job_ids = set(
+            SavedJobService.get_saved_jobs(request.user)
+            .filter(job_id__in=[job.id for job in jobs])
+            .values_list("job_id", flat=True)
+        )
+        for job in jobs:
+            job.is_saved = job.id in saved_job_ids
+        result.page_obj.object_list = jobs
     effective_filters = {**result.filters, "sort": result.sort}
 
     safe_record_event("job_search", request.user, metadata={"q": filters.get("q", "")})
@@ -72,11 +85,13 @@ def job_detail(request, public_id):
         is_saved = SavedJobService.is_saved(request.user, public_id)
 
     valid_languages = JobPresentationService.get_valid_languages(job)
+    cta_context = CTAContextService.get_job_cta_context(request.user, job)
 
     return render(request, "jobs/job_detail.html", {
         "job": job,
         "is_saved": is_saved,
         "valid_languages": valid_languages,
+        "cta_context": cta_context,
     })
 
 @login_required
@@ -93,6 +108,8 @@ def save_job(request, public_id):
 def unsave_job(request, public_id):
     SavedJobService.remove_saved_job(request.user, public_id)
     if request.headers.get("HX-Request") == "true":
+        if request.POST.get("remove_card") == "1":
+            return HttpResponse("")
         job = JobQueryService.get_public_job(public_id)
         return render(request, "jobs/partials/save_button.html", {"job": job, "is_saved": False})
     return redirect("jobs:detail", public_id=public_id)

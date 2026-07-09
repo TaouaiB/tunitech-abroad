@@ -12,3 +12,9 @@ class JobSearchForm(forms.Form):
     sort = forms.CharField(required=False)
     page = forms.CharField(required=False)
     page_size = forms.CharField(required=False)
+
+    # Phase 16B filters
+    company = forms.CharField(required=False)
+    published_exact = forms.CharField(required=False)
+    published_from = forms.CharField(required=False)
+    published_to = forms.CharField(required=False)

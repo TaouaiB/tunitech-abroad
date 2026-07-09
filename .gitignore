@@ -46,3 +46,4 @@ docker-compose.yml
 # Local test artifacts
 /tmp/
 var/
+private_test_corpus/

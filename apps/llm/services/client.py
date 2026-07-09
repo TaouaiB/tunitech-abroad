@@ -32,8 +32,8 @@ class OpenRouterClient:
 
     def _make_request(self, messages, model=None, response_format=None, max_tokens=1024, temperature=0.7) -> dict[str, Any]:
         if not self.enabled:
-            logger.info("LLM is disabled. Returning mock response.")
-            return self._get_mock_response(messages)
+            logger.info("LLM is disabled. Returning disabled response.")
+            return self._get_disabled_response(messages)
 
         if not self.api_key:
             logger.error("LLM_ENABLED is True but OPENROUTER_API_KEY is not set.")
@@ -93,11 +93,11 @@ class OpenRouterClient:
             usage = _normalize_usage(response.get("usage", {}))
             return content, usage
 
-    def _get_mock_response(self, messages):
+    def _get_disabled_response(self, messages):
         """
-        Returns a generic mock response when disabled.
+        Returns an explicit disabled response when LLM is turned off.
         """
         return {
-            "content": '{"mocked": true}',
-            "usage": {"prompt_tokens": 10, "completion_tokens": 10, "total_tokens": 20}
+            "content": '{"disabled": true, "reason": "LLM disabled"}',
+            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         }
