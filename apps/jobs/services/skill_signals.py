@@ -1,6 +1,11 @@
 import re
 from dataclasses import dataclass
 
+from apps.skills.services.extraction_policy import (
+    SkillCandidateKind,
+    classify_skill_candidate_with_alias,
+    is_generic_source_phrase,
+)
 from apps.jobs.services.skill_extraction import GENERIC_FT_LABELS
 
 
@@ -33,7 +38,6 @@ STRONG_SKILL_TERMS = (
     "postgresql",
     "postgres",
     "sql",
-    "api",
     "backend",
     "back-end",
     "frontend",
@@ -95,6 +99,32 @@ def _terms_in_text(text: str, terms: tuple[str, ...]) -> list[str]:
     return [term for term in terms if _contains_term(text, term)]
 
 
+def _policy_decision_for_raw(raw_skill: str):
+    return classify_skill_candidate_with_alias(raw_skill)
+
+
+def _policy_terms(raw_skills: list[str]) -> tuple[list[str], list[str], list[str]]:
+    hard: list[str] = []
+    broad: list[str] = []
+    rejected: list[str] = []
+    for raw in raw_skills:
+        if not isinstance(raw, str) or not raw.strip():
+            continue
+        decision = _policy_decision_for_raw(raw)
+        if decision.kind == SkillCandidateKind.HARD_TECHNICAL and decision.materialize and decision.can_be_required:
+            hard.append(raw)
+        elif decision.kind == SkillCandidateKind.BROAD_TECHNICAL and decision.materialize:
+            broad.append(raw)
+        elif decision.kind in {
+            SkillCandidateKind.SOURCE_METADATA,
+            SkillCandidateKind.REJECTED_NOISE,
+            SkillCandidateKind.METHODOLOGY_PROCESS,
+            SkillCandidateKind.SOFT_SKILL,
+        }:
+            rejected.append(raw)
+    return hard, broad, rejected
+
+
 def _raw_payload_skills(job) -> tuple[list[str], list[str]]:
     raw_payload = {}
     raw_record = getattr(job, "raw_record", None)
@@ -148,12 +178,25 @@ def compute_deterministic_skill_signal_quality(job) -> SkillSignalResult:
         for label in GENERIC_FT_LABELS
         if label and label.lower() in source_skill_text
     ]
+    generic_terms.extend(
+        value
+        for value in [*required_json, *optional_json, *raw_required, *raw_optional]
+        if isinstance(value, str) and is_generic_source_phrase(value)
+    )
+    hard_required, broad_required, rejected_required = _policy_terms([*required_json, *raw_required])
+    hard_optional, broad_optional, rejected_optional = _policy_terms([*optional_json, *raw_optional])
 
-    if required_json or required_terms:
-        return SkillSignalResult("strong", tuple(dict.fromkeys([*required_terms, *text_terms])))
+    if hard_required or required_terms:
+        return SkillSignalResult("strong", tuple(dict.fromkeys([*hard_required, *required_terms, *text_terms])))
 
-    if optional_json or optional_terms:
-        return SkillSignalResult("partial", tuple(dict.fromkeys([*optional_terms, *text_terms])))
+    if hard_optional or optional_terms:
+        return SkillSignalResult("partial", tuple(dict.fromkeys([*hard_optional, *optional_terms, *text_terms])))
+
+    if generic_terms or broad_required or broad_optional or rejected_required or rejected_optional:
+        return SkillSignalResult(
+            "generic_only",
+            tuple(dict.fromkeys([*generic_terms, *broad_required, *broad_optional, *rejected_required, *rejected_optional])),
+        )
 
     if len(text_terms) >= 2:
         return SkillSignalResult("partial", tuple(text_terms))
@@ -166,9 +209,6 @@ def compute_deterministic_skill_signal_quality(job) -> SkillSignalResult:
 
     if text_terms and confidence == "high":
         return SkillSignalResult("partial", tuple(text_terms))
-
-    if generic_terms:
-        return SkillSignalResult("generic_only", tuple(generic_terms))
 
     if not all_text:
         return SkillSignalResult("missing", ())

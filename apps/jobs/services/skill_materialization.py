@@ -13,7 +13,8 @@ from apps.jobs.models import (
     SkillExtractionStatus,
 )
 from apps.skills.models import Skill, SkillAlias
-from apps.skills.services.normalizer import SkillNormalizerService, normalize_skill_text
+from apps.skills.services.extraction_policy import classify_skill_candidate, classify_skill_candidate_with_alias
+from apps.skills.services.normalizer import SkillNormalizerService, candidate_normalized_skill_texts, normalize_skill_text
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,10 @@ def _requirement_priority(requirement_type: str) -> int:
         RequirementType.DETECTED.value: 1,
         RequirementType.UNKNOWN.value: 0,
     }.get(requirement_type, 0)
+
+
+def _candidate_policy_decision(raw_skill: str):
+    return classify_skill_candidate_with_alias(raw_skill)
 
 @dataclass(frozen=True)
 class JobSkillMaterializationResult:
@@ -105,12 +110,19 @@ class JobSkillMaterializationService:
             for skill, val in raw_skills_dict.items():
                 if not str(skill).strip():
                     continue
+                decision = _candidate_policy_decision(str(skill))
+                if not decision.materialize:
+                    continue
                 if isinstance(val, dict):
                     req_type = val.get("type", RequirementType.DETECTED.value)
                     conf = _coerce_confidence(val.get("confidence", "1.000"))
                 else:
                     req_type = val
                     conf = Decimal("1.000")
+                if not decision.can_be_required and req_type == RequirementType.REQUIRED.value:
+                    req_type = RequirementType.DETECTED.value
+                if decision.confidence_ceiling is not None:
+                    conf = min(conf, decision.confidence_ceiling).quantize(Decimal("0.001"))
                 processed_raw_skills[str(skill).strip()] = req_type
                 candidate_confidences[str(skill).strip()] = conf
             raw_skills_dict = processed_raw_skills
@@ -132,6 +144,22 @@ class JobSkillMaterializationService:
                 add_candidate(r, RequirementType.REQUIRED.value)
             for o in opt_raw:
                 add_candidate(o, RequirementType.OPTIONAL.value)
+
+        filtered_raw_skills = {}
+        filtered_confidences: dict[str, Decimal] = {}
+        for skill, req_type in raw_skills_dict.items():
+            decision = _candidate_policy_decision(str(skill))
+            if not decision.materialize:
+                continue
+            if not decision.can_be_required and req_type == RequirementType.REQUIRED.value:
+                req_type = RequirementType.DETECTED.value
+            confidence = candidate_confidences.get(skill, Decimal("1.000"))
+            if decision.confidence_ceiling is not None:
+                confidence = min(confidence, decision.confidence_ceiling).quantize(Decimal("0.001"))
+            filtered_raw_skills[skill] = req_type
+            filtered_confidences[skill] = confidence
+        raw_skills_dict = filtered_raw_skills
+        candidate_confidences = filtered_confidences
 
         all_raw_skills = list(raw_skills_dict.keys())
 
@@ -200,11 +228,18 @@ class JobSkillMaterializationService:
 
                     confidence = Decimal("0.000")
                     for raw, type_ in raw_skills_dict.items():
-                        norm_raw = normalize_skill_text(raw)
-                        if norm_raw in skill_aliases:
+                        raw_candidates = set(candidate_normalized_skill_texts(raw))
+                        if raw_candidates.intersection(skill_aliases):
+                            decision = classify_skill_candidate(
+                                raw_text=raw,
+                                canonical_name=skill.canonical_name,
+                                category=skill.category,
+                            )
+                            if not decision.materialize:
+                                continue
                             confidence = max(confidence, candidate_confidences.get(raw, Decimal("1.000")))
                             if type_ == RequirementType.REQUIRED.value:
-                                req_type = type_
+                                req_type = type_ if decision.can_be_required else RequirementType.DETECTED.value
                                 break
                             elif type_ == RequirementType.OPTIONAL.value and req_type != RequirementType.REQUIRED.value:
                                 req_type = type_
