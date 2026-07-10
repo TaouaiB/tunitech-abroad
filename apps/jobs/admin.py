@@ -12,6 +12,7 @@ from apps.jobs.models import (
     JobIngestionRun,
     JobIngestionQueryRun,
 )
+from apps.jobs.services.anomaly_review import LOW_CONFIDENCE_THRESHOLD
 from apps.jobs.tasks import normalize_raw_job_record
 
 
@@ -293,14 +294,61 @@ class SkillSignalQualityFilter(admin.SimpleListFilter):
             return queryset.filter(skill_signal_quality__in=["generic_only", "missing", "unknown", ""])
         return queryset
 
+
+class GenericOnlyJobFilter(admin.SimpleListFilter):
+    title = "Generic-only skills"
+    parameter_name = "generic_only_review"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Generic-only signal"),
+            ("no", "Not generic-only"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(skill_signal_quality="generic_only")
+        if self.value() == "no":
+            return queryset.exclude(skill_signal_quality="generic_only")
+        return queryset
+
+
+class HiddenOrExcludedJobFilter(admin.SimpleListFilter):
+    title = "Hidden/excluded reason"
+    parameter_name = "hidden_excluded_review"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Hidden/excluded/reasoned"),
+            ("non_it", "Excluded non-IT"),
+            ("quality_issue", "Has quality issue"),
+        )
+
+    def queryset(self, request, queryset):
+        from django.db.models import Q
+        from apps.jobs.models import JobStatus
+
+        hidden_statuses = [JobStatus.STALE, JobStatus.EXPIRED, JobStatus.REMOVED, JobStatus.ARCHIVED]
+        if self.value() == "yes":
+            return queryset.filter(
+                Q(status__in=hidden_statuses) | Q(quality_issue__gt="") | Q(skill_signal_quality="excluded_non_it")
+            )
+        if self.value() == "non_it":
+            return queryset.filter(skill_signal_quality="excluded_non_it")
+        if self.value() == "quality_issue":
+            return queryset.filter(quality_issue__gt="")
+        return queryset
+
 @admin.register(NormalizedJob)
 class NormalizedJobAdmin(admin.ModelAdmin):
     list_display = (
+        "public_id",
         "title",
         "company_name",
         "location",
         "status",
         "source",
+        "source_job_id",
         "skill_signal_quality",
         "skill_extraction_status",
         "enrichment_status",
@@ -313,6 +361,8 @@ class NormalizedJobAdmin(admin.ModelAdmin):
         NoSkillsFilter,
         ActiveJobFilter,
         SkillSignalQualityFilter,
+        GenericOnlyJobFilter,
+        HiddenOrExcludedJobFilter,
         "status",
         "skill_extraction_status",
         "source",
@@ -322,7 +372,18 @@ class NormalizedJobAdmin(admin.ModelAdmin):
         "quality_issue",
     )
     search_fields = ("title", "company_name", "source_job_id", "public_id", "source__name", "source__slug")
-    readonly_fields = ("public_id", "created_at", "updated_at", "first_seen_at", "last_seen_at", "last_fetched_at")
+    readonly_fields = (
+        "public_id",
+        "source_job_id",
+        "skill_signal_quality",
+        "skill_extraction_status",
+        "quality_issue",
+        "created_at",
+        "updated_at",
+        "first_seen_at",
+        "last_seen_at",
+        "last_fetched_at",
+    )
     actions = [mark_jobs_stale, mark_jobs_expired, queue_selected_eligible_job_enrichments, re_extract_skills_action, rematerialize_skills_action, recover_zero_skill_jobs_action]
     inlines = [NormalizedJobSkillInline, JobQualityFeedbackInline]
 
@@ -340,18 +401,57 @@ class NormalizedJobAdmin(admin.ModelAdmin):
         return enrichment.status if enrichment else "-"
 
 
+class LowConfidenceJobSkillFilter(admin.SimpleListFilter):
+    title = "Low confidence"
+    parameter_name = "low_confidence_review"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", f"Below {LOW_CONFIDENCE_THRESHOLD}"),
+            ("missing", "Missing confidence"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(confidence__isnull=False, confidence__lt=LOW_CONFIDENCE_THRESHOLD)
+        if self.value() == "missing":
+            return queryset.filter(confidence__isnull=True)
+        return queryset
+
+
 @admin.register(NormalizedJobSkill)
 class NormalizedJobSkillAdmin(admin.ModelAdmin):
-    list_display = ("job", "skill", "requirement_type", "source", "confidence")
-    list_filter = ("requirement_type", "source")
-    search_fields = ("job__title", "skill__canonical_name")
+    list_display = ("job_public_id", "job", "skill", "requirement_type", "source", "confidence", "job_source")
+    list_filter = (LowConfidenceJobSkillFilter, "requirement_type", "source", "job__source")
+    search_fields = (
+        "job__title",
+        "job__company_name",
+        "job__public_id",
+        "job__source_job_id",
+        "skill__canonical_name",
+    )
     readonly_fields = ("created_at",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("job", "job__source", "skill")
+
+    @admin.display(ordering="job__public_id", description="Job public ID")
+    def job_public_id(self, obj):
+        return obj.job.public_id
+
+    @admin.display(ordering="job__source", description="Job source")
+    def job_source(self, obj):
+        return obj.job.source
 
 
 @admin.register(JobQualityFeedback)
 class JobQualityFeedbackAdmin(admin.ModelAdmin):
-    list_display = ("job", "reason", "reviewed_by", "created_at")
+    list_display = ("job_public_id", "job", "reason", "reviewed_by", "created_at")
     list_filter = ("reason", "created_at")
-    search_fields = ("job__title", "job__company_name", "notes", "reviewed_by__email")
+    search_fields = ("job__public_id", "job__source_job_id", "job__title", "job__company_name", "notes", "reviewed_by__email")
     autocomplete_fields = ("job", "reviewed_by")
     readonly_fields = ("created_at",)
+
+    @admin.display(ordering="job__public_id", description="Job public ID")
+    def job_public_id(self, obj):
+        return obj.job.public_id

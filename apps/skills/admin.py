@@ -46,10 +46,22 @@ def map_candidates(modeladmin, request, queryset):
 
 @admin.register(UnmatchedSkillCandidate)
 class UnmatchedSkillCandidateAdmin(admin.ModelAdmin):
-    list_display = ('raw_skill_text', 'normalized_text', 'source_type', 'occurrence_count', 'status', 'mapped_skill')
-    search_fields = ('raw_skill_text', 'normalized_text')
-    list_filter = ('status', 'source_type')
+    list_display = (
+        'raw_skill_text',
+        'normalized_text',
+        'source_type',
+        'source_model',
+        'source_object_id',
+        'occurrence_count',
+        'status',
+        'mapped_skill',
+        'reviewed_by',
+        'reviewed_at',
+    )
+    search_fields = ('raw_skill_text', 'normalized_text', 'source_model', 'mapped_skill__canonical_name')
+    list_filter = ('status', 'source_type', 'source_model', 'reviewed_at')
     readonly_fields = ('created_at', 'updated_at', 'reviewed_at', 'reviewed_by')
+    ordering = ('-occurrence_count', 'source_type', 'status', 'normalized_text', 'id')
     actions = [ignore_candidates, map_candidates]
     
     def save_model(self, request, obj, form, change):
