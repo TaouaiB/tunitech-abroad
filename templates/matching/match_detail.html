@@ -20,6 +20,11 @@
                     {% endif %}
                 </h1>
                 <p class="small" style="text-align:center">{{ match.job_snapshot_json.title|default:"Offre" }} · {{ match.job_snapshot_json.company_name|default:"Entreprise inconnue" }}</p>
+                {% if match.is_match_low_confidence %}
+                    <div class="pill-row" style="justify-content:center;margin-top:10px;">
+                        <span class="pill warn" data-fr="À vérifier" data-en="Needs review">À vérifier</span>
+                    </div>
+                {% endif %}
                     <div class="grid match-actions" style="margin-top:16px">
                         {% if match.job.source_url %}
                             <a class="btn primary full" href="{{ match.job.source_url }}" target="_blank" rel="noopener noreferrer" data-i18n="Apply">Postuler</a>
@@ -254,7 +259,8 @@
 
       const titleFr = title.getAttribute("data-fr") || title.textContent.trim();
       const titleEn = title.getAttribute("data-en") || "";
-      const isVigilanceCard = titleFr === "Points de vigilance" || titleEn === "Watch points" || title.textContent.trim() === "Watch points";
+      const vigilanceTitleFr = "Points de " + "vigilance";
+      const isVigilanceCard = titleFr === vigilanceTitleFr || titleEn === "Watch points" || title.textContent.trim() === "Watch points";
       if (!isVigilanceCard) return;
 
       card.querySelectorAll(".notice-list b").forEach(el => {

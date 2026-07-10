@@ -42,6 +42,9 @@
       <div class="sort-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
         <div class="sort-title">
           <h2 class="h2" data-i18n="Latest opportunities">Dernières opportunités</h2>
+          <p class="small">
+            {{ total_count }} offres disponibles{% if filtered_count != total_count %} · {{ filtered_count }} résultat{% if filtered_count|default:0 != 1 %}s{% endif %} filtré{% if filtered_count|default:0 != 1 %}s{% endif %}{% endif %}
+          </p>
           {% if filters.q %}
           <p class="small">
               Résultats pour {{ filters.q }}
@@ -77,5 +80,6 @@
     </section>
   </div>
 </section>
+<button type="button" class="scroll-top-button" data-scroll-top hidden aria-label="Retour en haut">↑</button>
 </div>
 {% endblock %}

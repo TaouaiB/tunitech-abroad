@@ -191,6 +191,23 @@ class MatchingTests(TestCase):
         self.assertNotEqual(first.public_id, second.public_id)
         self.assertEqual(MatchResult.objects.filter(user=self.user, job=self.job).count(), 2)
 
+    def test_get_user_match_recomputes_when_profile_skills_change(self):
+        match = MatchResultService.create_match_result(self.user, self.job)
+        old_score = match.fit_score
+
+        ProfileSkill.objects.create(
+            profile=self.profile,
+            raw_name="PostgreSQL",
+            normalized_name="postgresql",
+            skill=self.postgres,
+            is_confirmed=True,
+        )
+
+        refreshed = MatchResultService.get_user_match(self.user, match.public_id)
+
+        self.assertGreaterEqual(refreshed.fit_score, old_score)
+        self.assertIn("postgresql", refreshed.profile_snapshot_json["skills"])
+
     def test_scoring_uses_formula_and_clamps_scores(self):
         result = MatchScoringService.calculate(self.profile, self.job)
         expected = round(

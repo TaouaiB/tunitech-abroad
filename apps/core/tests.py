@@ -193,6 +193,22 @@ class ContactTests(TestCase):
         msg = ContactMessage.objects.first()
         self.assertEqual(msg.name, 'Test User')
 
+    def test_contact_form_valid_post_does_not_render_required_errors(self):
+        url = reverse('core:about')
+        data = {
+            'name': 'Test User',
+            'email': 'test@example.com',
+            'subject': 'Compte',
+            'message': 'Hello world!',
+        }
+
+        with override_settings(CELERY_TASK_ALWAYS_EAGER=True, CONTACT_EMAIL_RECIPIENTS=['admin@example.com']):
+            response = self.client.post(url, data, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Requis.")
+        self.assertNotContains(response, "Message requis.")
+
     def test_contact_form_invalid_post(self):
         url = reverse('core:about')
         data = {

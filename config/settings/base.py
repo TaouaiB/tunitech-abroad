@@ -95,6 +95,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "apps.accounts.middleware.NoPasswordRedirectMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
 ]
@@ -113,6 +114,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.core.context_processors.email_verification_banner",
+                "apps.core.context_processors.onboarding_status",
             ],
         },
     },
@@ -270,7 +272,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
-MAX_CV_UPLOAD_SIZE_MB = int(os.environ.get("MAX_CV_UPLOAD_SIZE_MB", "5"))
+MAX_CV_UPLOAD_SIZE_MB = int(os.environ.get("MAX_CV_UPLOAD_SIZE_MB", "8"))
 CV_LLM_EXTRACTION_ENABLED = False
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -294,6 +296,7 @@ AUTHENTICATION_BACKENDS = [
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_NOTIFICATIONS = True
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[TuniAtlas] "
 LOGIN_REDIRECT_URL = "/jobs/"
 LOGOUT_REDIRECT_URL = "/jobs/"

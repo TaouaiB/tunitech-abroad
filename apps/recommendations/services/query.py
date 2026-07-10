@@ -34,6 +34,9 @@ class RecommendationQueryService:
                 -recommendation.fit_score,
                 -float(recommendation.ranking_score),
                 -cls._freshness_value(recommendation).timestamp(),
+                recommendation.job.title.lower(),
+                str(recommendation.job.public_id),
+                recommendation.pk,
             ),
         )
 
@@ -46,7 +49,16 @@ class RecommendationQueryService:
                 job__in=JobEligibilityService.filter_publicly_visible(),
             )
             .select_related("job", "job__source")
-            .order_by("-fit_score", "-ranking_score", "-job__published_at", "-job__first_seen_at", "-job__last_seen_at")[
+            .order_by(
+                "-fit_score",
+                "-ranking_score",
+                "-job__published_at",
+                "-job__first_seen_at",
+                "-job__last_seen_at",
+                "job__title",
+                "job__public_id",
+                "pk",
+            )[
                 : max(limit * 3, limit)
             ]
         )

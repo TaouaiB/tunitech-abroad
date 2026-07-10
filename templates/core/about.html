@@ -32,12 +32,12 @@
             <div class="field{% if form.name.errors %} has-error{% endif %}">
               <label for="{{ form.name.id_for_label }}" data-i18n="Name">Nom</label>
               {{ form.name }}
-              <div class="error" data-i18n="Required.">Requis.</div>
+              {% if form.name.errors %}<div class="error" style="display:block;">{{ form.name.errors.0 }}</div>{% endif %}
             </div>
             <div class="field{% if form.email.errors %} has-error{% endif %}">
               <label for="{{ form.email.id_for_label }}" data-i18n="Email">Email</label>
               {{ form.email }}
-              <div class="error" data-i18n="Valid email required.">Email valide requis.</div>
+              {% if form.email.errors %}<div class="error" style="display:block;">{{ form.email.errors.0 }}</div>{% endif %}
             </div>
           </div>
 
@@ -50,7 +50,6 @@
           <div class="field{% if form.message.errors %} has-error{% endif %}">
             <label for="{{ form.message.id_for_label }}" data-i18n="Message">Message</label>
             {{ form.message }}
-            <div class="error" data-i18n="Message required.">Message requis.</div>
             {% if form.message.errors %}<div class="error" style="display:block;">{{ form.message.errors.0 }}</div>{% endif %}
           </div>
 

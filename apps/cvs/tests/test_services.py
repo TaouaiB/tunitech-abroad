@@ -85,6 +85,23 @@ class CVServiceTests(TestCase):
         with self.assertRaises(ValueError):
             CVUploadService.upload_cv(self.user, file)
 
+    @patch('apps.cvs.services.upload.parse_cv.delay')
+    def test_upload_cv_accepts_pdf_at_eight_mb_limit(self, mock_delay):
+        from django.conf import settings
+
+        limit_bytes = settings.MAX_CV_UPLOAD_SIZE_MB * 1024 * 1024
+        file = SimpleUploadedFile(
+            "limit.pdf",
+            b"%PDF-" + (b"x" * (limit_bytes - 5)),
+            content_type="application/pdf",
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            cv = CVUploadService.upload_cv(self.user, file)
+
+        self.assertEqual(cv.file_size, limit_bytes)
+        mock_delay.assert_called_once_with(cv.id)
+
     def test_deterministic_extractor(self):
         text = "Amina Ben Ali\nLocation: Tunis\nContact me at test@test.com or +33 6 12 34 56 78.\nLinkedIn: https://linkedin.com/in/test\nGitHub: https://github.com/test\nPortfolio: https://amina.dev\nSkills:\nPython, Django, React"
         result = CVDeterministicExtractorService.extract(text)

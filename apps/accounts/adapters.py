@@ -2,8 +2,11 @@ from allauth.core.exceptions import ImmediateHttpResponse
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.contrib import messages
 from django.shortcuts import redirect
+from django.shortcuts import resolve_url
+from allauth.account.adapter import DefaultAccountAdapter
 
 from apps.accounts.services.account_provisioning import AccountProvisioningService
+from apps.accounts.services.onboarding import OnboardingRedirectService
 from apps.accounts.services.oauth_linking import OAuthAccountLinkingService
 
 
@@ -23,6 +26,7 @@ class TuniTechSocialAccountAdapter(DefaultSocialAccountAdapter):
     def save_user(self, request, sociallogin, form=None):
         user = super().save_user(request, sociallogin, form=form)
         AccountProvisioningService.provision_new_user(user)
+        OnboardingRedirectService.mark_required(request)
         return user
 
     def pre_social_login(self, request, sociallogin):
@@ -50,18 +54,25 @@ class TuniTechSocialAccountAdapter(DefaultSocialAccountAdapter):
             raise ImmediateHttpResponse(redirect("account_login"))
 
 
-from django.urls import reverse
-from allauth.account.adapter import DefaultAccountAdapter
-
-
 class TuniTechAccountAdapter(DefaultAccountAdapter):
-    """
-    Redirect users without a usable password to the password set page after login.
-    Otherwise, respect the standard LOGIN_REDIRECT_URL.
-    """
+    """Centralize post-auth onboarding redirects."""
+
+    def save_user(self, request, user, form, commit=True):
+        user = super().save_user(request, user, form, commit=commit)
+        AccountProvisioningService.provision_new_user(user)
+        OnboardingRedirectService.mark_required(request)
+        return user
 
     def get_login_redirect_url(self, request):
-        user = getattr(request, "user", None)
-        if user is not None and not user.has_usable_password():
-            return reverse("account_set_password")
-        return super().get_login_redirect_url(request)
+        return OnboardingRedirectService.get_login_redirect_url(
+            request,
+            default_url=resolve_url(super().get_login_redirect_url(request)),
+        )
+
+    def get_signup_redirect_url(self, request):
+        return OnboardingRedirectService.get_signup_redirect_url(request)
+
+    def get_password_change_redirect_url(self, request):
+        if request.session.get("tuniatlas_onboarding_required"):
+            return OnboardingRedirectService.get_password_set_redirect_url(request)
+        return super().get_password_change_redirect_url(request)

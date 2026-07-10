@@ -1,0 +1,316 @@
+50 objects imported automatically (use -v 2 for details).
+
+# Gate A Baseline Current Damage Report
+
+Generated at: 2026-07-10T01:23:08.636131+00:00
+
+## 1. Counts
+- active_jobs: 171
+- all_jobs: 1343
+- job_skill_rows: 7257
+- unmatched_skill_candidates: 2556
+- active_recommendations: 90
+- stale_recommendations: 227
+- match_results: 35
+- active_cvs: 15
+
+## 2. Top extracted job skills
+- Java | required | llm | 132
+- Performance Optimization | detected | rule | 89
+- Python | required | llm | 86
+- SQL | required | llm | 85
+- SQL | required | rule | 83
+- Angular | required | llm | 79
+- JavaScript | required | llm | 79
+- CI/CD | required | llm | 75
+- Python | required | rule | 73
+- Cloud | required | rule | 72
+- Teamwork | required | rule | 72
+- Agile | required | llm | 71
+- Git | required | rule | 69
+- DevOps | required | rule | 67
+- Spring Boot | required | llm | 64
+- Communication | required | rule | 63
+- Git | required | llm | 62
+- Agile | required | rule | 61
+- React | required | llm | 61
+- Docker | required | llm | 58
+- Docker | required | rule | 56
+- GitLab | required | rule | 56
+- Java | required | rule | 53
+- Linux | required | rule | 52
+- API | required | rule | 51
+- Linux | required | llm | 51
+- PostgreSQL | required | llm | 51
+- TypeScript | required | llm | 48
+- HTML5 | required | llm | 47
+- REST API | required | llm | 47
+- JavaScript | required | rule | 46
+- Azure | required | rule | 45
+- Node.js | required | llm | 42
+- PostgreSQL | required | rule | 41
+- CSS3 | required | llm | 39
+- Kubernetes | required | rule | 39
+- REST API | required | rule | 39
+- Software Testing | required | rule | 38
+- Unit Testing | required | llm | 38
+- Software Development | detected | rule | 36
+- Cybersecurity | detected | rule | 35
+- Jira | required | rule | 35
+- Angular | required | rule | 34
+- PHP | required | llm | 34
+- Technical Documentation | detected | rule | 34
+- Technical Documentation | required | rule | 34
+- AWS | required | rule | 33
+- Kubernetes | required | llm | 33
+- Jenkins | required | rule | 32
+- PHP | required | rule | 32
+- Google Cloud | required | rule | 31
+- SQL Server | required | rule | 31
+- C# | required | llm | 30
+- GitLab | required | llm | 30
+- Monitoring | required | rule | 30
+- TypeScript | required | rule | 30
+- Windows | required | rule | 30
+- DevOps | required | llm | 29
+- HTML5 | required | rule | 29
+- Microservices | required | llm | 29
+- React | required | rule | 29
+- GitLab CI/CD | required | rule | 28
+- Shell Scripting | required | rule | 28
+- CSS3 | required | rule | 27
+- Scrum | required | rule | 27
+- Windows | required | llm | 27
+- C# | required | rule | 26
+- Technical Watch | required | rule | 26
+- .NET Core | required | llm | 25
+- Angular | optional | llm | 25
+- MySQL | required | llm | 25
+- Terraform | required | rule | 25
+- Jenkins | required | llm | 24
+- React | optional | llm | 24
+- Scrum | required | llm | 24
+- Cloud | detected | rule | 23
+- Ansible | required | rule | 22
+- C++ | required | rule | 22
+- Docker | optional | llm | 22
+- Hibernate | required | llm | 22
+
+## 3. Top unmatched skill candidates
+- concevoir une application web | raw=Concevoir une application web | source=job | status=pending | total=624 | rows=1
+- application web | raw=Application web | source=job | status=pending | total=500 | rows=1
+- rediger un cahier des charges des specifications techniques | raw=Rédiger un cahier des charges, des spécifications techniques | source=job | status=pending | total=414 | rows=1
+- analyser exploiter structurer des donnees | raw=Analyser, exploiter, structurer des données | source=job | status=pending | total=292 | rows=1
+- determiner des mesures correctives | raw=Déterminer des mesures correctives | source=job | status=pending | total=229 | rows=1
+- configurer et optimiser des systemes devops | raw=Configurer et optimiser des systèmes DevOps | source=job | status=pending | total=206 | rows=1
+- concevoir et gerer un projet | raw=Concevoir et gérer un projet | source=job | status=pending | total=108 | rows=1
+- analyser les besoins informatiques | raw=Analyser les besoins informatiques | source=job | status=pending | total=106 | rows=1
+- optimiser les processus de qualite pour assurer la fiabilite des logiciels | raw=Optimiser les processus de qualité pour assurer la fiabilité des logiciels | source=job | status=pending | total=99 | rows=1
+- configurer le poste de travail aux besoins de l utilisateur | raw=Configurer le poste de travail aux besoins de l'utilisateur | source=job | status=pending | total=87 | rows=1
+- administrer un systeme d informations | raw=Administrer un système d'informations | source=job | status=pending | total=79 | rows=1
+- concevoir et developper une solution digitale | raw=Concevoir et développer une solution digitale | source=job | status=pending | total=77 | rows=1
+- analyser resoudre un probleme courant ou complexe | raw=Analyser, résoudre un problème courant ou complexe | source=job | status=pending | total=76 | rows=1
+- concevoir un logiciel un systeme d informations une application | raw=Concevoir un logiciel, un système d'informations, une application | source=job | status=pending | total=75 | rows=1
+- evaluer le resultat de ses actions | raw=Evaluer le résultat de ses actions | source=job | status=pending | total=75 | rows=1
+- apporter une assistance technique aux equipes | raw=Apporter une assistance technique aux équipes | source=job | status=pending | total=66 | rows=1
+- developper une application en lien avec une base de donnees | raw=Développer une application en lien avec une base de données | source=job | status=pending | total=61 | rows=1
+- agile methodologies | raw=Agile Methodologies | source=job | status=mapped | total=60 | rows=1
+- communiquer aupres de ses interlocuteurs internes et externes | raw=Communiquer auprès de ses interlocuteurs internes et externes | source=job | status=pending | total=57 | rows=1
+- coder des donnees | raw=Coder des données | source=job | status=pending | total=56 | rows=1
+- collaborer avec une equipe projet | raw=Collaborer avec une équipe projet | source=job | status=pending | total=54 | rows=1
+- diagnostiquer la nature et l origine des incidents et mettre en oeuvre les mesures correctives | raw=Diagnostiquer la nature et l'origine des incidents et mettre en oeuvre les mesures correctives | source=job | status=pending | total=48 | rows=1
+- tester un logiciel un systeme d informations une application | raw=Tester un logiciel, un système d'informations, une application | source=job | status=pending | total=48 | rows=1
+- windows | raw=Windows | source=job | status=mapped | total=48 | rows=1
+- methode agile | raw=Méthode AGILE | source=job | status=pending | total=47 | rows=1
+- gerer les risques de cybersecurite | raw=Gérer les risques de cybersécurité | source=job | status=pending | total=46 | rows=1
+- mener un processus de test en cybersecurite | raw=Mener un processus de test en cybersécurité | source=job | status=pending | total=45 | rows=1
+- depanner des equipements informatiques | raw=Dépanner des équipements informatiques | source=job | status=pending | total=43 | rows=1
+- gerer et deployer des logiciels a distance | raw=Gérer et déployer des logiciels à distance | source=job | status=pending | total=37 | rows=1
+- promouvoir une proposition un projet | raw=Promouvoir une proposition, un projet | source=job | status=pending | total=37 | rows=1
+- sonarqube | raw=Sonarqube | source=job | status=pending | total=37 | rows=1
+- installer et integrer le materiel station equipement reseau peripheriques ... dans l environnement de production et configurer les ressources logistiques et physiques | raw=Installer et intégrer le matériel (station, équipement réseau, périphériques, ...) dans l'environnement de production et configurer les ressources logistiques et physiques | source=job | status=pending | total=36 | rows=1
+- animer une demarche agile et innovante | raw=Animer une démarche agile et innovante | source=job | status=pending | total=35 | rows=1
+- api smoke tests | raw=API smoke tests | source=cv | status=pending | total=35 | rows=1
+- authentication flows | raw=authentication flows | source=cv | status=pending | total=35 | rows=1
+- backend | raw=Backend | source=cv | status=pending | total=35 | rows=1
+- based access control. | raw=based access control. | source=cv | status=pending | total=35 | rows=1
+- bug reports | raw=bug reports | source=cv | status=pending | total=35 | rows=1
+- ci basics | raw=CI basics | source=cv | status=pending | total=35 | rows=1
+- concevoir l architecture d un systeme d un reseau | raw=Concevoir l'architecture d'un système, d'un réseau | source=job | status=pending | total=35 | rows=1
+- databases | raw=databases | source=cv | status=pending | total=35 | rows=1
+- freelance web developer | raw=Freelance Web Developer | source=cv | status=pending | total=35 | rows=1
+- frontend | raw=Frontend | source=cv | status=pending | total=35 | rows=1
+- htmx basics | raw=HTMX basics | source=cv | status=pending | total=35 | rows=1
+- implemented input validation | raw=Implemented input validation | source=cv | status=pending | total=35 | rows=1
+- indexing fundamentals | raw=indexing fundamentals | source=cv | status=pending | total=35 | rows=1
+- inventory manager api | raw=Inventory Manager API | source=cv | status=pending | total=35 | rows=1
+- jwt | raw=JWT | source=cv | status=pending | total=35 | rows=1
+- language extraction | raw=language extraction | source=cv | status=pending | total=35 | rows=1
+- location extraction | raw=location extraction | source=cv | status=pending | total=35 | rows=1
+- manual qa | raw=manual QA | source=cv | status=pending | total=35 | rows=1
+- networks | raw=networks | source=cv | status=pending | total=35 | rows=1
+- npm | raw=npm | source=cv | status=pending | total=35 | rows=1
+- pagination | raw=pagination | source=cv | status=pending | total=35 | rows=1
+- pnpm | raw=pnpm | source=cv | status=pending | total=35 | rows=1
+- project parsing | raw=project parsing | source=cv | status=pending | total=35 | rows=1
+- recommended learning topics. | raw=recommended learning topics. | source=cv | status=pending | total=35 | rows=1
+- responsive ui | raw=responsive UI | source=cv | status=pending | total=35 | rows=1
+- search filters | raw=search filters | source=cv | status=pending | total=35 | rows=1
+- seo metadata | raw=SEO metadata | source=cv | status=pending | total=35 | rows=1
+- server | raw=server | source=cv | status=pending | total=35 | rows=1
+- side validation | raw=side validation | source=cv | status=pending | total=35 | rows=1
+- software engineering | raw=software engineering | source=cv | status=pending | total=35 | rows=1
+- stock alerts. | raw=stock alerts. | source=cv | status=pending | total=35 | rows=1
+- stock movements | raw=stock movements | source=cv | status=pending | total=35 | rows=1
+- suppliers | raw=suppliers | source=cv | status=pending | total=35 | rows=1
+- testing | raw=Testing | source=cv | status=pending | total=35 | rows=1
+- tools | raw=Tools | source=cv | status=pending | total=35 | rows=1
+- validation | raw=validation | source=cv | status=pending | total=35 | rows=1
+- vs code | raw=VS Code | source=cv | status=pending | total=35 | rows=1
+- web development | raw=web development | source=cv | status=pending | total=35 | rows=1
+- anticiper les risques de cybersecurite | raw=Anticiper les risques de cybersécurité | source=job | status=pending | total=34 | rows=1
+- cloud basics | raw=cloud basics | source=cv | status=pending | total=34 | rows=1
+- collaborer avec des equipes multidisciplinaires | raw=Collaborer avec des équipes multidisciplinaires | source=job | status=pending | total=34 | rows=1
+- cybersecurite | raw=Cybersécurité | source=job | status=mapped | total=34 | rows=1
+- jest basics | raw=Jest basics | source=cv | status=pending | total=34 | rows=1
+- prisma basics | raw=Prisma basics | source=cv | status=pending | total=34 | rows=1
+- rest api design | raw=REST API design | source=cv | status=pending | total=34 | rows=1
+- django basics | raw=Django basics | source=cv | status=pending | total=33 | rows=1
+- docker basics | raw=Docker basics | source=cv | status=pending | total=33 | rows=1
+
+## 4. Active zero-skill jobs
+- 1b6e6778-d772-4348-a9a5-59bf6a9db110 | Apprenti Technicien Informatique (H/F) | FONDATION PLURIEL | status=success | quality=partial
+- 25148585-a3b1-4dfe-bbdc-1e64d9f20a4a | Technicien Support Informatique en alternance (H/F) | SUPUETO METZ / VIDAL FORMATION METZ | status=success | quality=partial
+- f46d6fe6-643b-422e-8d43-23590521786a | Enseignant(e) en cybersécurité (H/F) | LPP DE ST HENRI | status=success | quality=partial
+- e400c881-9bf6-42ec-86ee-020a5c0bd302 | Alternance MOA informatique (H/F) | TILITI | status=success | quality=partial
+- bb56e441-f724-4c6b-9f8d-07e8a7882dad | Technicien Informatique en apprentissage (H/F) | SUPUETO METZ / VIDAL FORMATION METZ | status=success | quality=partial
+
+## 5. Jobs with noisy/weird extracted skills
+- API | detected | conf=0.700 | job=5b216060-6fa1-4420-b8a5-6a953ddbeb98 | Développeur fullstack F/H h/f | 
+- API | required | conf=1.000 | job=b6f88c7f-98b7-4b69-a92f-6ac033e252de | Développeur Windev (H/F) | SIMPLICITI
+- API | required | conf=1.000 | job=23c00609-cf52-487a-b24c-36adb38283f9 | Développeur Backend Go - Cloud & API Distribuées (H/F) | SKILLS AND AFFINITY GROUPE SCALIAN
+- API | required | conf=1.000 | job=7f4e8732-2603-4dba-9e0d-ab6906bf431e | Développeur Fullstack React / Node.js - Plateforme Cloud & FinOps (H/F) | SKILLS AND AFFINITY GROUPE SCALIAN
+- API | required | conf=1.000 | job=afcaeafc-e626-4221-8bb0-9ed4033ac053 | Developpeur Api Talend (H/F) | E-KENT
+- API | required | conf=1.000 | job=5eba2581-f545-41cf-8d9a-b084fd698a4c | Alternance - Développeur(se) Informatique & Création Digitale (H/F) | 
+- API | detected | conf=0.700 | job=8faae804-eb43-42d3-a402-33a5a35b8de5 | Développeur Applicatif Full Stack Junior (H/F) | UNIVERSAL MEDICA GROUP
+- API | required | conf=1.000 | job=eac4b80a-3ca7-45f1-9a45-b6391bca6154 | Ingénieur QA - DevOps (H/F) | CIRIL GROUP
+- API | required | conf=1.000 | job=5aefe9e5-3810-42c6-91c0-9bf4425b22ca | Développeur Fullstack Java Senior (H/F) | CIRIL GROUP
+- API | required | conf=1.000 | job=0613e94c-54b9-4d81-ab02-ab720ba35e06 | Développeur Java Fullstack (H/F) | KAPA IT
+- API | required | conf=1.000 | job=f1f74065-77ee-4fff-9b83-14d0936517be | Développeur .NET/C# RPA (H/F) | CPAM DE LOIRE ATLANTIQUE
+- API | required | conf=1.000 | job=85a62d13-b7ce-428d-9be6-4b514c64aaf4 | Développeur .NET Core (H/F) | SERV'IT
+- API | detected | conf=0.700 | job=4ddf8824-6a51-4477-907d-d0736766adeb | Développeur senior H/F (H/F) | M.G.F. SPORTS
+- API | required | conf=1.000 | job=c4d0886c-a5cf-49b6-b9d4-15df879613e8 | Développeur web Full Stack H/F | P.B.O.
+- API | required | conf=1.000 | job=b3b03a25-fa80-48a8-90e9-a07dbb4a75cc | Développeur web full stack H/F (H/F) | DIFFUSION D'ARTICLES MANUFACTURES
+- API | required | conf=1.000 | job=7757e5cc-7712-479d-937a-5e85694670b2 | Développeur Web Front-End React (H/F) | 
+- API | required | conf=1.000 | job=8c3ad998-dda2-49b9-ab03-796af9700a64 | Développeur  Full Stack Python & Go (H/F) | ALGOSECURE
+- API | required | conf=1.000 | job=32aff719-fd1a-4f40-828a-773af9d48513 | Développeur .Net (H/F) | AMILTONE
+- API | required | conf=1.000 | job=1c6bdcb8-b7fc-482d-9598-b8bf3e09da49 | Ingénieur / développeur full-stack .NET (Blazor) (H/F) | CLICSYSTEMES
+- API | required | conf=1.000 | job=9195c781-42b0-4c64-a2fc-261dd7171dde | Data Platform Trimaran Data Engineer / Data Analyst (H/F) | OFI INVEST ASSET MANAGEMENT
+- API | required | conf=1.000 | job=f596777d-5908-41fc-84d4-774a578ed17d | Développeur C# (h/f) (H/F) | ADECCO TERTIAIRE BAT B PORTE C
+- API | required | conf=1.000 | job=3a5f4810-4e08-475f-8f11-60a678c327e5 | Développeur Convertigo (H/F) - Montreuil (93) (H/F) | CIORANE
+- API | detected | conf=0.700 | job=b8a4023c-4a58-4fd6-bba0-24870d75764c | Ingénieur Software (H/F) | KINGFISHER INFORMATION TECHNOLOGY SERVIC
+- API | required | conf=1.000 | job=28b32ed6-9763-4497-9197-7ed32ee7496e | Tech Lead Fullstack JavaScript - Node.js / NestJS / Vue.js (H/F) | INFORMATIS TECHNOLOGY SYSTM
+- API | required | conf=1.000 | job=3a585857-d22b-43df-ab59-26b0e78b409e | Ingénieur d'études et développement logiciel - Full-Stack (H/F) | C-CLERC
+- API | required | conf=1.000 | job=fb07c205-da4e-4a31-b797-00e7f6bfa6f2 | Data engineer (BI) - H/F/X (H/F) | VENTE PRIVEE.COM
+- API | required | conf=1.000 | job=19dc6f8c-ae46-45c9-9bcb-a39d927e4050 | RESPONSABLE DSI FULLSTACK (H/F) | TEAM INTERIM
+- API | required | conf=1.000 | job=f86d720d-d576-4b04-a999-0d00da9773ee | Data Scientist / Data Engineer H/F (H/F) | AMILTONE
+- API | detected | conf=0.700 | job=233d3c17-321d-44f3-b176-5e4e5355b242 | Stage de fin d'études / Alternance - Consultant·e en Transformation Digitale - CTO/CIO Advisory (H/F) | 
+- API | required | conf=1.000 | job=fe7efb9c-5db6-4dea-b091-9f39139e9f26 | Ingénieur Fullstack .Net/Angular/React (H/F) | INOV TEAM LABS
+- API | required | conf=1.000 | job=55dda5ee-eaaa-4d94-871b-c7ef90823bfa | Développeur fullstack Java/Angular (H/F) | NFC-INTERACTIVE
+- API | required | conf=1.000 | job=84b5851e-4edc-4e49-b2d6-ee304699c35c | Développeur / Développeuse informatique PHP (H/F) | P2B SOLUTIONS
+- API | required | conf=1.000 | job=68c87605-512e-479a-a2f7-7e8a68035de7 | Lead DevOps Engineer (H/F) | FUJITSU TECHNOLOGY SOLUTIONS
+- API | required | conf=1.000 | job=5bb4b14b-bb79-452e-ae5d-f699c166ffe6 | Tech Lead Fullstack JavaScript - Node.js / NestJS / Vue.js (H/F) | INFORMATIS TECHNOLOGY SYSTM
+- API | required | conf=1.000 | job=93b10cae-217d-4e99-ad40-f0169f9869ad | Responsable Data Engineer (H/F) | AK RECRUTEMENT
+- API | required | conf=1.000 | job=952f615c-f03d-481f-93a8-91b3eb8fe380 | Developpeur Python (H/F) | E-KENT
+- API | required | conf=1.000 | job=2abcb199-7596-42e4-8c5e-d098c765aba1 | Développeur expert (H/F) IAM ForgeRock - Ping Identity (H/F) | CIORANE
+- API | detected | conf=1.000 | job=27ffa441-ef85-4160-b98b-24efa0285cc6 | Développeur web full stack (H/F) | GERESO
+- API | required | conf=1.000 | job=083b5776-b204-452e-9e37-f6c435c798f9 | Développeur Java confirmé - Marseille (H/F) | EPSYL
+- API | required | conf=1.000 | job=a3a4c333-d1d3-46ca-ad53-79bb11234cf1 | Développeur Fullstack Java Spring Angular H/F (H/F) | AMILTONE
+- API | required | conf=1.000 | job=6112642c-4cb0-4f07-be45-d1ddf132221d | Developpeur full stack (H/F) | MEDIA-START
+- API | required | conf=1.000 | job=3f2773bf-e8fd-4f25-a3b5-8ce824de3721 | Développeur FullStack Angular / .Net C# intermédiaire H/F | ISAGRI
+- API | required | conf=1.000 | job=a0b54477-cea2-4145-990c-05308adbcbcc | Tech Lead C# React (H/F) | 
+- API | detected | conf=1.000 | job=6d826915-61f6-430e-9244-e63e8938a0e2 | Developpeur Fullstack F/H (H/F) | 
+- API | detected | conf=1.000 | job=d3989a49-ef4e-4a95-99b8-e13d129a5794 | Technicien(ne) Informatique Polyvalent(e) #TDFE2026 (H/F) | 
+- API | required | conf=1.000 | job=d80e1fbd-bd46-4275-affc-c57db69f33cc | Administrateur / Administratrice systèmes et réseaux (H/F) | MARKAL
+- API | required | conf=1.000 | job=42a424b2-c542-4afe-9e74-5c33657a5de5 | Développeur Full Stack (React/Next.js - Golang/Node) - Poste hybride Dev (H/F) | 
+- API | detected | conf=0.700 | job=cd91349b-29b9-45e6-a44a-d0f04fb1edb7 | Data Engineer (H/F) | CIRIL GROUP
+- API | required | conf=1.000 | job=36bc893a-7df7-4094-842d-fd4452a6bed4 | Tech Lead Digital Fullstack H/F | JEMS
+- API | detected | conf=1.000 | job=6d0ab775-53c2-45c4-af80-869716f8ea8f | Développeur FullStack H/F | Plus que PRO
+- API | required | conf=1.000 | job=5e1a7ac1-6a32-45dd-bfbb-d57a1dd7d64a | Analyste programmeur / Analyste programmeuse informatique (H/F) | IT MARKETPLACE SA
+- API | required | conf=1.000 | job=b7464225-6530-4820-83f7-de2dbbda617d | Analyste programmeur / Analyste programmeuse informatique (H/F) | IT MARKETPLACE SA
+- API | required | conf=1.000 | job=702e2798-a421-44e2-a330-56c88e586b65 | Concepteur - Développeur Full Stack en Alternance H/F (H/F) | MEWO
+- API | required | conf=1.000 | job=9c727c89-013a-4243-9114-fe4e9258b520 | Stage de fin d'études - Développeur(se) Full Stack / Data (H/F) | 
+- API | detected | conf=0.700 | job=e833cc4f-1f4b-4da2-bdbc-81b1354276a0 | Data Engineer H/F (H/F) | MONDIAL RELAY
+- API | required | conf=1.000 | job=bc1e15dd-e9af-4314-8ebf-3ea0d08e74d8 | Tech Lead / DevOps (H/F) | LINK CONSULTING
+- API | required | conf=1.000 | job=2544eaaf-0a68-42cf-9620-1d3f9f03291c | QA ingenieur test automatisation (H/F) | 
+- API | required | conf=1.000 | job=1c527617-7b8a-4c30-952b-6ae33fe2072a | Développeur fullstack Java/Angular confirmé (H/F) | EXPERTEAM
+- API | required | conf=1.000 | job=8b268923-fd28-4ccd-a9ed-7c41ce7cb820 | Responsable Trade Support - Analyste Middle Office (H/F) | 
+- API | required | conf=1.000 | job=57975d47-5e7f-4cdb-85dd-1ccb9c102a6f | Fullstack Developer Confirmé/Senior (Backend oriented) (H/F) | THE NAVIGATION FAMILY
+- API | detected | conf=1.000 | job=baae87cc-cd27-4e67-9956-3d28a82d9bae | Tech Lead Fullstack Java React - Services Financiers - Ile-De-France (H/F) | 
+- API | optional | conf=1.000 | job=e5a4ac18-d047-48b8-950a-e8cc84e9db28 | Tech Lead – Cloud, DevOps (Node.js - Vue.js - AWS) (H/F) | ISAGRI
+- API | optional | conf=1.000 | job=1a55313f-a720-4096-85c1-0f2c1e8dfc47 | Tech Lead – Cloud, DevOps (Node.js - Vue.js - AWS) (H/F) | ISAGRI
+- API | required | conf=1.000 | job=66eb3c9b-402e-4c90-8c32-9f35b62c7ffc | Consultant QA API Web et Mobile (H/F) | H&A DATA SOLUTIONS
+- API | required | conf=1.000 | job=abff445e-16b2-4a62-9610-ebc5809aae93 | Consultant QA Automatisation de Tests (H/F) | H&A DATA SOLUTIONS
+- API | required | conf=1.000 | job=d7fa9ff4-6201-459e-9491-9ccde1fbc20d | Support Fonctionnel / Business Analyst Junior (H/F) | INFORMATIS TECHNOLOGY SYSTM
+- API | required | conf=1.000 | job=bb2648f2-f464-4a07-8fbb-9e17d5cdfeeb | Développeur Fullstack .NET / React H/F | CRIT INTERIM
+- API | required | conf=1.000 | job=be519fbf-0a2b-4bca-be70-470ccf08de47 | Consultant DevOps/Cloud (H/F) | DEVOTEAM
+- API | required | conf=1.000 | job=adfa9663-9949-4dc5-a1d2-da46fb8cc047 | Lead tech JAVA/Angular - Entreprise à mission F/H | Externatic
+- API | detected | conf=1.000 | job=b7cf1e65-bacf-4dbf-9c67-1b652557cd0d | Développeur.se Fullstack (H/F) | OYO COMMUNITIES
+- API | required | conf=1.000 | job=f73c73be-b0ad-49c5-a5bb-1d0b6fe3a6a6 | Concepteur Développeur (H/F) | ACG-SYNERGIES
+- API | required | conf=1.000 | job=dd16b14c-578d-4d6f-8d06-df6da17c61ee | Testeur QA confirmé / Ingenieur QA H/F (H/F) | 
+- API | detected | conf=1.000 | job=c9b9628c-5e2d-4e22-9e3e-8e50dbd5fe59 | Alternance - Développeur  H/F (H/F) | LA PLATEFORME
+- API | required | conf=1.000 | job=d7cfa869-c45f-4ef0-99c5-21434d5d5d7e | Développeur Java (H/F) | HOLENEK INGENIERIE
+- API | detected | conf=1.000 | job=070a3e3e-3f62-4dd8-bea8-0c6ca6163ca4 | Développeur confirmé PHP (H/F) | MOURALIS JEAN-PIERRE
+- API | required | conf=1.000 | job=e5e9cb66-565d-468f-9933-a6416728b1bb | Chef de Projet Digital /Data (h/f) | ADECCO FRANCE
+- API | required | conf=1.000 | job=b027ec5d-c82a-4b39-9e27-1765f0b8e128 | Chef de Projets IA - Architecte d'Agents Opérationnels (H/F) | 
+- API | detected | conf=1.000 | job=5d1304e9-1d6b-4d31-ab21-dfb65d26ff48 | Lead Dev Backend senior node nest (H/F) h/f | 
+- API | optional | conf=1.000 | job=a1fe3dd0-5ad3-465a-9a48-cd49f942f3f8 | Stage de fin d'études / Alternance - Consultant·e en Transformation Digitale - CTO/CIO Advisory (H/F) | 
+- API | required | conf=1.000 | job=717277e3-5d70-4df1-a675-aaca2d2e2f47 | Analyste SOC (H/F) | 
+
+## 6. Generic-only active jobs sample
+- 190d72ea-cd08-44de-8665-78fd5b73b382 | DÉVELOPPEUR COMMERCIAL GRAND EST (H/F/X) (H/F) | LEGOUPIL INDUSTRIE | skills=Teamwork
+- ade5464f-5d54-4e29-8eeb-60fe5e2259d3 | Développeur Manager Apprentis Solidaires (H/F) | ASS FONDATION ETUDIANTE POUR LA VILLE | skills=Communication
+- 430f5861-d105-4f89-af3f-312370b8759e | Alternant Informatique Systèmes et Réseaux H/F (H/F) | TRIALP | skills=Teamwork
+- c4203a6e-f3c9-4b25-be55-b724b7fbd6e6 | Ingénieur Logiciel (H/F) | TELESPAZIO FRENCH GUIANA | skills=Technical Watch
+
+## 7. Recommendation vs latest match mismatch
+- user=42 | job=f1f74065-77ee-4fff-9b83-14d0936517be | Développeur .NET/C# RPA (H/F) | recommendation=53% | latest_match=46% | rec_updated=2026-07-09T15:37:45.299245+00:00 | match_created=2026-07-07T01:14:59.705301+00:00 | match_public_id=87ca7c97-8096-439f-9f84-cc524e263486
+
+## 8. Recent CV parse samples without raw CV text
+- cv=cff442b0-abdd-4912-8590-79beaa6b338d | user=32 | status=parsed | warnings=[] | raw_skills=['validation', 'Tools', 'GitHub', 'Testing', 'software engineering', 'Docker basics', 'SEO metadata', 'Frontend', 'REST APIs', 'recommended learning topics.', 'Implemented input validation', 'Express', 'TypeScript basics', 'Databases', 'debugging production', 'Git', 'Express.js', 'npm', 'API smoke tests', 'Postman', 'CSS', 'React', 'Linux/Fedora', 'stock alerts.', 'Django basics', 'Prisma', 'networks', 'or remote', 'Docker', 'cloud basics']
+- cv=63dcb40b-82f2-49d3-ae16-10cf11b8929d | user=48 | status=parsed | warnings=[] | raw_skills=[]
+- cv=256b2296-3a29-4409-a64f-141986c8122d | user=43 | status=parsed | warnings=[] | raw_skills=[]
+- cv=f7aa0a09-90b3-443e-bcf5-d72cbdde99db | user=42 | status=parsed_with_warnings | warnings=["Profile name 'baha edine taouai' differs from CV name 'Aymen Ben Salah'."] | raw_skills=['Implemented input validation', 'API smoke tests', 'CSS3', 'Databases', 'CSS', 'manual QA', 'project parsing', 'TypeScript basics', 'authentication flows', 'web development', 'server', 'Postman', 'responsive UI', 'SQL basics', 'language extraction', 'like issues', 'Freelance Web Developer', 'VS Code', 'databases', 'MongoDB', 'REST APIs', 'debugging production', 'validation', 'pnpm', 'CI basics', 'Git', 'search filters', 'Docker', 'Web Developer Intern', 'Software Developer Intern']
+- cv=ef5a1374-3daa-4103-85d6-edbcffe074b2 | user=25 | status=parsed_with_warnings | warnings=['LLM extraction is disabled in this phase.'] | raw_skills=['MongoDB', 'Freelance Web Developer', 'manual QA', 'SEO metadata', 'Inventory Manager API', 'npm', 'Tailwind CSS', 'location extraction', 'Backend Developer', 'Backend', 'server', 'JavaScript', 'language extraction', 'Linux/Fedora', 'software engineering', 'Express', 'cloud basics', 'Web Developer Intern', 'debugging production', 'Express.js', 'Postman', 'Django basics', 'Frontend', 'CSS3', 'Jest basics', 'indexing fundamentals', 'networks', 'search filters', 'authentication flows', 'Mongoose']
+- cv=23205891-83f0-4945-9598-857020dd3c7c | user=24 | status=parsed_with_warnings | warnings=['LLM extraction is disabled in this phase.'] | raw_skills=['Databases', 'software engineering', 'networks', 'Backend', 'Mongoose', 'indexing fundamentals', 'stock movements', 'GitHub', 'JavaScript', 'Testing', 'JWT', 'language extraction', 'Docker', 'like issues', 'Express.js', 'location extraction', 'HTML', 'Express', 'React', 'bug reports', 'REST API design', 'manual QA', 'API smoke tests', 'search filters', 'based access control.', 'Frontend', 'Backend Developer', 'Tailwind CSS', 'project parsing', 'CSS3']
+- cv=93b27ba1-c9b9-4b14-bf9b-f78c194ea135 | user=23 | status=parsed_with_warnings | warnings=['LLM extraction is disabled in this phase.'] | raw_skills=['Node.js', 'Testing', 'Implemented input validation', 'JavaScript', 'location extraction', 'Backend Developer', 'Mongoose', 'Express', 'Databases', 'Docker', 'authentication flows', 'GitHub', 'Linux/Fedora', 'Postman', 'Docker basics', 'Freelance Web Developer', 'stock movements', 'side validation', 'TypeScript basics', 'Web Developer Intern', 'REST APIs', 'PostgreSQL', 'Jest', 'cloud basics', 'manual QA', 'or remote', 'npm', 'Software Developer Intern', 'Tailwind CSS', 'bug reports']
+- cv=a38c376e-db14-4627-ace3-2e523ec88604 | user=21 | status=parsed | warnings=[] | raw_skills=[]
+- cv=f08c6d8f-7e49-4ae5-ab6b-3ed7c20fac17 | user=19 | status=parsed_with_warnings | warnings=['LLM extraction is disabled in this phase.'] | raw_skills=['Django', 'React', 'Python', 'JavaScript', 'PostgreSQL']
+- cv=ef56624c-c6d1-4007-9600-58a85202b19c | user=10 | status=parsed | warnings=[] | raw_skills=[]
+- cv=cd593e3c-0724-43b0-bdce-60e4695a7dc7 | user=8 | status=parsed_with_warnings | warnings=["Profile name 'Existing Name' differs from CV name 'Aymen Ben Salah'."] | raw_skills=['GitHub', 'Tailwind CSS', 'JavaScript', 'Postman', 'Docker', 'React', 'Express.js', 'PostgreSQL', 'CSS3', 'Node.js', 'Jest', 'Next.js', 'HTML5', 'Git']
+- cv=4e7f5d74-01cd-4134-99eb-e0af50b12b76 | user=4 | status=parsed_with_warnings | warnings=['LLM extraction is disabled in this phase.'] | raw_skills=['Python']
+- cv=21b62be3-5357-4dc0-afb7-2a32a3fac0b3 | user=4 | status=parsed_with_warnings | warnings=['LLM extraction is disabled in this phase.'] | raw_skills=['Python']
+- cv=b9364456-7038-4a06-b6a8-da4d1de48234 | user=4 | status=parsed_with_warnings | warnings=['LLM extraction is disabled in this phase.'] | raw_skills=['Python']
+- cv=adea75f2-05cb-4629-a6dd-684dd488d904 | user=4 | status=parsed_with_warnings | warnings=['LLM extraction is disabled in this phase.'] | raw_skills=['Python']
+
+## 9. Manual production defects found during deploy smoke
+- match detail stale after profile skills change
+- recommendations page score/list can differ from match detail
+- manual refresh can produce confusing different list
+- password stepper shows CV/profile orange when complete
+- password mismatch message does not clear after correction
+- password change has same stale message issue
+- password changed email must be verified/improved
+- CV size must increase to 8 MB
+- /jobs needs total and filtered count
+- /jobs needs scroll-to-top button
+- about/contact form shows required errors after fields are filled
+- manual signup produced CSRF 403 after submit while account was created/logged in
+- manual signup should go to CV step
+- OAuth signup should go password step, then CV/profile
+- login redirect should respect onboarding state
+
+## 10. Gate A first conclusions
+- Separate intelligence defects from product-flow defects.
+- Product-flow defects should be stabilized inside Gate A before Gate B.
+- Skill extraction noise and CV parsing quality move to Gate B/C.

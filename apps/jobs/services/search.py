@@ -18,6 +18,8 @@ class PaginatedJobResult:
     paginator: Paginator
     filters: dict[str, str]
     total_count: int
+    filtered_count: int
+    available_count: int
     sort: str
 
 
@@ -26,6 +28,7 @@ class JobSearchService:
     def search(cls, filters: dict, request=None) -> PaginatedJobResult:
         filters = cls._clean_filters(filters)
         qs = cls._public_queryset()
+        available_count = qs.count()
 
         q = filters.get("q", "")
         location = filters.get("location", "")
@@ -122,6 +125,8 @@ class JobSearchService:
             paginator=paginator,
             filters={key: value for key, value in filters.items() if not key.startswith("_")},
             total_count=paginator.count,
+            filtered_count=paginator.count,
+            available_count=available_count,
             sort=sort,
         )
 

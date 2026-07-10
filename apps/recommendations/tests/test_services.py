@@ -38,6 +38,7 @@ from apps.jobs.models import (
     SkillSource,
     SourceType,
 )
+from apps.matching.models import MatchResult
 from apps.matching.services.scoring import FitScoreResult
 from apps.profiles.models import CandidateProfile, ProfileSkill
 from apps.recommendations.models import JobRecommendation, RecommendationRun, SavedJob
@@ -477,6 +478,16 @@ class RecommendationServiceTests(TestCase):
         )
 
         self.assertEqual([r[0] for r in first_ranks], [r[0] for r in second_ranks])
+
+    def test_refresh_updates_current_match_result_for_recommendation(self):
+        RecommendationService.refresh_for_user(self.user, "manual_admin")
+        rec = JobRecommendation.objects.filter(user=self.user, status="active").order_by("rank").first()
+
+        self.assertIsNotNone(rec)
+        match = MatchResult.objects.filter(user=self.user, job=rec.job).order_by("-created_at").first()
+
+        self.assertIsNotNone(match)
+        self.assertEqual(match.fit_score, rec.fit_score)
 
     # ------------------------------------------------------------------
     # Incomplete profile is skipped
