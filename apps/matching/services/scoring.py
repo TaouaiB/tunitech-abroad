@@ -4,6 +4,7 @@ from apps.profiles.models import CandidateProfile, ProfileSkill
 from apps.jobs.models import NormalizedJob, RequirementType
 from apps.cvs.models import CVUpload
 from apps.jobs.services.relevance import TECH_CATEGORIES
+from apps.skills.services.extraction_policy import SkillCandidateKind, classify_skill_candidate
 from django.utils import timezone
 
 MISSING_FRENCH_LEVELS = {"", "none", "no", "a0"}
@@ -44,7 +45,7 @@ class MatchScoringService:
         it_confidence = classification_json.get("confidence", "unknown")
         skill_signal_quality = job.skill_signal_quality
         job_skills = list(job.job_skills.select_related("skill").all())
-        tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
+        tech_job_skills = [js for js in job_skills if MatchScoringService._is_scoreable_job_skill(js)]
         low_confidence_job_skills = [
             js for js in tech_job_skills
             if js.confidence is not None and js.confidence < MatchScoringService.SKILL_CONFIDENCE_THRESHOLD
@@ -210,7 +211,7 @@ class MatchScoringService:
         missing_opt = []
 
         job_skills = list(job.job_skills.select_related("skill").all())
-        tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
+        tech_job_skills = [js for js in job_skills if MatchScoringService._is_scoreable_job_skill(js)]
 
         # Handle low confidence skills
         low_conf_skills = [
@@ -265,6 +266,17 @@ class MatchScoringService:
         tech_score = (req_score * 0.8) + (opt_score * 0.2)
 
         return max(0, min(100, round(tech_score))), strong_skills, missing_req, missing_opt
+
+    @staticmethod
+    def _is_scoreable_job_skill(job_skill) -> bool:
+        if job_skill.skill.category not in TECH_CATEGORIES:
+            return False
+        decision = classify_skill_candidate(
+            raw_text=job_skill.skill.canonical_name,
+            canonical_name=job_skill.skill.canonical_name,
+            category=job_skill.skill.category,
+        )
+        return decision.kind == SkillCandidateKind.HARD_TECHNICAL and decision.materialize
 
     @staticmethod
     def _calc_experience_score(profile, job, risk_flags):

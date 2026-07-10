@@ -187,7 +187,7 @@ def classify_skill_candidate(
     if canonical in SPECIFIC_API_CANONICALS or canonical in SPECIFIC_MONITORING_CANONICALS:
         return SkillPolicyDecision(SkillCandidateKind.HARD_TECHNICAL, True, True)
 
-    if canonical in BROAD_TECHNICAL_CANONICALS:
+    if canonical in BROAD_TECHNICAL_CANONICALS or normalized_raw in BROAD_TECHNICAL_CANONICALS:
         return SkillPolicyDecision(SkillCandidateKind.BROAD_TECHNICAL, True, False, Decimal("0.400"))
 
     if category == SkillCategory.SOFT_SKILL.value:

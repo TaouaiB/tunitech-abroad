@@ -229,7 +229,8 @@ class JobSkillMaterializationService:
                     confidence = Decimal("0.000")
                     for raw, type_ in raw_skills_dict.items():
                         raw_candidates = set(candidate_normalized_skill_texts(raw))
-                        if raw_candidates.intersection(skill_aliases):
+                        raw_matches_skill = raw_candidates.intersection(skill_aliases) or cls._raw_candidate_maps_to_skill(raw, skill)
+                        if raw_matches_skill:
                             decision = classify_skill_candidate(
                                 raw_text=raw,
                                 canonical_name=skill.canonical_name,
@@ -306,3 +307,13 @@ class JobSkillMaterializationService:
                 source=source,
                 status="failed"
             )
+
+    @staticmethod
+    def _raw_candidate_maps_to_skill(raw: str, skill: Skill) -> bool:
+        normalized_candidates = candidate_normalized_skill_texts(raw)
+        if not normalized_candidates:
+            return False
+        return SkillAlias.objects.filter(
+            skill=skill,
+            normalized_alias__in=normalized_candidates,
+        ).exists()
