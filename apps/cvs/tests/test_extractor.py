@@ -157,3 +157,68 @@ Skills: Python, Django
         skills = {skill.lower() for skill in result["raw_skills"]}
 
         self.assertNotIn("chef de projet", skills)
+
+    def test_explicit_skill_section_extracts_known_alias_candidates(self):
+        text = """
+Amina Ben Ali
+Technical Skills: Python, Django, PostgreSQL
+Experience
+Built inventory workflows with validation and stock alerts.
+        """
+        result = CVDeterministicExtractorService.extract(text)
+        skills = {skill.lower() for skill in result["raw_skills"]}
+
+        self.assertTrue({"python", "django", "postgresql"}.issubset(skills))
+        self.assertFalse({"validation", "stock alerts"} & skills)
+        self.assertNotIn("no_reliable_skill_section_found", result["warnings"])
+
+    def test_project_bullet_phrases_are_not_extracted_as_skills(self):
+        text = """
+Amina Ben Ali
+Projects
+- Inventory Manager API: implemented input validation, authentication flows, stock alerts, stock movements, suppliers.
+- Added language extraction, location extraction, recommended learning topics.
+        """
+        result = CVDeterministicExtractorService.extract(text)
+        skills = {skill.lower().rstrip(".") for skill in result["raw_skills"]}
+
+        self.assertFalse(skills)
+        self.assertIn("no_reliable_skill_section_found", result["warnings"])
+
+    def test_comma_separated_non_skill_line_outside_skill_section_is_ignored(self):
+        text = """
+Amina Ben Ali
+Summary
+Python, Django, PostgreSQL
+Experience
+Built APIs for local clients.
+        """
+        result = CVDeterministicExtractorService.extract(text)
+
+        self.assertEqual(result["raw_skills"], [])
+        self.assertIn("no_reliable_skill_section_found", result["warnings"])
+
+    def test_noisy_gate_a_examples_are_rejected_even_in_skill_section(self):
+        text = """
+Amina Ben Ali
+Skills
+language extraction, location extraction, recommended learning topics, stock alerts
+stock movements, suppliers, validation, server, freelance web developer, web development
+Python
+        """
+        result = CVDeterministicExtractorService.extract(text)
+        skills = {skill.lower().rstrip(".") for skill in result["raw_skills"]}
+
+        self.assertEqual(skills, {"python"})
+        self.assertFalse({
+            "language extraction",
+            "location extraction",
+            "recommended learning topics",
+            "stock alerts",
+            "stock movements",
+            "suppliers",
+            "validation",
+            "server",
+            "freelance web developer",
+            "web development",
+        } & skills)

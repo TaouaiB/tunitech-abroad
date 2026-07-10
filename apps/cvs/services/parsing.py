@@ -8,6 +8,7 @@ from apps.cvs.services.text_extraction import CVTextExtractionService
 from apps.cvs.services.deterministic_extractor import CVDeterministicExtractorService
 from apps.cvs.services.llm_extraction import CVLLMExtractionService
 from apps.skills.services.normalizer import SkillNormalizerService, normalize_skill_text
+from apps.skills.services.extraction_policy import SkillCandidateKind, classify_skill_candidate
 from apps.profiles.models import ProfileSkill
 from apps.profiles.services.completeness import ProfileCompletenessService
 from apps.profiles.services.validation import CURRENT_LEVEL_CHOICES
@@ -108,6 +109,38 @@ class CVParsingService:
         return []
 
     @classmethod
+    def _append_profile_conflict_warnings(cls, parsed: dict, profile) -> None:
+        warnings = parsed.setdefault("warnings", [])
+
+        def warn_if_conflict(field_name: str, existing: object, parsed_value: object) -> None:
+            if not existing or not parsed_value:
+                return
+            if isinstance(existing, list) or isinstance(parsed_value, list):
+                existing_norm = {str(item).strip().lower() for item in existing or [] if str(item).strip()}
+                parsed_norm = {str(item).strip().lower() for item in parsed_value or [] if str(item).strip()}
+                if existing_norm and parsed_norm and existing_norm != parsed_norm:
+                    warnings.append(f"profile_{field_name}_conflict_skipped")
+                return
+            if str(existing).strip().lower() != str(parsed_value).strip().lower():
+                warnings.append(f"profile_{field_name}_conflict_skipped")
+
+        warn_if_conflict("name", profile.full_name, parsed.get("extracted_name"))
+        warn_if_conflict("location", profile.location, parsed.get("extracted_location"))
+        warn_if_conflict("target_roles", profile.target_roles, parsed.get("target_roles"))
+        warn_if_conflict("current_level", profile.current_level, cls._normalize_current_level(parsed.get("current_level")))
+        warn_if_conflict("french_level", profile.french_level, parsed.get("french_level"))
+        warn_if_conflict("english_level", profile.english_level, parsed.get("english_level"))
+
+    @classmethod
+    def _cv_profile_skill_allowed(cls, skill) -> bool:
+        decision = classify_skill_candidate(
+            raw_text=skill.canonical_name,
+            canonical_name=skill.canonical_name,
+            category=skill.category,
+        )
+        return decision.materialize and decision.kind == SkillCandidateKind.HARD_TECHNICAL
+
+    @classmethod
     def _estimate_years_from_text(cls, raw_text: str) -> float | None:
         spans: list[tuple[int, int, int, int]] = []
         month_pattern = "|".join(re.escape(month) for month in cls.MONTH_ALIASES)
@@ -198,6 +231,8 @@ class CVParsingService:
         if inferred_target_type:
             det_result['target_type'] = inferred_target_type
         llm_result = CVLLMExtractionService.extract_structured(cv_upload, raw_text)
+        if hasattr(user, 'candidate_profile'):
+            cls._append_profile_conflict_warnings(det_result, user.candidate_profile)
 
         with transaction.atomic():
             parsed_data, _ = CVParsedData.objects.update_or_create(
@@ -233,7 +268,10 @@ class CVParsingService:
                 source_id=cv_upload.id
             )
 
-            canonical_skills = normalization_result.canonical_skills
+            canonical_skills = [
+                skill for skill in normalization_result.canonical_skills
+                if cls._cv_profile_skill_allowed(skill)
+            ]
 
             user = cv_upload.user
             if hasattr(user, 'candidate_profile'):
