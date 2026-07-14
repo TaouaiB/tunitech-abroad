@@ -10,7 +10,7 @@ from apps.cvs.services.deterministic_extractor import CVDeterministicExtractorSe
 from apps.cvs.services.deletion import CVDeletionService
 from apps.cvs.services.parsing import CVParsingService
 from apps.profiles.models import CandidateProfile, ProfileSkill
-from apps.skills.models import Skill, SkillAlias
+from apps.skills.models import Skill, SkillAlias, UnmatchedSkillCandidate
 from apps.skills.services.normalizer import normalize_skill_text
 import fitz
 
@@ -84,6 +84,23 @@ class CVServiceTests(TestCase):
         file = SimpleUploadedFile("large.pdf", b"x" * oversize_bytes, content_type="application/pdf")
         with self.assertRaises(ValueError):
             CVUploadService.upload_cv(self.user, file)
+
+    @patch('apps.cvs.services.upload.parse_cv.delay')
+    def test_upload_cv_accepts_pdf_at_eight_mb_limit(self, mock_delay):
+        from django.conf import settings
+
+        limit_bytes = settings.MAX_CV_UPLOAD_SIZE_MB * 1024 * 1024
+        file = SimpleUploadedFile(
+            "limit.pdf",
+            b"%PDF-" + (b"x" * (limit_bytes - 5)),
+            content_type="application/pdf",
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            cv = CVUploadService.upload_cv(self.user, file)
+
+        self.assertEqual(cv.file_size, limit_bytes)
+        mock_delay.assert_called_once_with(cv.id)
 
     def test_deterministic_extractor(self):
         text = "Amina Ben Ali\nLocation: Tunis\nContact me at test@test.com or +33 6 12 34 56 78.\nLinkedIn: https://linkedin.com/in/test\nGitHub: https://github.com/test\nPortfolio: https://amina.dev\nSkills:\nPython, Django, React"
@@ -172,6 +189,115 @@ class CVServiceTests(TestCase):
         profile.refresh_from_db()
         self.assertEqual(profile.full_name, "")
         self.assertEqual(profile.phone, "")
+
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    def test_unknown_candidates_from_non_skill_sections_are_not_tracked(self, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        CandidateProfile.objects.create(user=self.user)
+        pdf = self._pdf_file(
+            "Amina Ben Ali\n"
+            "Projects\n"
+            "Inventory Manager API: implemented input validation, stock alerts, stock movements, suppliers.\n"
+            "Summary: language extraction, location extraction, recommended learning topics.\n"
+        )
+        cv = CVUpload.objects.create(
+            user=self.user, file=pdf, original_filename="cv_non_skills.pdf",
+            file_hash="hash_non_skills", file_size=pdf.size, is_active=True
+        )
+
+        parsed_data = CVParsingService.parse(cv)
+
+        self.assertIsNotNone(parsed_data)
+        self.assertFalse(UnmatchedSkillCandidate.objects.filter(source_type="cv").exists())
+        self.assertIn("no_reliable_skill_section_found", parsed_data.warnings_json)
+
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    def test_unknown_candidates_from_explicit_skill_sections_are_tracked(self, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        CandidateProfile.objects.create(user=self.user)
+        pdf = self._pdf_file(
+            "Amina Ben Ali\n"
+            "Technical Skills\n"
+            "Python, TuniStack\n"
+            "Experience\n"
+            "Built internal tools with Django.\n"
+        )
+        cv = CVUpload.objects.create(
+            user=self.user, file=pdf, original_filename="cv_unknown_skill.pdf",
+            file_hash="hash_unknown_skill", file_size=pdf.size, is_active=True
+        )
+
+        parsed_data = CVParsingService.parse(cv)
+
+        self.assertIsNotNone(parsed_data)
+        self.assertTrue(
+            UnmatchedSkillCandidate.objects.filter(
+                normalized_text=normalize_skill_text("TuniStack"),
+                source_type="cv",
+            ).exists()
+        )
+
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    def test_confirmed_profile_fields_and_skills_are_preserved(self, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        python = Skill.objects.create(canonical_name="Python", slug="python", category="backend")
+        java = Skill.objects.create(canonical_name="Java", slug="java", category="backend")
+        communication = Skill.objects.create(canonical_name="Communication", slug="communication", category="soft_skill")
+        agile = Skill.objects.create(canonical_name="Agile", slug="agile", category="methodology")
+        for skill in [python, java, communication, agile]:
+            SkillAlias.objects.create(
+                skill=skill,
+                alias=skill.canonical_name,
+                normalized_alias=normalize_skill_text(skill.canonical_name),
+            )
+        profile = CandidateProfile.objects.create(
+            user=self.user,
+            full_name="Confirmed User",
+            location="Sousse, Tunisia",
+            current_level="mid",
+            target_roles=["Backend Developer"],
+            french_level="fluent",
+            english_level="intermediate",
+            is_confirmed=True,
+        )
+        ProfileSkill.objects.create(
+            profile=profile,
+            skill=java,
+            raw_name="Java",
+            normalized_name="java",
+            source="manual",
+            confidence=100,
+            is_confirmed=True,
+        )
+        pdf = self._pdf_file(
+            "Different Name\n"
+            "Location: Tunis, Tunisia\n"
+            "Target roles: Frontend Developer\n"
+            "French: Basic\n"
+            "English: Fluent\n"
+            "1 year experience\n"
+            "Skills\n"
+            "Python, Java, Communication, Agile\n"
+        )
+        cv = CVUpload.objects.create(
+            user=self.user, file=pdf, original_filename="cv_confirmed.pdf",
+            file_hash="hash_confirmed", file_size=pdf.size, is_active=True
+        )
+
+        parsed_data = CVParsingService.parse(cv)
+
+        profile.refresh_from_db()
+        self.assertEqual(profile.full_name, "Confirmed User")
+        self.assertEqual(profile.location, "Sousse, Tunisia")
+        self.assertEqual(profile.current_level, "mid")
+        self.assertEqual(profile.target_roles, ["Backend Developer"])
+        self.assertEqual(profile.french_level, "fluent")
+        self.assertEqual(profile.english_level, "intermediate")
+        self.assertTrue(ProfileSkill.objects.get(profile=profile, normalized_name="java").is_confirmed)
+        self.assertTrue(ProfileSkill.objects.filter(profile=profile, normalized_name="python", source="cv_upload").exists())
+        self.assertFalse(ProfileSkill.objects.filter(profile=profile, normalized_name="communication").exists())
+        self.assertFalse(ProfileSkill.objects.filter(profile=profile, normalized_name="agile").exists())
+        self.assertTrue(any(w.startswith("profile_") for w in parsed_data.warnings_json))
 
     def test_parsing_normalizes_current_level_labels_before_profile_save(self):
         self.assertEqual(CVParsingService._normalize_current_level("Junior"), "junior")

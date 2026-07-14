@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import Client, TestCase, override_settings
 from apps.accounts.models import User
 from django.db.utils import IntegrityError
 from django.db import connection
@@ -8,13 +8,16 @@ from unittest.mock import patch
 from allauth.account.models import EmailAddress
 from allauth.core.exceptions import ImmediateHttpResponse
 from allauth.socialaccount.models import SocialAccount, SocialLogin
+from django.core import mail
 from django.contrib.messages import get_messages
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.backends.db import SessionStore
+from django.urls import reverse
 from django.test import RequestFactory
 
 from .adapters import TuniTechSocialAccountAdapter
 from .services.account_provisioning import AccountProvisioningService
+from .services.onboarding import OnboardingRedirectService
 from .signals import populate_profile_from_social_data
 
 def create_test_user(username: str, email: str, password: str = "password123") -> User:
@@ -44,6 +47,88 @@ class UserModelTests(TestCase):
             tables = [row[0] for row in cursor.fetchall()]
         self.assertIn("accounts_user", tables)
         self.assertNotIn("auth_user", tables)
+
+
+class AccountFlowTests(TestCase):
+    def test_manual_signup_post_with_csrf_redirects_to_cv(self):
+        client = Client(enforce_csrf_checks=True)
+        response = client.get(reverse("account_signup"))
+        csrf_token = response.cookies["csrftoken"].value
+
+        response = client.post(
+            reverse("account_signup"),
+            {
+                "email": "manual-signup@example.test",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+                "csrfmiddlewaretoken": csrf_token,
+            },
+            HTTP_REFERER=reverse("account_signup"),
+        )
+
+        self.assertNotEqual(response.status_code, 403)
+        self.assertRedirects(response, reverse("dashboard:cv"), fetch_redirect_response=False)
+        self.assertTrue(User.objects.filter(email="manual-signup@example.test").exists())
+
+    def test_onboarding_redirect_service_routes_no_password_user_to_password_step(self):
+        user = create_test_user("oauthnopass", "oauthnopass@example.test")
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+        request = RequestFactory().get("/")
+        request.user = user
+        request.session = SessionStore()
+
+        self.assertEqual(
+            OnboardingRedirectService.get_login_redirect_url(request),
+            reverse("account_set_password"),
+        )
+
+    def test_onboarding_redirect_service_respects_manual_user_default_url(self):
+        user = create_test_user("manualexisting", "manualexisting@example.test")
+        request = RequestFactory().get("/")
+        request.user = user
+        request.session = SessionStore()
+
+        self.assertEqual(
+            OnboardingRedirectService.get_login_redirect_url(request, default_url="/jobs/?next=kept"),
+            "/jobs/?next=kept",
+        )
+
+    def test_no_password_user_cannot_bypass_password_step_via_cv_page(self):
+        user = create_test_user("oauthbypass", "oauthbypass@example.test")
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+
+        request = RequestFactory().get(reverse("dashboard:cv"))
+        request.user = user
+        request.session = SessionStore()
+
+        self.assertEqual(
+            OnboardingRedirectService.should_redirect_request(request),
+            reverse("account_set_password"),
+        )
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        ACCOUNT_EMAIL_NOTIFICATIONS=True,
+    )
+    def test_password_change_sends_security_email(self):
+        user = create_test_user("passwordmail", "passwordmail@example.test", "OldPass123!")
+        EmailAddress.objects.create(user=user, email=user.email, primary=True, verified=True)
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("account_change_password"),
+            {
+                "oldpassword": "OldPass123!",
+                "password1": "NewPass123!",
+                "password2": "NewPass123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("password was changed", mail.outbox[0].subject)
 
 class AccountProvisioningServiceTests(TestCase):
     def test_idempotent_provisioning(self):
@@ -77,7 +162,7 @@ class AccountProvisioningServiceTests(TestCase):
             AccountProvisioningService.provision_new_user(user)
 
             profile = CandidateProfile.objects.get(user=user)
-            self.assertEqual(profile.full_name, 'Github User')
+            self.assertEqual(profile.full_name, '')
             self.assertEqual(profile.github_url, 'https://github.com/ghuser')
             self.assertEqual(profile.location, 'Tunis')
         except ImportError:
@@ -229,7 +314,7 @@ class SocialAccountAdapterTests(TestCase):
         )
         populate_profile_from_social_data(user, google_login)
         user.candidate_profile.refresh_from_db()
-        self.assertEqual(user.candidate_profile.full_name, "Google Candidate")
+        self.assertEqual(user.candidate_profile.full_name, "")
         self.assertEqual(user.candidate_profile.avatar_url, "https://lh3.googleusercontent.test/avatar.png")
         self.assertEqual(user.candidate_profile.website_url, "https://profiles.google.test/candidate")
 
@@ -250,7 +335,7 @@ class SocialAccountAdapterTests(TestCase):
         )
         populate_profile_from_social_data(github_user, github_login)
         github_user.candidate_profile.refresh_from_db()
-        self.assertEqual(github_user.candidate_profile.full_name, "GitHub Candidate")
+        self.assertEqual(github_user.candidate_profile.full_name, "")
         self.assertEqual(github_user.candidate_profile.avatar_url, "https://avatars.githubusercontent.test/u/1")
         self.assertEqual(github_user.candidate_profile.github_url, "https://github.com/candidate")
         self.assertEqual(github_user.candidate_profile.location, "Tunis")
@@ -332,7 +417,7 @@ class AuthViewsTests(TestCase):
         self.assertNotContains(response, "Account created")
         self.assertContains(response, "has-error")
 
-    def test_normal_email_signup_redirects_to_jobs_and_sends_verification_email(self):
+    def test_normal_email_signup_redirects_to_cv_and_sends_verification_email(self):
         response = self.client.post(
             "/accounts/signup/",
             {
@@ -343,7 +428,7 @@ class AuthViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/jobs/", response["Location"])
+        self.assertIn("/dashboard/cv/", response["Location"])
         user = User.objects.get(email="normal-signup@example.test")
         email_address = EmailAddress.objects.get(user=user, email=user.email)
         self.assertFalse(email_address.verified)

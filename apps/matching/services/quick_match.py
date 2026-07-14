@@ -6,17 +6,16 @@ from django.conf import settings
 from apps.matching.models import QuickMatchSession
 from apps.jobs.models import NormalizedJob, RequirementType
 from apps.skills.services.normalizer import SkillNormalizerService, normalize_skill_text
+from apps.matching.services.scoring import MatchScoringService
+from apps.jobs.services.language_requirements import (
+    LanguageRequirementClassifier,
+    LanguageRequirementKind,
+)
 
 class QuickMatchRateLimitExceeded(Exception):
     pass
 
-MISSING_FRENCH_LEVELS = {"", "none", "no", "a0"}
-
 class QuickMatchService:
-    @staticmethod
-    def _has_french_level(french_level: str | None) -> bool:
-        return (french_level or "").strip().lower() not in MISSING_FRENCH_LEVELS
-
     @staticmethod
     def run_quick_match(
         session_key: str,
@@ -24,6 +23,7 @@ class QuickMatchService:
         entered_skills: list[str],
         experience_level: str,
         french_level: str,
+        english_level: str = "",
         ip_address: str | None = None,
     ) -> QuickMatchSession:
 
@@ -62,13 +62,17 @@ class QuickMatchService:
         entered_skill_ids = {skill.id for skill in normalized_result.canonical_skills}
 
         # Process Job Skills
-        job_skills = list(job.job_skills.select_related("skill").all())
+        job_skills = [
+            job_skill
+            for job_skill in MatchScoringService._ordered_job_skills(job)
+            if MatchScoringService._is_scoreable_job_skill(job_skill)
+            and (
+                job_skill.confidence is None
+                or job_skill.confidence >= MatchScoringService.SKILL_CONFIDENCE_THRESHOLD
+            )
+        ]
         req_skills = [js for js in job_skills if js.requirement_type == RequirementType.REQUIRED]
         opt_skills = [js for js in job_skills if js.requirement_type == RequirementType.OPTIONAL]
-
-        if not req_skills and job_skills:
-            req_skills = job_skills
-            opt_skills = []
 
         matched_skills = []
         missing_skills = []
@@ -97,7 +101,7 @@ class QuickMatchService:
         tech_score = max(0, min(100, round(tech_score)))
 
         # Experience score fallback
-        exp_score = 70
+        exp_score = 100
         j_level = job.experience_level.lower() if job.experience_level else ""
         p_level = experience_level.lower() if experience_level else ""
 
@@ -110,15 +114,25 @@ class QuickMatchService:
         elif "senior" in j_level:
             exp_score = 100 if "senior" in p_level else 30
 
-        # Language score fallback
-        france_first = job.country.lower() == "france" if job.country else True
-        lang_score = 70
-        has_french_level = QuickMatchService._has_french_level(french_level)
-
-        if france_first and not has_french_level:
-            lang_score = 40
-        elif has_french_level:
-            lang_score = 80
+        # Apply the same explicit-required-only language policy as full matching.
+        # A language is only assessed when the candidate supplied a level;
+        # otherwise we never add a penalty for a Quick Match that did not
+        # collect the candidate's level for that language.
+        missing_languages = []
+        requirements = job.language_requirements_json or {}
+        for language, candidate_level, flag in (
+            ("french", french_level, "french_level_missing"),
+            ("english", english_level, "english_level_missing"),
+        ):
+            requirement = LanguageRequirementClassifier.get_requirement(requirements, language)
+            if requirement.kind != LanguageRequirementKind.REQUIRED:
+                continue
+            if not candidate_level:
+                # Omitted/uncollected level means "not assessed", not insufficient.
+                continue
+            if not LanguageRequirementClassifier.candidate_meets(requirement, candidate_level):
+                missing_languages.append(flag)
+        lang_score = max(40, 100 - (40 * len(missing_languages)))
 
         # Fit score (assume 70 for role and location since we don't have them in quick match)
         fit_score = tech_score * 0.45 + exp_score * 0.20 + 70 * 0.15 + lang_score * 0.10 + 70 * 0.10
@@ -127,8 +141,7 @@ class QuickMatchService:
         risk_flags = []
         if any(ms['requirement_type'] == 'required' for ms in missing_skills):
             risk_flags.append('missing_required_skills')
-        if france_first and not has_french_level:
-            risk_flags.append('french_level_missing')
+        risk_flags.extend(missing_languages)
 
         expires_at = timezone.now() + timedelta(hours=24)
 

@@ -83,6 +83,45 @@ class JobViewTests(TestCase):
         response = self.client.get(reverse("jobs:list"), {"q": "Test", "location": "Paris"})
         self.assertEqual(response.status_code, 200)
 
+    def test_job_list_context_includes_total_and_filtered_counts(self):
+        raw = RawJobRecord.objects.create(
+            source=self.source,
+            source_job_id="2",
+            raw_payload_json={},
+            payload_hash="2",
+            first_seen_at=timezone.now(),
+            last_seen_at=timezone.now(),
+            last_fetched_at=timezone.now(),
+        )
+        other_job = NormalizedJob.objects.create(
+            source=self.source,
+            raw_record=raw,
+            source_job_id="2",
+            title="Other Job",
+            company_name="Other Company",
+            status=JobStatus.ACTIVE,
+            skill_signal_quality="strong",
+            skill_extraction_status="success",
+            classification_json={"is_it": True, "confidence": "high"},
+            required_skills_json=["Django"],
+            first_seen_at=timezone.now(),
+            last_seen_at=timezone.now(),
+            last_fetched_at=timezone.now(),
+        )
+        NormalizedJobSkill.objects.create(
+            job=other_job,
+            skill=self.skill,
+            requirement_type=RequirementType.REQUIRED,
+            source=SkillSource.LLM,
+        )
+
+        response = self.client.get(reverse("jobs:list"), {"company": "Test Company"})
+
+        self.assertEqual(response.context["total_count"], 2)
+        self.assertEqual(response.context["filtered_count"], 1)
+        self.assertContains(response, "2 offres disponibles")
+        self.assertContains(response, "1 résultat filtré")
+
     def test_job_list_view_does_not_render_contract_type_filter(self):
         response = self.client.get(reverse("jobs:list"))
         self.assertEqual(response.status_code, 200)

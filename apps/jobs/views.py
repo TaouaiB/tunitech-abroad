@@ -61,7 +61,8 @@ def job_list(request):
         "page_obj": result.page_obj,
         "paginator": result.paginator,
         "filters": effective_filters,
-        "total_count": result.total_count,
+        "total_count": result.available_count,
+        "filtered_count": result.filtered_count,
         "sort": result.sort,
     })
 

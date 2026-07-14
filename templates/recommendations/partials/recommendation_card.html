@@ -15,29 +15,18 @@
             {% if rec.job.published_at %}<span>·</span><span>{{ rec.job.published_at|date:"d M Y" }}</span>{% endif %}
         </div>
         <p class="job-desc">
-            {% if rec.reason_summary %}{{ rec.reason_summary }}{% else %}
+            {% if rec.reason_summary %}{{ rec|user_recommendation_reason }}{% else %}
             Score calculé à partir des données de votre profil et de cette offre.
             {% endif %}
             {% if rec.is_match_low_confidence %}
                 <br><span style="color:var(--warn);font-size:12px;"><span class="recommendation-i18n" data-fr="Signal technique insuffisant : vérifiez l\'offre originale avant d\'interpréter ce score." data-en="Insufficient technical signal: check the original job post before interpreting this score.">Signal technique insuffisant : vérifiez l\'offre originale avant d\'interpréter ce score.</span></span>
             {% endif %}
         </p>
-        <div class="pill-row">
-            {% for skill in rec.strong_skills_json|slice:":6" %}
-                {% with skill_label=skill.name|default:skill %}
-                    {% if skill_label|is_valid_badge %}
-                        <span class="skill ok">{{ skill_label }}</span>
-                    {% endif %}
-                {% endwith %}
+        <div class="pill-row" data-canonical-job-skills>
+            {% for skill in rec|recommendation_job_skills %}
+                <span class="skill {% if skill.status == 'strong' %}ok{% elif skill.status == 'missing' %}missing{% elif skill.status == 'warning' %}warn{% else %}{{ skill.name|skill_color }}{% endif %}" data-canonical-skill>{{ skill.name }}</span>
             {% endfor %}
-            {% for skill in rec.missing_skills_json|slice:":6" %}
-                {% with skill_label=skill.name|default:skill %}
-                    {% if skill_label|is_valid_badge %}
-                        <span class="skill missing">{{ skill_label }}</span>
-                    {% endif %}
-                {% endwith %}
-            {% endfor %}
-            {% for flag in rec.human_risk_flags|slice:":4" %}
+            {% for flag in rec|user_risk_flags|slice:":4" %}
                 <span class="pill warn">{{ flag }}</span>
             {% endfor %}
         </div>

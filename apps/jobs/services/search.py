@@ -3,7 +3,7 @@ from typing import Any
 
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.core.paginator import InvalidPage, Paginator
-from django.db.models import F, Q, QuerySet, TextField
+from django.db.models import Case, Exists, F, FloatField, OuterRef, Q, QuerySet, TextField, Value, When
 from django.db.models.functions import Cast
 from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
@@ -18,14 +18,28 @@ class PaginatedJobResult:
     paginator: Paginator
     filters: dict[str, str]
     total_count: int
+    filtered_count: int
+    available_count: int
     sort: str
 
 
 class JobSearchService:
+    BILINGUAL_SEARCH_TERMS = {
+        "engineer": ("engineer", "ingénieur", "ingénieure"),
+        "ingenieur": ("engineer", "ingénieur", "ingénieure"),
+        "ingenieure": ("engineer", "ingénieur", "ingénieure"),
+        "developer": ("developer", "développeur", "développeuse"),
+        "developpeur": ("developer", "développeur", "développeuse"),
+        "developpeuse": ("developer", "développeur", "développeuse"),
+        "software": ("software", "logiciel"),
+        "logiciel": ("software", "logiciel"),
+    }
+
     @classmethod
     def search(cls, filters: dict, request=None) -> PaginatedJobResult:
         filters = cls._clean_filters(filters)
         qs = cls._public_queryset()
+        available_count = qs.count()
 
         q = filters.get("q", "")
         location = filters.get("location", "")
@@ -91,9 +105,56 @@ class JobSearchService:
 
         has_query = False
         if q:
-            search_query = SearchQuery(q, config="french")
-            qs = qs.filter(search_vector=search_query)
-            qs = qs.annotate(rank=SearchRank(F("search_vector"), search_query))
+            search_terms = cls._general_search_terms(q)
+            search_query = None
+            for term in search_terms:
+                term_query = SearchQuery(term, config="french", search_type="plain")
+                search_query = term_query if search_query is None else search_query | term_query
+
+            from apps.jobs.models import NormalizedJobSkill
+            from apps.skills.models import Skill
+
+            canonical_skill_ids = list(
+                Skill.objects.filter(is_active=True)
+                .annotate(
+                    search_rank=SearchRank(
+                        SearchVector("canonical_name", config="french"),
+                        search_query,
+                    )
+                )
+                .filter(search_rank__gt=0)
+                .values_list("id", flat=True)
+            )
+            canonical_skill_match = Exists(
+                NormalizedJobSkill.objects.filter(
+                    job_id=OuterRef("pk"),
+                    skill_id__in=canonical_skill_ids,
+                )
+            )
+            title_vector = SearchVector("title", weight="A", config="french")
+            qs = qs.annotate(
+                stored_rank=SearchRank(F("search_vector"), search_query),
+                title_rank=SearchRank(title_vector, search_query),
+                canonical_skill_match=canonical_skill_match,
+                exact_title_bonus=Case(
+                    *[When(title__iexact=term, then=Value(2.0)) for term in search_terms],
+                    default=Value(0.0),
+                    output_field=FloatField(),
+                ),
+            ).filter(
+                Q(search_vector=search_query)
+                | Q(title__in=search_terms)
+                | Q(title_rank__gt=0)
+                | Q(canonical_skill_match=True)
+            ).annotate(
+                rank=F("exact_title_bonus") + F("title_rank") * Value(3.0)
+                + Case(
+                    When(canonical_skill_match=True, then=Value(2.0)),
+                    default=Value(0.0),
+                    output_field=FloatField(),
+                )
+                + F("stored_rank")
+            )
             has_query = True
 
         sort = filters.get("sort", "")
@@ -122,6 +183,8 @@ class JobSearchService:
             paginator=paginator,
             filters={key: value for key, value in filters.items() if not key.startswith("_")},
             total_count=paginator.count,
+            filtered_count=paginator.count,
+            available_count=available_count,
             sort=sort,
         )
 
@@ -247,3 +310,14 @@ class JobSearchService:
         except Exception:
             pass
         return {term for term in terms if term}
+
+    @classmethod
+    def _general_search_terms(cls, query: str) -> tuple[str, ...]:
+        import unicodedata
+
+        normalized = "".join(
+            character
+            for character in unicodedata.normalize("NFKD", query.strip().casefold())
+            if not unicodedata.combining(character)
+        )
+        return cls.BILINGUAL_SEARCH_TERMS.get(normalized, (query.strip(),))

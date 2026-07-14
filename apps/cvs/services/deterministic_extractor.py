@@ -28,6 +28,231 @@ class CVDeterministicExtractionResult(TypedDict):
 from apps.cvs.services.name_extraction import CVNameExtractionService
 
 class CVDeterministicExtractorService:
+    SKILL_SECTION_HEADERS = {
+        "skills",
+        "technical skills",
+        "competences",
+        "competences techniques",
+        "compétences",
+        "compétences techniques",
+        "stack",
+        "technologies",
+        "tools",
+        "frameworks",
+        "databases",
+        "cloud",
+        "devops",
+        "testing",
+        "programming languages",
+        "languages / programming languages",
+    }
+    STOP_SECTION_HEADERS = {
+        "experience",
+        "professional experience",
+        "expérience",
+        "expérience professionnelle",
+        "projects",
+        "projets",
+        "education",
+        "formation",
+        "certifications",
+        "contact",
+        "profile",
+        "profil",
+        "summary",
+        "résumé",
+        "resume",
+        "languages",
+        "langues",
+        "interests",
+        "centres d'intérêt",
+        "centres d interet",
+        "french",
+        "français",
+        "francais",
+        "english",
+        "anglais",
+    }
+    SKILL_SUBSECTION_LABELS = {
+        "backend",
+        "frontend",
+        "front end",
+        "back end",
+        "databases",
+        "database",
+        "frameworks",
+        "tools",
+        "cloud",
+        "devops",
+        "testing",
+        "languages",
+        "programming languages",
+        "mobile",
+        "security",
+        "data",
+    }
+    CV_SKILL_NOISE_TERMS = {
+        "api smoke tests",
+        "authentication flows",
+        "based access control",
+        "bug reports",
+        "freelance web developer",
+        "implemented input validation",
+        "inventory manager api",
+        "language extraction",
+        "location extraction",
+        "manual qa",
+        "recommended learning topics",
+        "responsive ui",
+        "seo metadata",
+        "server",
+        "stock alerts",
+        "stock movements",
+        "suppliers",
+        "testing",
+        "tools",
+        "validation",
+        "web development",
+        "and role",
+    }
+    NON_SKILL_SINGLE_WORDS = {
+        "april",
+        "august",
+        "december",
+        "february",
+        "january",
+        "july",
+        "june",
+        "march",
+        "may",
+        "november",
+        "october",
+        "september",
+    }
+    SKILL_LIST_SPLIT_RE = re.compile(r"[,•;|/]+")
+
+    @classmethod
+    def _header_key(cls, line: str) -> str:
+        cleaned = line.strip().strip(":").lower()
+        cleaned = re.sub(r"\s+", " ", cleaned)
+        return cleaned
+
+    @classmethod
+    def _is_skill_section_header(cls, line: str) -> bool:
+        key = cls._header_key(line)
+        if key in cls.SKILL_SECTION_HEADERS:
+            return True
+        if ":" in line:
+            label = cls._header_key(line.split(":", 1)[0])
+            return label in cls.SKILL_SECTION_HEADERS
+        return False
+
+    @classmethod
+    def _is_stop_section_header(cls, line: str) -> bool:
+        key = cls._header_key(line)
+        if key in cls.STOP_SECTION_HEADERS:
+            return True
+        if ":" in line:
+            label = cls._header_key(line.split(":", 1)[0])
+            return label in cls.STOP_SECTION_HEADERS
+        if line.strip().isupper() and len(line.strip()) > 4:
+            return True
+        return False
+
+    @classmethod
+    def _clean_skill_candidate(cls, value: str) -> str:
+        cleaned = value.strip().strip(":-–—•*·")
+        cleaned = re.sub(r"^\s*[-*]\s*", "", cleaned)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        return cleaned
+
+    @classmethod
+    def _is_reliable_skill_candidate(cls, value: str) -> bool:
+        cleaned = cls._clean_skill_candidate(value)
+        if not 1 < len(cleaned) <= 50:
+            return False
+        if is_metadata_noise(cleaned):
+            return False
+        normalized = cls._header_key(cleaned.rstrip("."))
+        if normalized in cls.CV_SKILL_NOISE_TERMS or normalized in cls.STOP_SECTION_HEADERS:
+            return False
+        if normalized in cls.NON_SKILL_SINGLE_WORDS:
+            return False
+        if normalized.startswith(("french ", "francais ", "français ", "english ", "anglais ")):
+            return False
+        if re.search(r"\b(19|20)\d{2}\b", cleaned):
+            return False
+        if re.search(r"\b(?:implemented|built|created|managed|added|fixed|wrote|developed|designed)\b", normalized):
+            return False
+        if len(normalized.split()) > 4:
+            return False
+        return True
+
+    @classmethod
+    def _extract_skill_candidates(cls, lines: list[str]) -> tuple[list[str], list[str], bool, bool]:
+        candidates: list[str] = []
+        seen: set[str] = set()
+        warnings: list[str] = []
+        in_skills_section = False
+        reliable_section_found = False
+        noisy_candidate_seen = False
+
+        def add_candidate(raw_value: str) -> None:
+            nonlocal noisy_candidate_seen
+            candidate = cls._clean_skill_candidate(raw_value)
+            if not candidate:
+                return
+            if not cls._is_reliable_skill_candidate(candidate):
+                noisy_candidate_seen = True
+                return
+            normalized = cls._header_key(candidate)
+            if normalized not in seen:
+                candidates.append(candidate)
+                seen.add(normalized)
+
+        for line in lines:
+            cleaned_line = line.strip()
+            if not cleaned_line:
+                if in_skills_section:
+                    in_skills_section = False
+                continue
+
+            if cls._is_skill_section_header(cleaned_line):
+                reliable_section_found = True
+                in_skills_section = True
+                if ":" in cleaned_line:
+                    inline_value = cleaned_line.split(":", 1)[1]
+                    for part in cls.SKILL_LIST_SPLIT_RE.split(inline_value):
+                        add_candidate(part)
+                continue
+
+            if in_skills_section and cls._is_stop_section_header(cleaned_line):
+                in_skills_section = False
+                continue
+
+            if not in_skills_section:
+                continue
+
+            if ":" in cleaned_line:
+                label, values = cleaned_line.split(":", 1)
+                if cls._header_key(label) in cls.SKILL_SUBSECTION_LABELS:
+                    cleaned_line = values
+
+            parts = cls.SKILL_LIST_SPLIT_RE.split(cleaned_line)
+            if len(parts) == 1 and re.search(r"\s{2,}", cleaned_line):
+                parts = re.split(r"\s{2,}", cleaned_line)
+            for part in parts:
+                add_candidate(part)
+
+        if not reliable_section_found:
+            warnings.append("no_reliable_skill_section_found")
+        if noisy_candidate_seen and not candidates:
+            warnings.append("only_broad_or_noisy_skill_candidates_found")
+        if not candidates:
+            warnings.append("no_skills_detected")
+
+        return candidates, warnings, reliable_section_found, noisy_candidate_seen
+
     @classmethod
     def extract(cls, raw_text: str, auth_user_name: str = "", user_email: str = "") -> CVDeterministicExtractionResult:
         result: CVDeterministicExtractionResult = {
@@ -238,59 +463,9 @@ class CVDeterministicExtractorService:
             elif 'senior' in roles_text_combined or 'lead' in roles_text_combined:
                 result['current_level'] = 'senior'
 
-        # Skills
-        skill_candidates = set()
-        in_skills_section = False
-        noise_words = {
-            "projects", "education", "experience", "private", "university", "target", "roles", "salary", "range", 
-            "march", "january", "february", "april", "may", "june", "july", "august", "september", "october", "november", "december", 
-            "and", "role", "tunis", "tunisia", "france", "belgium", "luxembourg", "canada", "local", "clients", 
-            "digitalbridge", "labs", "professional", "certifications", "languages", "error", "cases",
-            "source", "status", "statut", "badge", "verified", "verifie", "certifie"
-        }
-        
-        for line in lines:
-            lower_line = line.lower()
-            if any(h in lower_line for h in ["skill", "compétence", "competence"]):
-                if not lower_line.startswith("no "):
-                    in_skills_section = True
-                    # if inline skills e.g. Skills: Python, Django
-                    if ":" in lower_line:
-                        parts = re.split(r'[,•|-]', line.split(":", 1)[1])
-                        for p in parts:
-                            c = p.strip()
-                            if 1 < len(c) < 30 and not is_metadata_noise(c):
-                                skill_candidates.add(c)
-                    continue
-            
-            is_comma_separated = line.count(',') >= 2
-            
-            if in_skills_section or is_comma_separated:
-                if in_skills_section and len(line.strip()) == 0:
-                    in_skills_section = False
-                else:
-                    if any(nw in lower_line for nw in ["projects", "education", "target roles:", "salary range", "private university", "french:", "english:", "added filters by"]):
-                        continue
-                    if line.isupper() and len(line.strip()) > 5:
-                        continue # Skip uppercase section headers
-                        
-                    parts = re.split(r'[,•|-]', line)
-                    for p in parts:
-                        cleaned = p.strip()
-                        if 1 < len(cleaned) < 30:
-                            if is_metadata_noise(cleaned):
-                                continue
-                            cleaned_lower = cleaned.lower()
-                            # Check if it contains any noise words as whole words
-                            words = cleaned_lower.split()
-                            if any(w in noise_words for w in words):
-                                continue
-                            if len(words) <= 3 and not re.search(r'\b(19|20)\d{2}\b', cleaned):
-                                skill_candidates.add(cleaned)
-                            
-        result['raw_skills'] = list(skill_candidates)
-        if not result['raw_skills']:
-            result['warnings'].append("no_skills_detected")
+        raw_skills, skill_warnings, _section_found, _noisy_seen = cls._extract_skill_candidates(lines)
+        result['raw_skills'] = raw_skills
+        result['warnings'].extend(skill_warnings)
         
         if not result['extracted_email'] and not result['extracted_phone']:
             result['warnings'].append("No contact information found")

@@ -1,13 +1,14 @@
 import logging
-from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
+from django.utils import timezone
 
 from apps.matching.models import MatchResult
 from apps.matching.services.scoring import MatchScoringService
 from apps.cvs.models import CVUpload
 from apps.jobs.models import NormalizedJob
 from apps.jobs.services.query import JobQueryService
+from apps.matching.services.policy_version import MATCH_SCORING_VERSION
 
 try:
     from apps.analytics.services.user_event import UserEventService
@@ -18,22 +19,13 @@ logger = logging.getLogger(__name__)
 
 class MatchResultService:
     @staticmethod
-    def create_match_result(user, job: NormalizedJob, cv_upload=None) -> MatchResult:
-        if not user.is_authenticated:
-            raise PermissionDenied("User must be authenticated to create a match result.")
-            
-        public_job = JobQueryService.get_public_job(job.public_id)
-            
-        profile = getattr(user, 'candidate_profile', None)
-        if not profile:
-            raise ValueError("Candidate profile not found for user.")
-            
-        if not cv_upload:
-            cv_upload = CVUpload.objects.filter(user=user, is_active=True).first()
-            
-        score_result = MatchScoringService.calculate(profile=profile, job=public_job, cv_upload=cv_upload)
-        
-        profile_snapshot = {
+    def _profile_snapshot(profile) -> dict:
+        skills = list(
+            profile.profile_skills.order_by("normalized_name").values_list(
+                "normalized_name", flat=True
+            )
+        )
+        return {
             "public_id": str(profile.public_id),
             "current_level": profile.current_level,
             "years_experience": float(profile.years_experience) if profile.years_experience is not None else None,
@@ -41,9 +33,12 @@ class MatchResultService:
             "target_roles": profile.target_roles,
             "french_level": profile.french_level,
             "english_level": profile.english_level,
+            "skills": skills,
         }
-        
-        job_snapshot = {
+
+    @staticmethod
+    def _job_snapshot(public_job, score_result) -> dict:
+        return {
             "public_id": str(public_job.public_id),
             "title": public_job.title,
             "company_name": public_job.company_name,
@@ -55,29 +50,56 @@ class MatchResultService:
             "optional_skills_json": public_job.optional_skills_json,
             "match_confidence": score_result.match_confidence,
         }
-        
+
+    @classmethod
+    def _payload(cls, *, user, profile, public_job, cv_upload, score_result) -> dict:
+        return {
+            "user": user,
+            "profile": profile,
+            "cv_upload": cv_upload,
+            "job": public_job,
+            "profile_snapshot_json": cls._profile_snapshot(profile),
+            "job_snapshot_json": cls._job_snapshot(public_job, score_result),
+            "fit_score": score_result.fit_score,
+            "technical_skills_score": score_result.technical_skills_score,
+            "experience_score": score_result.experience_score,
+            "role_title_score": score_result.role_title_score,
+            "language_score": score_result.language_score,
+            "location_score": score_result.location_score,
+            "strong_skills_json": score_result.strong_skills,
+            "missing_required_skills_json": score_result.missing_required_skills,
+            "missing_optional_skills_json": score_result.missing_optional_skills,
+            "risk_flags_json": score_result.risk_flags,
+            "profile_signals_json": score_result.profile_signals,
+            "recommended_actions_json": score_result.recommended_actions,
+            "scoring_version": score_result.scoring_version,
+        }
+
+    @classmethod
+    def create_match_result(cls, user, job: NormalizedJob, cv_upload=None) -> MatchResult:
+        if not user.is_authenticated:
+            raise PermissionDenied("User must be authenticated to create a match result.")
+
+        public_job = JobQueryService.get_public_job(job.public_id)
+
+        profile = getattr(user, 'candidate_profile', None)
+        if not profile:
+            raise ValueError("Candidate profile not found for user.")
+
+        if not cv_upload:
+            cv_upload = CVUpload.objects.filter(user=user, is_active=True).first()
+
+        score_result = MatchScoringService.calculate(profile=profile, job=public_job, cv_upload=cv_upload)
         match = MatchResult.objects.create(
-            user=user,
-            profile=profile,
-            cv_upload=cv_upload,
-            job=public_job,
-            profile_snapshot_json=profile_snapshot,
-            job_snapshot_json=job_snapshot,
-            fit_score=score_result.fit_score,
-            technical_skills_score=score_result.technical_skills_score,
-            experience_score=score_result.experience_score,
-            role_title_score=score_result.role_title_score,
-            language_score=score_result.language_score,
-            location_score=score_result.location_score,
-            strong_skills_json=score_result.strong_skills,
-            missing_required_skills_json=score_result.missing_required_skills,
-            missing_optional_skills_json=score_result.missing_optional_skills,
-            risk_flags_json=score_result.risk_flags,
-            profile_signals_json=score_result.profile_signals,
-            recommended_actions_json=score_result.recommended_actions,
-            scoring_version=score_result.scoring_version,
+            **cls._payload(
+                user=user,
+                profile=profile,
+                public_job=public_job,
+                cv_upload=cv_upload,
+                score_result=score_result,
+            )
         )
-        
+
         if UserEventService is not None:
             try:
                 UserEventService.record_event(
@@ -87,17 +109,103 @@ class MatchResultService:
                 )
             except Exception as e:
                 logger.warning(f"Failed to record UserEvent match_generated: {e}")
-                
+
         return match
+
+    @classmethod
+    def update_current_match_for_job(cls, user, job: NormalizedJob, score_result=None, cv_upload=None) -> MatchResult:
+        if not user.is_authenticated:
+            raise PermissionDenied("User must be authenticated.")
+
+        public_job = JobQueryService.get_public_job(job.public_id)
+        profile = getattr(user, "candidate_profile", None)
+        if not profile:
+            raise ValueError("Candidate profile not found for user.")
+        if not cv_upload:
+            cv_upload = CVUpload.objects.filter(user=user, is_active=True).first()
+        if score_result is None:
+            score_result = MatchScoringService.calculate(profile=profile, job=public_job, cv_upload=cv_upload)
+
+        payload = cls._payload(
+            user=user,
+            profile=profile,
+            public_job=public_job,
+            cv_upload=cv_upload,
+            score_result=score_result,
+        )
+        match = MatchResult.objects.filter(user=user, job=public_job).order_by("-created_at").first()
+        if match is None:
+            return MatchResult.objects.create(**payload)
+
+        for field, value in payload.items():
+            if field != "user":
+                setattr(match, field, value)
+        match.updated_at = timezone.now()
+        match.save(update_fields=[field for field in payload if field != "user"] + ["updated_at"])
+        return match
+
+    @classmethod
+    def _is_stale(cls, match: MatchResult) -> bool:
+        if not match.profile_snapshot_json:
+            return False
+        profile = match.profile
+        current_cv = CVUpload.objects.filter(user=match.user, is_active=True).first()
+        return (
+            match.scoring_version != MATCH_SCORING_VERSION
+            or match.profile_snapshot_json != cls._profile_snapshot(profile)
+            or match.cv_upload_id != (current_cv.id if current_cv else None)
+        )
+
+    @classmethod
+    def _recompute_in_place(cls, match: MatchResult) -> MatchResult:
+        """Recompute the score for the requested match row in place.
+
+        Preserves the row's `public_id` so the requested object never silently
+        becomes another row. This is the refresh contract used by
+        `refresh_if_stale` and the public match-history endpoints.
+        """
+        public_job = JobQueryService.get_public_job(match.job.public_id)
+        cv_upload = CVUpload.objects.filter(user=match.user, is_active=True).first()
+        score_result = MatchScoringService.calculate(
+            profile=match.profile, job=public_job, cv_upload=cv_upload
+        )
+        payload = cls._payload(
+            user=match.user,
+            profile=match.profile,
+            public_job=public_job,
+            cv_upload=cv_upload,
+            score_result=score_result,
+        )
+        for field, value in payload.items():
+            if field != "user":
+                setattr(match, field, value)
+        match.updated_at = timezone.now()
+        match.save(update_fields=[field for field in payload if field != "user"] + ["updated_at"])
+        return match
+
+    @classmethod
+    def refresh_if_stale(cls, match: MatchResult) -> MatchResult:
+        if not cls._is_stale(match):
+            return match
+        # Refresh the requested row in place to preserve its `public_id`.
+        # This avoids the previous behavior where `update_current_match_for_job`
+        # could update/return the latest row for the job, surfacing a different
+        # `public_id` than the URL requested.
+        return cls._recompute_in_place(match)
 
     @staticmethod
     def get_user_match(user, public_id) -> MatchResult:
         if not user.is_authenticated:
             raise PermissionDenied("User must be authenticated.")
-        return get_object_or_404(MatchResult, user=user, public_id=public_id)
+        match = get_object_or_404(MatchResult, user=user, public_id=public_id)
+        return MatchResultService.refresh_if_stale(match)
 
     @staticmethod
-    def list_user_matches(user) -> QuerySet[MatchResult]:
+    def list_user_matches(user) -> list[MatchResult]:
+        # Read-only. The history page must never mutate historical rows.
+        # Refresh of stale rows is the responsibility of the guarded local
+        # management command, controlled production refresh, or the explicit
+        # per-row refresh in `get_user_match(requested_public_id)`.
         if not user.is_authenticated:
             raise PermissionDenied("User must be authenticated.")
-        return MatchResult.objects.filter(user=user).order_by("-created_at")
+        return list(MatchResult.objects.filter(user=user).order_by("-created_at"))

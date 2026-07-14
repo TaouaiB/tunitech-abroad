@@ -24,7 +24,6 @@
     const exactMap = {
       "Votre profil est bien aligné avec cette offre. Vérifiez les conditions de mobilité/contrat puis postulez sur la source.": "Your profile is well aligned with this job. Check the mobility/contract conditions, then apply on the source website.",
       "Signal technique insuffisant": "Insufficient technical signal",
-      "Expérience non précisée": "Experience not specified",
       "Expérience insuffisante": "Insufficient experience"
     };
     if (exactMap[text]) return exactMap[text];
@@ -94,7 +93,6 @@
       const current = pill.textContent.trim();
       const fr = pill.getAttribute("data-fr") || (
         current === "Insufficient technical signal" ? "Signal technique insuffisant" :
-        current === "Experience not specified" ? "Expérience non précisée" :
         current === "Insufficient experience" ? "Expérience insuffisante" :
         current
       );

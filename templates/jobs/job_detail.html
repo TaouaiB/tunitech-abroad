@@ -36,24 +36,18 @@
             <div class="card">
                 <h2 class="h2">Description</h2>
                 <p class="job-desc">{{ job.description|linebreaksbr|default:"Description non disponible" }}</p>
-                <h3 class="h3" style="margin-top:18px">Compétences requises</h3>
-                {% if job.required_skills_json %}
-                    <div class="pill-row">
-                        {% for skill in job.required_skills_json %}
-                            <span class="skill {{ skill|skill_color }}">{{ skill }}</span>
+                <h3 class="h3" style="margin-top:18px">Compétences techniques</h3>
+                {% with skill_entries=job|canonical_job_skills %}
+                {% if skill_entries %}
+                    <div class="pill-row" data-canonical-job-skills>
+                        {% for skill in skill_entries %}
+                            <span class="skill {{ skill.name|skill_color }}" data-canonical-skill>{{ skill.name }}</span>
                         {% endfor %}
                     </div>
                 {% else %}
                     <p class="small">Aucune compétence spécifique extraite.</p>
                 {% endif %}
-                {% if job.optional_skills_json %}
-                    <h3 class="h3">Compétences optionnelles</h3>
-                    <div class="pill-row">
-                        {% for skill in job.optional_skills_json %}
-                            <span class="skill missing">{{ skill }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+                {% endwith %}
                 {% if valid_languages %}
                     <h3 class="h3">Langues exigées</h3>
                     <ul class="small" style="margin:0;padding-left:20px;">

@@ -38,6 +38,8 @@ from apps.jobs.models import (
     SkillSource,
     SourceType,
 )
+from apps.matching.models import MatchResult
+from apps.matching.services.policy_version import RECOMMENDATION_VERSION
 from apps.matching.services.scoring import FitScoreResult
 from apps.profiles.models import CandidateProfile, ProfileSkill
 from apps.recommendations.models import JobRecommendation, RecommendationRun, SavedJob
@@ -478,6 +480,16 @@ class RecommendationServiceTests(TestCase):
 
         self.assertEqual([r[0] for r in first_ranks], [r[0] for r in second_ranks])
 
+    def test_refresh_updates_current_match_result_for_recommendation(self):
+        RecommendationService.refresh_for_user(self.user, "manual_admin")
+        rec = JobRecommendation.objects.filter(user=self.user, status="active").order_by("rank").first()
+
+        self.assertIsNotNone(rec)
+        match = MatchResult.objects.filter(user=self.user, job=rec.job).order_by("-created_at").first()
+
+        self.assertIsNotNone(match)
+        self.assertEqual(match.fit_score, rec.fit_score)
+
     # ------------------------------------------------------------------
     # Incomplete profile is skipped
     # ------------------------------------------------------------------
@@ -534,6 +546,7 @@ class StalenessServiceTests(TestCase):
             rank=1,
             computed_at=timezone.now(),
             status="active",
+            recommendation_version=RECOMMENDATION_VERSION,
         )
 
     def test_mark_user_recommendations_stale_changes_status(self):
@@ -613,6 +626,7 @@ class RecommendationQueryServiceTests(TestCase):
             rank=1,
             computed_at=timezone.now(),
             status="active",
+            recommendation_version=RECOMMENDATION_VERSION,
         )
 
     def test_get_dashboard_recommendations_uses_score_order_when_ranks_are_not_meaningful(self):
@@ -1157,3 +1171,129 @@ class BoundaryComplianceTests(TestCase):
     def test_recommendation_service_has_no_all_objects(self):
         import apps.recommendations.services.recommendation as m
         self._check_no_symbol(m, "CVUpload.all_objects", "all_objects")
+
+
+class GateFRefreshCommandSafetyTests(TestCase):
+    """Gate F safety hardening — local refresh command stays a local-only path."""
+
+    @staticmethod
+    def _call(*args, **kwargs):
+        from django.core.management import call_command
+        from io import StringIO
+        out = StringIO()
+        kwargs.setdefault("stdout", out)
+        call_command("refresh_gate_f_policy_results", *args, **kwargs)
+        return out.getvalue()
+
+    def _command_error_class(self):
+        from django.core.management.base import CommandError
+        return CommandError
+
+    def test_apply_refused_for_wrong_settings_module(self):
+        import os
+        CommandError = self._command_error_class()
+        with (
+            override_settings(DEBUG=True),
+            patch.dict(os.environ, {"DJANGO_SETTINGS_MODULE": "config.settings.production"}),
+        ):
+            with self.assertRaises(CommandError) as ctx:
+                self._call("--user-id", "1", "--apply")
+        self.assertIn("DJANGO_SETTINGS_MODULE", str(ctx.exception))
+
+    def test_apply_refused_when_debug_false(self):
+        CommandError = self._command_error_class()
+        with override_settings(DEBUG=False):
+            with self.assertRaises(CommandError) as ctx:
+                self._call("--user-id", "1", "--apply")
+        self.assertIn("DEBUG=False", str(ctx.exception))
+
+    def test_apply_refused_for_non_local_host(self):
+        CommandError = self._command_error_class()
+        with (
+            override_settings(DEBUG=True),
+            override_settings(
+                DATABASES={
+                    "default": {
+                        "ENGINE": "django.db.backends.postgresql",
+                        "HOST": "prod-db.example.com",
+                        "NAME": "prod_db",
+                    }
+                }
+            ),
+        ):
+            with self.assertRaises(CommandError) as ctx:
+                self._call("--user-id", "1", "--apply")
+        self.assertIn("database host is not local", str(ctx.exception))
+
+    def test_apply_refused_for_non_postgresql_engine(self):
+        CommandError = self._command_error_class()
+        with (
+            override_settings(DEBUG=True),
+            override_settings(
+                DATABASES={
+                    "default": {
+                        "ENGINE": "django.db.backends.sqlite3",
+                        "HOST": "localhost",
+                        "NAME": ":memory:",
+                    }
+                }
+            ),
+        ):
+            with self.assertRaises(CommandError) as ctx:
+                self._call("--user-id", "1", "--apply")
+        self.assertIn("not PostgreSQL", str(ctx.exception))
+
+    def test_dry_run_skips_local_apply_guards(self):
+        # Dry-run must never invoke apply guards or refresh state, regardless
+        # of the local invariants (DEBUG may be False during the test run).
+        from django.contrib.auth import get_user_model
+        from apps.profiles.models import CandidateProfile
+        from apps.matching.services.match_result import MatchResultService
+
+        User = get_user_model()
+        user = User.objects.create(username="refresh-cmd-user")
+        CandidateProfile.objects.create(
+            user=user,
+            years_experience=1.0,
+            current_level="junior",
+            french_level="intermediate",
+            profile_completion_score=80,
+        )
+        with patch.object(MatchResultService, "refresh_if_stale") as refresh:
+            output = self._call("--user-id", str(user.id))
+        self.assertIn("Dry run only", output)
+        refresh.assert_not_called()
+
+    @override_settings(DEBUG=True)
+    def test_apply_runs_when_all_local_invariants_hold(self):
+        # Sanity successful path: settings module is local, DEBUG=True, and the
+        # heavy refresh services are stubbed so the command path executes fully
+        # without depending on recommendation scoring internals.
+        from django.contrib.auth import get_user_model
+        from apps.profiles.models import CandidateProfile
+
+        User = get_user_model()
+        user = User.objects.create(username="refresh-cmd-apply")
+        CandidateProfile.objects.create(
+            user=user,
+            years_experience=1.0,
+            current_level="junior",
+            french_level="intermediate",
+            profile_completion_score=80,
+        )
+        result_stub = type("Result", (), {"stored_recommendations_count": 0})()
+        with (
+            patch(
+                "apps.recommendations.management.commands.refresh_gate_f_policy_results."
+                "RecommendationService.refresh_for_user",
+                return_value=result_stub,
+            ),
+            patch(
+                "apps.recommendations.management.commands.refresh_gate_f_policy_results."
+                "RecommendationStalenessService.mark_outdated_policy_recommendations_stale",
+                return_value=0,
+            ),
+        ):
+            output = self._call("--user-id", str(user.id), "--apply")
+        self.assertIn("Refreshed", output)
+        self.assertIn("recommendations", output)

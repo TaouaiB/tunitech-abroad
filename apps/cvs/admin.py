@@ -31,6 +31,26 @@ class StuckCVFilter(admin.SimpleListFilter):
             return queryset.filter(parse_status__in=['pending', 'processing'], uploaded_at__lt=threshold)
         return queryset
 
+
+class ParsedDataWarningFilter(admin.SimpleListFilter):
+    title = "Parser warnings"
+    parameter_name = "parser_warnings"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Has warnings"),
+            ("no", "No warnings"),
+        )
+
+    def queryset(self, request, queryset):
+        from django.db.models import Q
+
+        if self.value() == "yes":
+            return queryset.filter(Q(cv_upload__parse_status="parsed_with_warnings") | ~Q(warnings_json=[]))
+        if self.value() == "no":
+            return queryset.filter(cv_upload__parse_status="parsed", warnings_json=[])
+        return queryset
+
 @admin.register(CVUpload)
 class CVUploadAdmin(admin.ModelAdmin):
     list_display = ("user", "original_filename", "is_active", "parse_status", "uploaded_at", "deleted_at")
@@ -48,11 +68,53 @@ class CVUploadAdmin(admin.ModelAdmin):
 
 @admin.register(CVParsedData)
 class CVParsedDataAdmin(admin.ModelAdmin):
-    list_display = ('cv_upload', 'extraction_method', 'extracted_name', 'extracted_email', 'created_at')
-    list_filter = ('extraction_method',)
-    search_fields = ('cv_upload__user__email', 'extracted_name', 'extracted_email')
-    readonly_fields = ('cv_upload', 'created_at', 'updated_at', 'deterministic_json', 'llm_json', 'merged_json', 'confidence_json', 'warnings_json')
+    list_display = (
+        'cv_public_id',
+        'cv_upload',
+        'parse_status',
+        'extraction_method',
+        'warning_count',
+        'extracted_name',
+        'extracted_email',
+        'created_at',
+    )
+    list_filter = (ParsedDataWarningFilter, 'extraction_method', 'cv_upload__parse_status', 'created_at')
+    search_fields = ('cv_upload__public_id', 'cv_upload__user__email', 'extracted_name', 'extracted_email')
+    readonly_fields = (
+        'cv_upload',
+        'cv_public_id',
+        'parse_status',
+        'created_at',
+        'updated_at',
+        'deterministic_json',
+        'llm_json',
+        'merged_json',
+        'confidence_json',
+        'warnings_json',
+    )
     exclude = ('raw_text',)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("cv_upload", "cv_upload__user")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(ordering="cv_upload__public_id", description="CV public ID")
+    def cv_public_id(self, obj):
+        return obj.cv_upload.public_id
+
+    @admin.display(ordering="cv_upload__parse_status", description="Parse status")
+    def parse_status(self, obj):
+        return obj.cv_upload.parse_status
+
+    @admin.display(description="Warnings")
+    def warning_count(self, obj):
+        warnings = obj.warnings_json if isinstance(obj.warnings_json, list) else []
+        return len(warnings)
 
 @admin.register(CVFieldCorrection)
 class CVFieldCorrectionAdmin(admin.ModelAdmin):

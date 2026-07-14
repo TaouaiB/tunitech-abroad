@@ -48,8 +48,11 @@
           <div class="field {% if form.password2.errors %}has-error{% endif %}">
             <label data-i18n="Verify password">Confirmer le mot de passe</label>
             <input class="input confirm-password" type="password" name="password2" required placeholder="Repeat password">
-            <div class="error" style="{% if form.password2.errors %}display:block;{% endif %}">{% if form.password2.errors %}{{ form.password2.errors|join:", " }}{% else %}Les mots de passe ne correspondent pas.{% endif %}</div>
-            <div class="success" data-i18n="Passwords match.">Mots de passe identiques.</div>
+            {% if form.password2.errors %}
+              <div class="error" style="display:block;">{{ form.password2.errors|join:", " }}</div>
+            {% endif %}
+            <div class="error" data-client-error data-i18n="Passwords do not match." style="display:none;">Les mots de passe ne correspondent pas.</div>
+            <div class="success" data-client-success data-i18n="Passwords match." style="display:none;">Mots de passe identiques.</div>
           </div>
 
           {% if redirect_field_value %}

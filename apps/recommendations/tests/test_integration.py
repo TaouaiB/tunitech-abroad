@@ -6,7 +6,8 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from apps.jobs.models import NormalizedJob, JobSource, RawJobRecord
+from apps.jobs.models import NormalizedJob, JobSource, RawJobRecord, NormalizedJobSkill, RequirementType, SkillSource
+from apps.skills.models import Skill
 from apps.recommendations.models import JobRecommendation, SavedJob
 from apps.profiles.models import CandidateProfile
 from apps.cvs.models import CVParsedData, CVUpload
@@ -44,6 +45,19 @@ def create_job(status="active"):
         first_seen_at=timezone.now(),
         last_seen_at=timezone.now(),
         last_fetched_at=timezone.now()
+    )
+
+
+def add_job_skill(job, name, requirement_type=RequirementType.REQUIRED):
+    skill, _ = Skill.objects.get_or_create(
+        canonical_name=name,
+        defaults={"slug": f"integration-{name.lower().replace(' ', '-')}", "category": "tools"},
+    )
+    return NormalizedJobSkill.objects.create(
+        job=job,
+        skill=skill,
+        requirement_type=requirement_type,
+        source=SkillSource.ADMIN,
     )
 
 class DashboardIntegrationTests(TestCase):
@@ -132,6 +146,8 @@ class DashboardIntegrationTests(TestCase):
             computed_at=timezone.now(),
             status="active",
         )
+        add_job_skill(self.job, "Python")
+        add_job_skill(self.job, "PostgreSQL")
         match = MatchResult.objects.create(
             user=self.user,
             profile=profile,
@@ -219,7 +235,6 @@ class DashboardIntegrationTests(TestCase):
             computed_at=timezone.now(),
             status="active",
         )
-
         response = self.client.get(reverse("dashboard:recommendations"))
 
         self.assertEqual(response.status_code, 200)
@@ -281,7 +296,6 @@ class DashboardIntegrationTests(TestCase):
             computed_at=timezone.now(),
             status="active",
         )
-
         response = self.client.get(reverse("dashboard:recommendations"))
 
         self.assertEqual(response.status_code, 200)
@@ -328,6 +342,7 @@ class DashboardIntegrationTests(TestCase):
             computed_at=timezone.now(),
             status="active",
         )
+        add_job_skill(self.job, "PostgreSQL")
 
         response = self.client.get(reverse("dashboard:recommendations"))
 

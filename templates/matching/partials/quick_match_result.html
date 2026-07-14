@@ -1,3 +1,4 @@
+{% load job_presentation %}
 <div class="mt-6 border-t border-slate-200 pt-6 animate-fade-in-up dark:border-slate-800">
     {% if error %}
         <div class="bg-red-50 text-red-800 p-4 rounded-lg flex items-start gap-3 border border-red-200 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
@@ -20,9 +21,10 @@
                         <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         Compétences Validées
                     </h4>
-                    {% if session.matched_skills_json %}
+                    {% with strong_skills=session|canonical_strong_skills %}
+                    {% if strong_skills %}
                         <div class="flex flex-wrap gap-2">
-                            {% for skill in session.matched_skills_json %}
+                            {% for skill in strong_skills %}
                                 <span class="badge badge-green border border-green-200 px-2.5 py-1">
                                     {{ skill.name }}
                                 </span>
@@ -31,6 +33,7 @@
                     {% else %}
                         <p class="text-sm text-slate-600 italic bg-slate-50 p-3 rounded dark:bg-slate-800 dark:text-slate-300">Aucune compétence trouvée en commun.</p>
                     {% endif %}
+                    {% endwith %}
                 </div>
                 
                 <!-- Missing Skills -->
@@ -39,22 +42,34 @@
                         <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                         Compétences Manquantes
                     </h4>
-                    {% if session.missing_skills_json %}
+                    {% with missing_skills=session|canonical_missing_required_skills optional_skills=session|canonical_missing_optional_skills %}
+                    {% if missing_skills or optional_skills %}
                         <div class="flex flex-wrap gap-2">
-                            {% for skill in session.missing_skills_json %}
+                            {% for skill in missing_skills %}
                                 <span class="badge badge-red border border-red-200 px-2.5 py-1">
                                     {{ skill.name }}
-                                    {% if skill.requirement_type == "optional" %}
-                                        <span class="text-xs text-red-500 font-normal ml-1">(Optionnel)</span>
-                                    {% endif %}
+                                </span>
+                            {% endfor %}
+                            {% for skill in optional_skills %}
+                                <span class="badge badge-yellow border border-yellow-200 px-2.5 py-1" data-optional-skill>
+                                    {{ skill.name }} <span class="text-xs text-yellow-700 dark:text-amber-300 font-normal ml-1">(Optionnel)</span>
                                 </span>
                             {% endfor %}
                         </div>
                     {% else %}
                         <p class="text-sm text-slate-600 italic bg-slate-50 p-3 rounded dark:bg-slate-800 dark:text-slate-300">Aucune compétence manquante détectée !</p>
                     {% endif %}
+                    {% endwith %}
                 </div>
             </div>
+
+            {% with risk_flags=session|user_risk_flags %}
+            {% if risk_flags %}
+                <div class="mt-6 flex flex-wrap gap-2" data-user-risk-flags>
+                    {% for flag in risk_flags %}<span class="pill warn">{{ flag }}</span>{% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
             
             {% if not user.is_authenticated %}
             <div class="mt-8 p-6 bg-brand-50 rounded-xl border border-brand-100 text-center dark:border-brand-900/50 dark:bg-brand-950/30">

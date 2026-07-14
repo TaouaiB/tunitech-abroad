@@ -140,10 +140,13 @@ class ProfileCompletenessService:
 
     @classmethod
     def _is_field_complete(cls, profile: CandidateProfile, field: str) -> bool:
+        if field == "full_name":
+            user_name = profile.user.get_full_name().strip()
+            return is_meaningful_text(user_name or str(profile.full_name or ""))
         val = getattr(profile, field, None)
         if val is None or val == "":
             return False
-        if field in {"full_name", "phone", "location"}:
+        if field in {"phone", "location"}:
             return is_meaningful_text(str(val))
         if field == "target_roles":
             return bool(meaningful_list(val if isinstance(val, list) else [str(val)]))

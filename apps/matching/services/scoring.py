@@ -4,9 +4,13 @@ from apps.profiles.models import CandidateProfile, ProfileSkill
 from apps.jobs.models import NormalizedJob, RequirementType
 from apps.cvs.models import CVUpload
 from apps.jobs.services.relevance import TECH_CATEGORIES
+from apps.skills.services.extraction_policy import SkillCandidateKind, classify_skill_candidate
 from django.utils import timezone
-
-MISSING_FRENCH_LEVELS = {"", "none", "no", "a0"}
+from apps.matching.services.policy_version import MATCH_SCORING_VERSION
+from apps.jobs.services.language_requirements import (
+    LanguageRequirementClassifier,
+    LanguageRequirementKind,
+)
 
 @dataclass(frozen=True)
 class FitScoreResult:
@@ -23,7 +27,7 @@ class FitScoreResult:
     risk_flags: list[str]
     profile_signals: list[str]
     recommended_actions: list[str]
-    scoring_version: str = "score_v1"
+    scoring_version: str = MATCH_SCORING_VERSION
 
 class MatchScoringService:
     CONFIDENCE_RELIABLE = "reliable"
@@ -43,8 +47,8 @@ class MatchScoringService:
         classification_json = job.classification_json or {}
         it_confidence = classification_json.get("confidence", "unknown")
         skill_signal_quality = job.skill_signal_quality
-        job_skills = list(job.job_skills.select_related("skill").all())
-        tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
+        job_skills = MatchScoringService._ordered_job_skills(job)
+        tech_job_skills = [js for js in job_skills if MatchScoringService._is_scoreable_job_skill(js)]
         low_confidence_job_skills = [
             js for js in tech_job_skills
             if js.confidence is not None and js.confidence < MatchScoringService.SKILL_CONFIDENCE_THRESHOLD
@@ -209,8 +213,8 @@ class MatchScoringService:
         missing_req = []
         missing_opt = []
 
-        job_skills = list(job.job_skills.select_related("skill").all())
-        tech_job_skills = [js for js in job_skills if js.skill.category in TECH_CATEGORIES]
+        job_skills = MatchScoringService._ordered_job_skills(job)
+        tech_job_skills = [js for js in job_skills if MatchScoringService._is_scoreable_job_skill(js)]
 
         # Handle low confidence skills
         low_conf_skills = [
@@ -267,6 +271,34 @@ class MatchScoringService:
         return max(0, min(100, round(tech_score))), strong_skills, missing_req, missing_opt
 
     @staticmethod
+    def _is_scoreable_job_skill(job_skill) -> bool:
+        if job_skill.skill.category not in TECH_CATEGORIES:
+            return False
+        decision = classify_skill_candidate(
+            raw_text=job_skill.skill.canonical_name,
+            canonical_name=job_skill.skill.canonical_name,
+            category=job_skill.skill.category,
+        )
+        return decision.kind == SkillCandidateKind.HARD_TECHNICAL and decision.materialize
+
+    @staticmethod
+    def _ordered_job_skills(job) -> list:
+        requirement_order = {
+            RequirementType.REQUIRED: 0,
+            RequirementType.OPTIONAL: 1,
+            RequirementType.DETECTED: 2,
+            RequirementType.UNKNOWN: 3,
+        }
+        return sorted(
+            job.job_skills.select_related("skill").all(),
+            key=lambda row: (
+                requirement_order.get(row.requirement_type, 9),
+                row.skill.canonical_name.casefold(),
+                row.skill_id,
+            ),
+        )
+
+    @staticmethod
     def _calc_experience_score(profile, job, risk_flags):
         p_years = profile.years_experience
         p_level = profile.current_level.lower() if profile.current_level else ""
@@ -305,7 +337,7 @@ class MatchScoringService:
             return 30
 
         risk_flags.add("experience_unknown")
-        return 60
+        return 100
 
     @staticmethod
     def _calc_role_title_score(profile, job):
@@ -328,39 +360,25 @@ class MatchScoringService:
 
     @staticmethod
     def _calc_language_score(profile, job, risk_flags, recommended_actions):
-        j_lang_req = job.language_requirements_json or {}
-        p_french = (profile.french_level or "").strip().lower()
-        p_english = profile.english_level.lower() if profile.english_level else ""
-        has_french_level = p_french not in MISSING_FRENCH_LEVELS
-
-        # Check if job explicitly requires English
-        req_english = False
-        if isinstance(j_lang_req, dict) and j_lang_req.get("english"):
-            req_english = True
-        elif isinstance(j_lang_req, list):
-            req_english = any("english" in str(x).lower() for x in j_lang_req)
-
-        # Basic France-first check
-        france_first = job.country.lower() == "france" if job.country else True
-
-        score = 55
-        if not j_lang_req:
+        requirements = job.language_requirements_json or {}
+        if not requirements:
             risk_flags.add("job_language_unknown")
-        if france_first and not has_french_level:
-            risk_flags.add("french_level_missing")
-            recommended_actions.add("Renseignez votre niveau de français.")
-            score = 40
-        elif req_english and not p_english:
-            risk_flags.add("english_level_missing")
-            score = min(score, 60)
 
-        if has_french_level:
-            score = max(score, 70)
+        missing_required = 0
+        for language, candidate_level, flag, action in (
+            ("french", profile.french_level, "french_level_missing", "Renseignez votre niveau de français."),
+            ("english", profile.english_level, "english_level_missing", "Renseignez votre niveau d'anglais."),
+        ):
+            requirement = LanguageRequirementClassifier.get_requirement(requirements, language)
+            if (
+                requirement.kind == LanguageRequirementKind.REQUIRED
+                and not LanguageRequirementClassifier.candidate_meets(requirement, candidate_level)
+            ):
+                risk_flags.add(flag)
+                recommended_actions.add(action)
+                missing_required += 1
 
-        if has_french_level and p_english and j_lang_req:
-            score = 85
-
-        return max(0, min(100, score))
+        return max(40, 100 - (40 * missing_required))
 
     @staticmethod
     def _calc_location_score(profile, job):

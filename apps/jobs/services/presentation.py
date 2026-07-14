@@ -1,3 +1,7 @@
+from apps.jobs.models import RequirementType
+from apps.skills.services.extraction_policy import SkillCandidateKind, classify_skill_candidate
+
+
 class JobPresentationService:
     UNKNOWN_LANGUAGE_VALUES = {
         "",
@@ -15,6 +19,8 @@ class JobPresentationService:
         "non précisée",
         "not specified",
         "unspecified",
+        "langues non precisees",
+        "langues non précisées",
     }
 
     @staticmethod
@@ -62,22 +68,149 @@ class JobPresentationService:
         return badges
 
     @staticmethod
-    def get_card_skill_chips(job, limit=5):
-        canonical_skills = [
-            job_skill.skill.canonical_name
-            for job_skill in job.job_skills.select_related("skill").all()[:limit]
-            if job_skill.skill.canonical_name
-        ]
-        if canonical_skills:
-            return canonical_skills
+    def get_user_facing_skill_entries(job, *, strong_skills=None, missing_required=None, missing_optional=None):
+        """Return the one canonical, deterministic skill set used on every user page."""
+        requirement_order = {
+            RequirementType.REQUIRED: 0,
+            RequirementType.OPTIONAL: 1,
+            RequirementType.DETECTED: 2,
+            RequirementType.UNKNOWN: 3,
+        }
 
-        raw_skills = job.required_skills_json if isinstance(job.required_skills_json, list) else []
-        chips = []
-        for raw_skill in raw_skills:
-            skill = str(raw_skill).strip()
-            if not skill or len(skill) > 34:
+        def names(rows):
+            values = set()
+            for row in rows or []:
+                value = row.get("name") if isinstance(row, dict) else row
+                if value:
+                    values.add(str(value).strip().casefold())
+            return values
+
+        strong_names = names(strong_skills)
+        missing_required_names = names(missing_required)
+        missing_optional_names = names(missing_optional)
+        rows = list(job.job_skills.select_related("skill").all())
+        rows.sort(
+            key=lambda row: (
+                requirement_order.get(row.requirement_type, 9),
+                row.skill.canonical_name.casefold(),
+                row.skill_id,
+            )
+        )
+
+        entries = []
+        seen = set()
+        for row in rows:
+            skill_name = (row.skill.canonical_name or "").strip()
+            normalized_name = skill_name.casefold()
+            if not skill_name or normalized_name in seen:
                 continue
-            chips.append(skill)
+            decision = classify_skill_candidate(
+                raw_text=skill_name,
+                canonical_name=skill_name,
+                category=row.skill.category,
+            )
+            if decision.kind != SkillCandidateKind.HARD_TECHNICAL or not decision.materialize:
+                continue
+
+            status = "neutral"
+            if normalized_name in strong_names:
+                status = "strong"
+            elif normalized_name in missing_required_names:
+                status = "missing"
+            elif normalized_name in missing_optional_names:
+                status = "warning"
+            entries.append({"name": skill_name, "status": status, "requirement_type": row.requirement_type})
+            seen.add(normalized_name)
+        return entries
+
+    @staticmethod
+    def get_strong_skill_entries(subject):
+        return [
+            entry
+            for entry in JobPresentationService.get_subject_skill_entries(subject)
+            if entry["status"] == "strong"
+        ]
+
+    @staticmethod
+    def get_missing_required_skill_entries(subject):
+        return [
+            entry
+            for entry in JobPresentationService.get_subject_skill_entries(subject)
+            if entry["status"] == "missing"
+        ]
+
+    @staticmethod
+    def get_missing_optional_skill_entries(subject):
+        return [
+            entry
+            for entry in JobPresentationService.get_subject_skill_entries(subject)
+            if entry["status"] == "warning"
+        ]
+
+    @staticmethod
+    def get_subject_skill_entries(subject):
+        """Resolve persisted status only against the subject's current canonical job skills."""
+        if hasattr(subject, "missing_required_skills_json"):
+            return JobPresentationService.get_user_facing_skill_entries(
+                subject.job,
+                strong_skills=subject.strong_skills_json,
+                missing_required=subject.missing_required_skills_json,
+                missing_optional=subject.missing_optional_skills_json,
+            )
+
+        if hasattr(subject, "missing_skills_json") and hasattr(subject, "matched_skills_json"):
+            missing_required = []
+            missing_optional = []
+            for skill in subject.missing_skills_json or []:
+                target = (
+                    missing_optional
+                    if isinstance(skill, dict) and skill.get("requirement_type") == RequirementType.OPTIONAL
+                    else missing_required
+                )
+                target.append(skill)
+            return JobPresentationService.get_user_facing_skill_entries(
+                subject.job,
+                strong_skills=subject.matched_skills_json,
+                missing_required=missing_required,
+                missing_optional=missing_optional,
+            )
+
+        missing_required = []
+        missing_optional = []
+        for skill in getattr(subject, "missing_skills_json", []) or []:
+            target = (
+                missing_optional
+                if isinstance(skill, dict) and skill.get("requirement_type") == RequirementType.OPTIONAL
+                else missing_required
+            )
+            target.append(skill)
+        return JobPresentationService.get_user_facing_skill_entries(
+            subject.job,
+            strong_skills=getattr(subject, "strong_skills_json", []),
+            missing_required=missing_required,
+            missing_optional=missing_optional,
+        )
+
+    @staticmethod
+    def get_card_skill_chips(job, limit=5):
+        canonical = [entry["name"] for entry in JobPresentationService.get_user_facing_skill_entries(job)[:limit]]
+        if canonical:
+            return canonical
+
+        # The public search card may show bounded raw evidence while canonical
+        # extraction is pending; matching/recommendation/saved/detail pages do not.
+        chips = []
+        for raw_skill in job.required_skills_json if isinstance(job.required_skills_json, list) else []:
+            skill_name = str(raw_skill).strip()
+            decision = classify_skill_candidate(raw_text=skill_name)
+            if (
+                not skill_name
+                or len(skill_name) > 34
+                or decision.kind != SkillCandidateKind.HARD_TECHNICAL
+                or not decision.materialize
+            ):
+                continue
+            chips.append(skill_name)
             if len(chips) >= limit:
                 break
         return chips

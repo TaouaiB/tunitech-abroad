@@ -7,10 +7,11 @@ from apps.profiles.models import CandidateProfile
 from apps.cvs.models import CVUpload
 from apps.jobs.models import NormalizedJob, JobStatus
 from apps.jobs.services.eligibility import JobEligibilityService
+from apps.matching.services.match_result import MatchResultService
 from apps.matching.services.scoring import MatchScoringService
+from apps.matching.services.policy_version import RECOMMENDATION_VERSION
 from apps.recommendations.models import JobRecommendation, RecommendationRun
 
-RECOMMENDATION_VERSION = "reco_v1"
 MAX_RECOMMENDATIONS = 20
 
 @dataclass(frozen=True)
@@ -151,6 +152,12 @@ class RecommendationService:
                 
                 # Store top recommendations
                 for rank, (job, score_res, ranking_score, _confidence_rank) in enumerate(top_recommendations, start=1):
+                    MatchResultService.update_current_match_for_job(
+                        user=user,
+                        job=job,
+                        score_result=score_res,
+                        cv_upload=active_cv,
+                    )
                     rec, created = JobRecommendation.objects.update_or_create(
                         user=user,
                         job=job,

@@ -115,7 +115,7 @@
                     <input type="file" name="{{ form.file.name }}" id="{{ form.file.id_for_label }}" hidden @change="handleFileChange($event)" accept="application/pdf">
                     <div x-show="!fileName">
                         <b data-fr="Déposez votre CV ou cliquez pour parcourir" data-en="Drop your CV or click to browse">Déposez votre CV ou cliquez pour parcourir</b>
-                        <div class="small" style="margin-top:4px;" data-fr="PDF jusqu'à 5 Mo" data-en="PDF up to 5 MB">PDF jusqu'à 5 Mo</div>
+                        <div class="small" style="margin-top:4px;" data-fr="PDF jusqu'à 8 Mo" data-en="PDF up to 8 MB">PDF jusqu'à 8 Mo</div>
                     </div>
                     <div x-show="fileName" style="display:none; word-break:break-word; overflow-wrap:anywhere;">
                         <b style="color:var(--good);" x-text="fileName"></b>

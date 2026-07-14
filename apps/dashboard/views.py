@@ -18,6 +18,8 @@ from allauth.socialaccount.models import SocialAccount
 from apps.notifications.forms import EmailPreferenceForm
 from apps.notifications.models import EmailPreference
 from types import SimpleNamespace
+from apps.accounts.forms import AccountNameForm
+from apps.accounts.services.user_identity import UserIdentityService
 
 
 def _settings_context(request, **extra):
@@ -72,10 +74,10 @@ def dashboard_home(request):
     profile = getattr(request.user, "candidate_profile", None)
     user_full_name = request.user.get_full_name().strip()
     display_name = (
-        profile.full_name.strip()
-        if profile and profile.full_name.strip()
-        else user_full_name
+        user_full_name
         if user_full_name
+        else profile.full_name.strip()
+        if profile and profile.full_name.strip()
         else request.user.email
     )
     return render(request, "dashboard/home.html", {"dashboard_display_name": display_name})
@@ -236,7 +238,22 @@ def dashboard_cv_status(request, public_id):
 
 @login_required
 def dashboard_account(request):
-    return render(request, "dashboard/account.html", _settings_context(request, settings_active="account"))
+    if request.method == "POST" and request.POST.get("account_action") == "update_names":
+        name_form = AccountNameForm(request.POST, user=request.user)
+        if name_form.is_valid():
+            UserIdentityService.update_names(request.user, **name_form.cleaned_data)
+            messages.success(request, "Nom mis à jour.")
+            return redirect("dashboard:account")
+    else:
+        name_form = AccountNameForm(
+            user=request.user,
+            initial={"first_name": request.user.first_name, "last_name": request.user.last_name},
+        )
+    return render(
+        request,
+        "dashboard/account.html",
+        _settings_context(request, settings_active="account", name_form=name_form),
+    )
 
 @login_required
 def dashboard_delete_account(request):

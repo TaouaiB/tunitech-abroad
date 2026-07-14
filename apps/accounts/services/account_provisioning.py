@@ -22,11 +22,9 @@ class AccountProvisioningService:
                 if social_account:
                     extra = social_account.extra_data
                     if social_account.provider == 'google':
-                        profile.full_name = extra.get('name', '')
                         profile.avatar_url = extra.get('picture', '')
                         profile.website_url = extra.get('profile') or extra.get('link') or ''
                     elif social_account.provider == 'github':
-                        profile.full_name = extra.get('name', '')
                         profile.github_url = extra.get('html_url', '') or (
                             f"https://github.com/{extra.get('login')}" if extra.get('login') else ''
                         )

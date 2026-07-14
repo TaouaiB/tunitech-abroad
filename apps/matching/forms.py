@@ -18,6 +18,17 @@ class QuickMatchForm(forms.Form):
         ('advanced', 'Advanced (C1)'),
         ('fluent', 'Fluent / Native (C2)'),
     ]
+    # Keep English choices in sync with FRENCH_CHOICES so the shared
+    # LanguageRequirementClassifier can score both languages identically.
+    # An empty/unselected value means "not assessed" (never penalize).
+    ENGLISH_CHOICES = [
+        ('', '---'),
+        ('none', 'None'),
+        ('basic', 'Basic (A1/A2)'),
+        ('intermediate', 'Intermediate (B1/B2)'),
+        ('advanced', 'Advanced (C1)'),
+        ('fluent', 'Fluent / Native (C2)'),
+    ]
 
     skills = forms.CharField(
         widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'e.g., Python, React, PostgreSQL'}),
@@ -34,6 +45,11 @@ class QuickMatchForm(forms.Form):
         choices=FRENCH_CHOICES,
         required=False,
         label="French Level"
+    )
+    english_level = forms.ChoiceField(
+        choices=ENGLISH_CHOICES,
+        required=False,
+        label="English Level"
     )
 
     def clean_skills(self):

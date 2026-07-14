@@ -54,5 +54,5 @@ The redirect URIs should look like:
 - `https://your-domain.com/accounts/github/login/callback/`
 
 ## Media Storage
-- `MAX_CV_UPLOAD_SIZE_MB` (Optional override, defaults to 5)
+- `MAX_CV_UPLOAD_SIZE_MB` (Optional override, defaults to 8)
 - Ensure the production environment has a persistent volume attached for `private_media/` if not using S3/object storage.

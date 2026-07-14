@@ -3,6 +3,7 @@ import logging
 from apps.recommendations.models import JobRecommendation, RecommendationRun, SavedJob
 from apps.matching.models import MatchResult
 from apps.jobs.services.eligibility import JobEligibilityService
+from apps.recommendations.services.staleness import RecommendationStalenessService
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,9 @@ class RecommendationQueryService:
                 -recommendation.fit_score,
                 -float(recommendation.ranking_score),
                 -cls._freshness_value(recommendation).timestamp(),
+                recommendation.job.title.lower(),
+                str(recommendation.job.public_id),
+                recommendation.pk,
             ),
         )
 
@@ -46,7 +50,16 @@ class RecommendationQueryService:
                 job__in=JobEligibilityService.filter_publicly_visible(),
             )
             .select_related("job", "job__source")
-            .order_by("-fit_score", "-ranking_score", "-job__published_at", "-job__first_seen_at", "-job__last_seen_at")[
+            .order_by(
+                "-fit_score",
+                "-ranking_score",
+                "-job__published_at",
+                "-job__first_seen_at",
+                "-job__last_seen_at",
+                "job__title",
+                "job__public_id",
+                "pk",
+            )[
                 : max(limit * 3, limit)
             ]
         )
@@ -82,6 +95,7 @@ class RecommendationQueryService:
     def get_dashboard_recommendations(cls, user, limit: int = 20) -> RecommendationDashboardResult:
         from apps.profiles.models import CandidateProfile
         
+        RecommendationStalenessService.mark_outdated_policy_recommendations_stale(user)
         latest_run = RecommendationRun.objects.filter(user=user).order_by("-started_at").first()
         
         # Check if currently running

@@ -27,6 +27,7 @@ from apps.jobs.models import (
 from apps.matching.models import MatchResult, QuickMatchSession
 from apps.matching.services.feedback import MatchFeedbackService
 from apps.matching.services.match_result import MatchResultService
+from apps.matching.services.policy_version import MATCH_SCORING_VERSION
 from apps.matching.services.quick_match import QuickMatchRateLimitExceeded, QuickMatchService
 from apps.matching.services.scoring import MatchScoringService
 from apps.profiles.models import CandidateProfile, ProfileSkill
@@ -191,6 +192,23 @@ class MatchingTests(TestCase):
         self.assertNotEqual(first.public_id, second.public_id)
         self.assertEqual(MatchResult.objects.filter(user=self.user, job=self.job).count(), 2)
 
+    def test_get_user_match_recomputes_when_profile_skills_change(self):
+        match = MatchResultService.create_match_result(self.user, self.job)
+        old_score = match.fit_score
+
+        ProfileSkill.objects.create(
+            profile=self.profile,
+            raw_name="PostgreSQL",
+            normalized_name="postgresql",
+            skill=self.postgres,
+            is_confirmed=True,
+        )
+
+        refreshed = MatchResultService.get_user_match(self.user, match.public_id)
+
+        self.assertGreaterEqual(refreshed.fit_score, old_score)
+        self.assertIn("postgresql", refreshed.profile_snapshot_json["skills"])
+
     def test_scoring_uses_formula_and_clamps_scores(self):
         result = MatchScoringService.calculate(self.profile, self.job)
         expected = round(
@@ -290,6 +308,7 @@ class MatchingTests(TestCase):
             "Senior Backend Developer",
             expires_at=timezone.now() - timedelta(days=1),
             experience_level=ExperienceLevel.SENIOR,
+            language_requirements={"french": "required"},
         )
         self._job_skill(expired_job, self.react, RequirementType.REQUIRED)
 
@@ -300,14 +319,14 @@ class MatchingTests(TestCase):
         self.assertIn("experience_too_low", result.risk_flags)
         self.assertIn("job_may_be_expired", result.risk_flags)
 
-    def test_full_scoring_treats_none_french_level_as_missing_for_france_job(self):
+    def test_full_scoring_does_not_invent_french_requirement_for_france_job(self):
         self.profile.french_level = "none"
         self.profile.save(update_fields=["french_level"])
 
         result = MatchScoringService.calculate(self.profile, self.job)
 
-        self.assertIn("french_level_missing", result.risk_flags)
-        self.assertLess(result.language_score, 80)
+        self.assertNotIn("french_level_missing", result.risk_flags)
+        self.assertEqual(result.language_score, 100)
 
     def test_profile_signals_do_not_reduce_score(self):
         with_signals = MatchScoringService.calculate(self.profile, self.job)
@@ -486,7 +505,7 @@ class MatchingTests(TestCase):
                 ip_address="192.0.2.10",
             )
 
-    def test_quick_match_treats_none_french_level_as_missing_for_france_job(self):
+    def test_quick_match_does_not_invent_french_requirement_for_france_job(self):
         session = QuickMatchService.run_quick_match(
             session_key="none-french-session",
             job=self.job,
@@ -496,8 +515,88 @@ class MatchingTests(TestCase):
             ip_address="198.51.100.10",
         )
 
-        self.assertIn("french_level_missing", session.risk_flags_json)
-        self.assertLess(session.estimated_fit_score, 90)
+        self.assertNotIn("french_level_missing", session.risk_flags_json)
+
+    def test_quick_match_uses_explicit_required_only_language_policy_and_neutral_metadata(self):
+        optional_job = self._job(
+            "quick-optional-language",
+            "Optional languages",
+            experience_level=ExperienceLevel.UNKNOWN,
+            language_requirements={"french": "optional", "english": "preferred"},
+        )
+        self._job_skill(optional_job, self.python, RequirementType.REQUIRED)
+        optional = QuickMatchService.run_quick_match(
+            session_key="quick-optional-language",
+            job=optional_job,
+            entered_skills=["Python"],
+            experience_level="junior",
+            french_level="none",
+            ip_address="198.51.100.20",
+        )
+        self.assertNotIn("french_level_missing", optional.risk_flags_json)
+        self.assertNotIn("english_level_missing", optional.risk_flags_json)
+        self.assertEqual(optional.estimated_fit_score, 92)
+
+        french_required_job = self._job(
+            "quick-french-required",
+            "French required",
+            experience_level=ExperienceLevel.UNKNOWN,
+            language_requirements={"french": "B2"},
+        )
+        self._job_skill(french_required_job, self.python, RequirementType.REQUIRED)
+        french_required = QuickMatchService.run_quick_match(
+            session_key="quick-french-required",
+            job=french_required_job,
+            entered_skills=["Python"],
+            experience_level="junior",
+            french_level="basic",
+            ip_address="198.51.100.21",
+        )
+        self.assertIn("french_level_missing", french_required.risk_flags_json)
+        self.assertLess(french_required.estimated_fit_score, optional.estimated_fit_score)
+
+        english_required_job = self._job(
+            "quick-english-required",
+            "English required",
+            experience_level=ExperienceLevel.UNKNOWN,
+            language_requirements={"english": {"required": True}},
+        )
+        self._job_skill(english_required_job, self.python, RequirementType.REQUIRED)
+        # English required job: omitted English level means "not assessed"
+        # and must NOT penalize the candidate.
+        english_required_omitted = QuickMatchService.run_quick_match(
+            session_key="quick-english-required-omitted",
+            job=english_required_job,
+            entered_skills=["Python"],
+            experience_level="junior",
+            french_level="fluent",
+            english_level="",
+            ip_address="198.51.100.220",
+        )
+        self.assertNotIn("english_level_missing", english_required_omitted.risk_flags_json)
+        # Explicit insufficient English ("none") on a required-English job must warn and penalize.
+        english_required = QuickMatchService.run_quick_match(
+            session_key="quick-english-required",
+            job=english_required_job,
+            entered_skills=["Python"],
+            experience_level="junior",
+            french_level="fluent",
+            english_level="none",
+            ip_address="198.51.100.22",
+        )
+        self.assertIn("english_level_missing", english_required.risk_flags_json)
+        # Fluent English on a required-English job must NOT warn, even if a level
+        # threshold is required.
+        english_fluent = QuickMatchService.run_quick_match(
+            session_key="quick-english-fluent",
+            job=english_required_job,
+            entered_skills=["Python"],
+            experience_level="junior",
+            french_level="fluent",
+            english_level="fluent",
+            ip_address="198.51.100.23",
+        )
+        self.assertNotIn("english_level_missing", english_fluent.risk_flags_json)
 
     def test_quick_match_uses_aliases_and_records_unknown_skills(self):
         dotnet = self._skill(".NET", SkillCategory.BACKEND)
@@ -521,6 +620,44 @@ class MatchingTests(TestCase):
                 source_type="quick_match",
                 status="pending",
             ).exists()
+        )
+
+    def test_quick_match_required_c2_satisfied_by_fluent_candidate(self):
+        # Defect 1 — Quick Match end-to-end C2 coverage. The UI labels fluent
+        # as "Fluent / Native (C2)", so a required C2 + fluent candidate must
+        # NOT raise english_level_missing; advanced must raise it.
+        c2_job = self._job(
+            "quick-c2-english",
+            "C2 English",
+            experience_level=ExperienceLevel.UNKNOWN,
+            language_requirements={"english": "C2"},
+        )
+        self._job_skill(c2_job, self.python, RequirementType.REQUIRED)
+
+        fluent_session = QuickMatchService.run_quick_match(
+            session_key="quick-c2-fluent",
+            job=c2_job,
+            entered_skills=["Python"],
+            experience_level="junior",
+            french_level="intermediate",
+            english_level="fluent",
+            ip_address="198.51.100.40",
+        )
+        self.assertNotIn("english_level_missing", fluent_session.risk_flags_json)
+
+        advanced_session = QuickMatchService.run_quick_match(
+            session_key="quick-c2-advanced",
+            job=c2_job,
+            entered_skills=["Python"],
+            experience_level="junior",
+            french_level="intermediate",
+            english_level="advanced",
+            ip_address="198.51.100.41",
+        )
+        self.assertIn("english_level_missing", advanced_session.risk_flags_json)
+        self.assertLess(
+            advanced_session.estimated_fit_score,
+            fluent_session.estimated_fit_score,
         )
 
     def test_full_match_post_requires_login_and_uses_uuid_route(self):
@@ -549,6 +686,131 @@ class MatchingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(QuickMatchSession.objects.exists())
+
+    def test_quick_match_view_passes_english_level_to_service(self):
+        english_required_job = self._job(
+            "quick-english-view",
+            "English required",
+            experience_level=ExperienceLevel.UNKNOWN,
+            language_requirements={"english": {"required": True}},
+        )
+        self._job_skill(english_required_job, self.python, RequirementType.REQUIRED)
+
+        url = reverse("matching:quick_match", kwargs={"public_id": english_required_job.public_id})
+        # Explicit insufficient English — should be flagged and penalized.
+        insufficient_response = self.client.post(
+            url,
+            {
+                "skills": "Python",
+                "experience_level": "junior",
+                "french_level": "intermediate",
+                "english_level": "none",
+            },
+        )
+        self.assertEqual(insufficient_response.status_code, 200)
+        session = QuickMatchSession.objects.order_by("-id").first()
+        self.assertIn("english_level_missing", session.risk_flags_json)
+        self.assertContains(
+            insufficient_response,
+            "anglais requis non atteint",
+        )
+
+        # Fluent English — no warning and no penalty.
+        fluent_response = self.client.post(
+            url,
+            {
+                "skills": "Python",
+                "experience_level": "junior",
+                "french_level": "intermediate",
+                "english_level": "fluent",
+            },
+        )
+        self.assertEqual(fluent_response.status_code, 200)
+        fluent_session = QuickMatchSession.objects.order_by("-id").first()
+        self.assertNotIn("english_level_missing", fluent_session.risk_flags_json)
+        self.assertGreater(
+            fluent_session.estimated_fit_score,
+            session.estimated_fit_score,
+        )
+
+        # Omitted English — not assessed, no penalty.
+        omitted_response = self.client.post(
+            url,
+            {
+                "skills": "Python",
+                "experience_level": "junior",
+                "french_level": "intermediate",
+            },
+        )
+        self.assertEqual(omitted_response.status_code, 200)
+        omitted_session = QuickMatchSession.objects.order_by("-id").first()
+        self.assertNotIn("english_level_missing", omitted_session.risk_flags_json)
+
+    def test_quick_match_form_has_optional_english_level_field(self):
+        from apps.matching.forms import QuickMatchForm
+
+        form = QuickMatchForm()
+        self.assertIn("english_level", form.fields)
+        self.assertFalse(form.fields["english_level"].required)
+
+        # Empty english_level means "not assessed", not "insufficient".
+        valid = QuickMatchForm({
+            "skills": "Python",
+            "experience_level": "junior",
+            "french_level": "intermediate",
+            "english_level": "",
+        })
+        self.assertTrue(valid.is_valid(), valid.errors)
+        self.assertEqual(valid.cleaned_data["english_level"], "")
+
+        explicit = QuickMatchForm({
+            "skills": "Python",
+            "experience_level": "junior",
+            "french_level": "intermediate",
+            "english_level": "fluent",
+        })
+        self.assertTrue(explicit.is_valid(), explicit.errors)
+        self.assertEqual(explicit.cleaned_data["english_level"], "fluent")
+
+    def test_quick_match_optional_skills_renderYellow_classes(self):
+        # Blocker 3: optional missing skills must not use red badge classes.
+        kafka = self._skill("Kafka", SkillCategory.BACKEND)
+        job = self._job(
+            "quick-optional-styling",
+            "Backend Developer",
+            language_requirements={},
+        )
+        self._job_skill(job, self.python, RequirementType.REQUIRED)
+        self._job_skill(job, kafka, RequirementType.OPTIONAL)
+        session = QuickMatchService.run_quick_match(
+            session_key="quick-optional-styling-session",
+            job=job,
+            entered_skills=["Python"],
+            experience_level="mid",
+            french_level="intermediate",
+            english_level="",
+            ip_address="127.0.0.10",
+        )
+        missing_optional = next(
+            (s for s in session.missing_skills_json if s.get("requirement_type") == "optional"),
+            None,
+        )
+        self.assertIsNotNone(missing_optional)
+        self.assertEqual(missing_optional["name"], "Kafka")
+
+        from django.template.loader import render_to_string
+        html = render_to_string(
+            "matching/partials/quick_match_result.html", {"session": session}
+        )
+        self.assertIn("Kafka", html)
+        self.assertIn("(Optionnel)", html)
+        self.assertIn("badge badge-yellow", html)
+        self.assertIn("data-optional-skill", html)
+        # Optional missing skills must NOT render red badge classes.
+        optional_fragment = html.split("data-optional-skill", 1)[1].split("</span>", 1)[0]
+        self.assertNotIn("badge badge-red", optional_fragment)
+        self.assertNotIn("border border-red-200", optional_fragment)
+        self.assertNotIn("text-red-500", optional_fragment)
 
     def test_match_history_and_detail_are_owner_filtered(self):
         match = MatchResultService.create_match_result(self.user, self.job)
@@ -951,3 +1213,252 @@ class Phase16FFeedbackTests(TestCase):
             {"reason": MatchQualityIssue.GOOD_MATCH},
         )
         self.assertEqual(response.status_code, 404)
+
+
+class MatchRowIdentityTests(TestCase):
+    """Blocker 4 — preserve object identity and deterministic history behavior."""
+
+    def setUp(self):
+        self.user = create_test_user(
+            username="identity-user", email="identity@example.test", password="password"
+        )
+        self.other_user = create_test_user(
+            username="identity-other", email="identity-other@example.test", password="password"
+        )
+        self.profile = CandidateProfile.objects.create(
+            user=self.user,
+            years_experience=3.0,
+            current_level="mid",
+            target_country="France",
+            target_roles=["Backend Developer"],
+            french_level="intermediate",
+            english_level="fluent",
+            profile_completion_score=100,
+        )
+        CandidateProfile.objects.create(
+            user=self.other_user,
+            years_experience=1.0,
+            current_level="junior",
+            french_level="basic",
+            profile_completion_score=80,
+        )
+        self.source = JobSource.objects.create(
+            name="Identity", slug="identity", source_type=SourceType.FIXTURE
+        )
+        self.job_one = self._job("identity-job-one", "Backend Developer Python")
+        self.job_two = self._job("identity-job-two", "Backend Developer Go")
+
+    def _job(self, source_job_id, title):
+        now = timezone.now()
+        raw = RawJobRecord.objects.create(
+            source=self.source,
+            source_job_id=source_job_id,
+            raw_payload_json={},
+            payload_hash=source_job_id,
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+        )
+        return NormalizedJob.objects.create(
+            source=self.source,
+            raw_record=raw,
+            source_job_id=source_job_id,
+            title=title,
+            country="France",
+            remote_type=RemoteType.HYBRID,
+            job_type=JobType.FULL_TIME_JOB,
+            experience_level=ExperienceLevel.MID_LEVEL,
+            status=JobStatus.ACTIVE,
+            description="Build backend systems.",
+            required_skills_json=["Python"],
+            optional_skills_json=[],
+            language_requirements_json={},
+            classification_json={"family": "software_development", "is_it": True, "confidence": "high"},
+            skill_signal_quality="strong",
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+        )
+
+    def _make_match(self, *, user, profile, job, scoring_version, snapshot=None):
+        snapshot = snapshot if snapshot is not None else MatchResultService._profile_snapshot(profile)
+        return MatchResult.objects.create(
+            user=user,
+            profile=profile,
+            job=job,
+            profile_snapshot_json=snapshot,
+            job_snapshot_json={"title": job.title, "company_name": "Test"},
+            fit_score=50,
+            technical_skills_score=50,
+            experience_score=50,
+            role_title_score=50,
+            language_score=50,
+            location_score=50,
+            scoring_version=scoring_version,
+        )
+
+    @staticmethod
+    def _public_ids(matches):
+        return [str(m.public_id) for m in matches]
+
+    def test_history_has_no_duplicate_public_ids_with_mixed_versions(self):
+        latest = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_one,
+            scoring_version=MATCH_SCORING_VERSION,
+        )
+        older = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_one,
+            scoring_version="score_v1",
+        )
+
+        history = MatchResultService.list_user_matches(self.user)
+
+        ids = self._public_ids(history)
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertIn(str(latest.public_id), ids)
+        self.assertIn(str(older.public_id), ids)
+        # History must return rows in reverse-created order.
+        ordered_db = [
+            str(m.public_id)
+            for m in MatchResult.objects.filter(user=self.user).order_by("-created_at")
+        ]
+        self.assertEqual(ids, ordered_db)
+
+    def test_history_does_not_call_refresh_if_stale(self):
+        # Defect 2 — list_user_matches must be read-only and never trigger
+        # refresh_if_stale / _recompute_in_place / update_current_match_for_job.
+        stale = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_one,
+            scoring_version="score_v1",
+        )
+        with (
+            patch.object(MatchResultService, "refresh_if_stale") as refresh,
+            patch.object(MatchResultService, "_recompute_in_place") as recompute,
+            patch.object(MatchResultService, "update_current_match_for_job") as update,
+        ):
+            history = MatchResultService.list_user_matches(self.user)
+        refresh.assert_not_called()
+        recompute.assert_not_called()
+        update.assert_not_called()
+        self.assertEqual([str(m.public_id) for m in history], [str(stale.public_id)])
+
+    def test_history_does_not_mutate_scoring_version_score_snapshot_or_timestamp(self):
+        stale = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_one,
+            scoring_version="score_v1",
+        )
+        original_snapshot = dict(stale.profile_snapshot_json)
+        original_fit = stale.fit_score
+        original_version = stale.scoring_version
+        original_updated = stale.updated_at
+
+        MatchResultService.list_user_matches(self.user)
+        stale.refresh_from_db()
+
+        self.assertEqual(stale.scoring_version, original_version)
+        self.assertEqual(stale.fit_score, original_fit)
+        self.assertEqual(stale.profile_snapshot_json, original_snapshot)
+        self.assertEqual(stale.updated_at, original_updated)
+
+    def test_repeated_history_loads_remain_read_only(self):
+        stale = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_one,
+            scoring_version="score_v1",
+        )
+        original_version = stale.scoring_version
+        original_updated = stale.updated_at
+
+        for _ in range(3):
+            MatchResultService.list_user_matches(self.user)
+        stale.refresh_from_db()
+
+        self.assertEqual(stale.scoring_version, original_version)
+        self.assertEqual(stale.updated_at, original_updated)
+
+    def test_get_user_match_returns_requested_public_id_when_stale(self):
+        older = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_one,
+            scoring_version="score_v1",
+        )
+        requested_public_id = str(older.public_id)
+
+        refreshed = MatchResultService.get_user_match(self.user, requested_public_id)
+
+        # The refreshed object must respect the requested public_id; refreshing
+        # it in place may not surface any other row.
+        self.assertEqual(str(refreshed.public_id), requested_public_id)
+        self.assertEqual(refreshed.scoring_version, MATCH_SCORING_VERSION)
+        self.assertTrue(MatchResult.objects.filter(public_id=requested_public_id).exists())
+
+    def test_two_jobs_both_present_and_ordered(self):
+        match_one = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_one,
+            scoring_version="score_v1",
+        )
+        match_two = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_two,
+            scoring_version="score_v1",
+        )
+
+        history = MatchResultService.list_user_matches(self.user)
+
+        ids = self._public_ids(history)
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(set(ids), {str(match_one.public_id), str(match_two.public_id)})
+        # list_user_matches preserves reverse-chronological order returned by the DB.
+        ordered_db = [
+            str(m.public_id)
+            for m in MatchResult.objects.filter(user=self.user).order_by("-created_at")
+        ]
+        self.assertEqual(ids, ordered_db)
+
+    def test_selected_stale_detail_refreshes_only_that_row_in_place(self):
+        # Defect 2 — opening one selected stale detail may refresh that row
+        # in place, but other stale rows for the same job must remain untouched.
+        stale_kept = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_one,
+            scoring_version="score_v1",
+        )
+        # Slightly different snapshot for the second stale row so we can
+        # verify it is NOT refreshed when the first is opened.
+        other_snapshot = dict(stale_kept.profile_snapshot_json)
+        other_snapshot["note"] = "other-stale-row"
+        stale_other = MatchResult.objects.create(
+            user=self.user,
+            profile=self.profile,
+            job=self.job_one,
+            profile_snapshot_json=other_snapshot,
+            job_snapshot_json={"title": self.job_one.title, "company_name": "Test"},
+            fit_score=30,
+            technical_skills_score=30,
+            experience_score=30,
+            role_title_score=30,
+            language_score=30,
+            location_score=30,
+            scoring_version="score_v1",
+        )
+
+        requested_public_id = str(stale_kept.public_id)
+        refreshed = MatchResultService.get_user_match(self.user, requested_public_id)
+
+        self.assertEqual(str(refreshed.public_id), requested_public_id)
+        self.assertEqual(refreshed.scoring_version, MATCH_SCORING_VERSION)
+
+        stale_other.refresh_from_db()
+        # The other stale row was not selected and must remain untouched.
+        self.assertEqual(stale_other.scoring_version, "score_v1")
+        self.assertEqual(stale_other.fit_score, 30)
+        self.assertEqual(stale_other.profile_snapshot_json, other_snapshot)
+
+    def test_other_user_match_remains_inaccessible(self):
+        mine = self._make_match(
+            user=self.user, profile=self.profile, job=self.job_one,
+            scoring_version=MATCH_SCORING_VERSION,
+        )
+
+        with self.assertRaises(Http404):
+            MatchResultService.get_user_match(self.other_user, str(mine.public_id))
+
+        # And the history endpoint never leaks another user's rows.
+        other_history = MatchResultService.list_user_matches(self.other_user)
+        self.assertNotIn(str(mine.public_id), self._public_ids(other_history))

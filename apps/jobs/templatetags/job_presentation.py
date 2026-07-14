@@ -9,6 +9,62 @@ register = template.Library()
 def card_skill_chips(job):
     return JobPresentationService.get_card_skill_chips(job)
 
+
+@register.filter
+def canonical_job_skills(job):
+    return JobPresentationService.get_user_facing_skill_entries(job)
+
+
+@register.filter
+def recommendation_job_skills(recommendation):
+    return JobPresentationService.get_subject_skill_entries(recommendation)
+
+
+@register.filter
+def match_job_skills(match):
+    return JobPresentationService.get_subject_skill_entries(match)
+
+
+@register.filter
+def canonical_strong_skills(subject):
+    return JobPresentationService.get_strong_skill_entries(subject)
+
+
+@register.filter
+def canonical_missing_required_skills(subject):
+    return JobPresentationService.get_missing_required_skill_entries(subject)
+
+
+@register.filter
+def canonical_missing_optional_skills(subject):
+    return JobPresentationService.get_missing_optional_skill_entries(subject)
+
+
+@register.filter
+def canonical_subject_skills(subject):
+    return JobPresentationService.get_subject_skill_entries(subject)
+
+
+@register.filter
+def user_risk_flags(subject):
+    from apps.matching.services.presentation import MatchPresentationService
+
+    return MatchPresentationService.get_user_facing_risk_labels(subject)
+
+
+@register.filter
+def user_match_actions(match):
+    from apps.matching.services.presentation import MatchPresentationService
+
+    return MatchPresentationService.get_user_facing_actions(match)
+
+
+@register.filter
+def user_recommendation_reason(recommendation):
+    from apps.matching.services.presentation import MatchPresentationService
+
+    return MatchPresentationService.get_user_facing_recommendation_reason(recommendation)
+
 @register.filter
 def is_valid_badge(value):
     return JobPresentationService.is_valid_badge_value(value)

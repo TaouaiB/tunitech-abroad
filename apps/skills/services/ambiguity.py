@@ -15,6 +15,7 @@ METADATA_NOISE_TERMS = {
     "verifie",
     "verifiee",
     "verifies",
+    "langues non precisees",
 }
 
 
@@ -161,8 +162,9 @@ def _has_standalone_sql_evidence(text: str) -> bool:
 
 def _has_chef_devops_evidence(text: str) -> bool:
     if re.search(
-        r"\b(?:chef de projet|chef d equipe|chef d'equipe|chef de produit|chef cuisinier|"
-        r"project manager|team lead|product manager|restaurant chef|kitchen chef|head chef)\b",
+        r"\b(?:chef de projet|chef projet|chef d equipe|chef d'equipe|chef d equipe|chef de produit|"
+        r"chef cuisinier|cuisinier|cuisine|restauration|hospitality|restaurant chef|kitchen chef|"
+        r"head chef|project manager|team lead|product manager)\b",
         text,
     ):
         return False
