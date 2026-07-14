@@ -2,10 +2,10 @@ import importlib.util
 from django.test import TestCase
 from apps.accounts.models import User
 from django.db import IntegrityError
-from .models import CandidateProfile, ProfileSkill
-from .forms import ProfileForm
-from .services.completeness import ProfileCompletenessService
-from .services.backfill import ProfileSkillBackfillService
+from ..models import CandidateProfile, ProfileSkill
+from ..forms import ProfileForm
+from ..services.completeness import ProfileCompletenessService
+from ..services.backfill import ProfileSkillBackfillService
 from apps.skills.models import Skill, SkillAlias, UnmatchedSkillCandidate
 from apps.skills.services.normalizer import normalize_skill_text
 from apps.profiles.services.profile_update import ProfileUpdateService
@@ -110,15 +110,18 @@ class ProfileModelsTests(TestCase):
             source="cv_upload",
         )
 
-        first = ProfileSkillBackfillService.backfill_profile_skills()
-        second = ProfileSkillBackfillService.backfill_profile_skills()
+        first = ProfileSkillBackfillService.repair(user=self.user, apply=True)
+        second = ProfileSkillBackfillService.repair(user=self.user, apply=True)
 
         mapped.refresh_from_db()
         self.assertEqual(mapped.skill, dotnet)
-        self.assertEqual(first["mapped_to_canonical"], 1)
-        self.assertEqual(second["mapped_to_canonical"], 0)
-        candidate = UnmatchedSkillCandidate.objects.get(normalized_text="unknown skill", source_type="cv")
-        self.assertEqual(candidate.occurrence_count, 1)
+        self.assertEqual(first.rows_linked, 1)
+        self.assertEqual(second.rows_linked, 0)
+        self.assertFalse(
+            UnmatchedSkillCandidate.objects.filter(
+                normalized_text="unknown skill", source_type="cv"
+            ).exists()
+        )
 
 
 class ProfileUpdateServiceSkillTests(TestCase):

@@ -538,9 +538,19 @@ class StalenessHooksTests(TestCase):
     @patch("apps.cvs.services.text_extraction.CVTextExtractionService.extract_text")
     @patch("apps.cvs.services.deterministic_extractor.CVDeterministicExtractorService.extract")
     @patch("apps.cvs.services.llm_extraction.CVLLMExtractionService.extract_structured")
-    def test_cv_parsing_marks_stale(self, mock_llm, mock_det, mock_extract_text):
+    def test_cv_parsing_marks_stale_when_skills_change(self, mock_llm, mock_det, mock_extract_text):
+        from apps.skills.models import Skill, SkillAlias
+        from apps.skills.services.normalizer import normalize_skill_text
+
+        skill = Skill.objects.create(
+            canonical_name="Python", slug="python", category="programming_language"
+        )
+        SkillAlias.objects.create(
+            skill=skill, alias="Python", normalized_alias=normalize_skill_text("Python")
+        )
+
         mock_extract_text.return_value = {"success": True, "raw_text": "Sample text"}
-        mock_det.return_value = {}
+        mock_det.return_value = {"raw_skills": ["Python"]}
         mock_llm.return_value = {}
 
         cv = CVUpload.objects.create(

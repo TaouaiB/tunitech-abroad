@@ -7,10 +7,10 @@ from apps.cvs.models import CVUpload, CVParsedData
 from apps.cvs.services.text_extraction import CVTextExtractionService
 from apps.cvs.services.deterministic_extractor import CVDeterministicExtractorService
 from apps.cvs.services.llm_extraction import CVLLMExtractionService
-from apps.skills.services.normalizer import SkillNormalizerService, normalize_skill_text
+from apps.skills.services.normalizer import SkillNormalizerService
 from apps.skills.services.extraction_policy import SkillCandidateKind, classify_skill_candidate
-from apps.profiles.models import ProfileSkill
 from apps.profiles.services.completeness import ProfileCompletenessService
+from apps.profiles.services.materialization import ProfileSkillMaterializationService
 from apps.profiles.services.validation import CURRENT_LEVEL_CHOICES
 
 class CVParsingService:
@@ -321,41 +321,38 @@ class CVParsingService:
                 if update_fields:
                     profile.save(update_fields=update_fields)
 
-                existing_normalized = set(
-                    ProfileSkill.objects.filter(profile=profile).values_list('normalized_name', flat=True)
-                )
-
-                new_profile_skills = []
+                skill_state_changed = False
                 for skill in canonical_skills:
-                    normalized_name = normalize_skill_text(skill.canonical_name)
-                    if normalized_name not in existing_normalized:
-                        new_profile_skills.append(
-                            ProfileSkill(
-                                profile=profile,
-                                skill=skill,
-                                raw_name=skill.canonical_name,
-                                normalized_name=normalized_name,
-                                source='cv_upload',
-                                confidence=80,
-                                is_confirmed=False
-                            )
+                    result = ProfileSkillMaterializationService.materialize(
+                        profile=profile,
+                        skill=skill,
+                        source='cv_upload',
+                        confidence=80,
+                        is_confirmed=False,
+                        raw_name=skill.canonical_name,
+                    )
+                    if result.changed:
+                        skill_state_changed = True
+                    elif result.conflict:
+                        parsed_data.warnings_json = parsed_data.warnings_json or []
+                        parsed_data.warnings_json.append(
+                            f"profile_skill_conflict_preserved:{skill.canonical_name}"
                         )
-                        existing_normalized.add(normalized_name)
-
-                if new_profile_skills:
-                    ProfileSkill.objects.bulk_create(new_profile_skills, ignore_conflicts=True)
+                if parsed_data.warnings_json:
+                    parsed_data.save(update_fields=['warnings_json'])
 
                 ProfileCompletenessService.calculate(profile)
+
+                if skill_state_changed:
+                    try:
+                        from apps.recommendations.services.staleness import RecommendationStalenessService
+                        RecommendationStalenessService.mark_user_recommendations_stale(cv_upload.user, reason="cv_parsed")
+                    except ImportError:
+                        pass
 
             status = 'parsed_with_warnings' if parsed_data.warnings_json else 'parsed'
             cv_upload.parse_status = status
             cv_upload.parsed_at = timezone.now()
             cv_upload.save(update_fields=['parse_status', 'parsed_at', 'text_extraction_status', 'extracted_text_length'])
-
-            try:
-                from apps.recommendations.services.staleness import RecommendationStalenessService
-                RecommendationStalenessService.mark_user_recommendations_stale(cv_upload.user, reason="cv_parsed")
-            except ImportError:
-                pass
 
             return parsed_data

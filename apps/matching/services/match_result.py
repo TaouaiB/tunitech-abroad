@@ -1,4 +1,6 @@
 import logging
+from django.db import models
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
@@ -192,6 +194,35 @@ class MatchResultService:
         # could update/return the latest row for the job, surfacing a different
         # `public_id` than the URL requested.
         return cls._recompute_in_place(match)
+
+    @classmethod
+    def recompute_current_matches_for_user(cls, user) -> int:
+        """
+        Recompute only the latest match row per (user, job) in place.
+
+        Preserves each row's ``public_id``. Unavailable jobs are skipped so
+        historical rows for removed/expired jobs stay intact.
+        """
+        latest_per_job = MatchResult.objects.filter(
+            user=user,
+            pk=models.Subquery(
+                MatchResult.objects.filter(
+                    user=user, job=models.OuterRef("job")
+                )
+                .order_by("-created_at", "-pk")
+                .values("pk")[:1]
+            ),
+        )
+
+        count = 0
+        for match in latest_per_job.select_related("job").order_by("pk"):
+            try:
+                JobQueryService.get_public_job(match.job.public_id)
+            except Http404:
+                continue
+            cls._recompute_in_place(match)
+            count += 1
+        return count
 
     @staticmethod
     def get_user_match(user, public_id) -> MatchResult:

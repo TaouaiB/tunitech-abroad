@@ -299,6 +299,101 @@ class CVServiceTests(TestCase):
         self.assertFalse(ProfileSkill.objects.filter(profile=profile, normalized_name="agile").exists())
         self.assertTrue(any(w.startswith("profile_") for w in parsed_data.warnings_json))
 
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    def test_reparsing_repairs_null_linked_legacy_row(self, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        profile = CandidateProfile.objects.create(user=self.user)
+        legacy = ProfileSkill.objects.create(
+            profile=profile,
+            raw_name="Python",
+            normalized_name="python",
+            source="cv_upload",
+            is_confirmed=False,
+        )
+        skill = Skill.objects.create(canonical_name="Python", slug="python", category="backend")
+        SkillAlias.objects.create(skill=skill, alias="Python", normalized_alias=normalize_skill_text("Python"))
+        pdf = self._pdf_file(
+            "Amina Ben Ali\n"
+            "Location: Tunis\n"
+            "Email: amina@example.test\n"
+            "Phone: +33 6 12 34 56 78\n"
+            "Skills:\n"
+            "Python\n"
+        )
+        cv = CVUpload.objects.create(
+            user=self.user, file=pdf, original_filename="cv_reparse.pdf",
+            file_hash="hash_reparse", file_size=pdf.size, is_active=True
+        )
+
+        CVParsingService.parse(cv)
+
+        legacy.refresh_from_db()
+        self.assertEqual(legacy.skill, skill)
+        self.assertEqual(ProfileSkill.objects.filter(profile=profile, normalized_name="python").count(), 1)
+
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    def test_reparsing_does_not_duplicate_profile_skill(self, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        profile = CandidateProfile.objects.create(user=self.user)
+        skill = Skill.objects.create(canonical_name="Python", slug="python", category="backend")
+        SkillAlias.objects.create(skill=skill, alias="Python", normalized_alias=normalize_skill_text("Python"))
+        ProfileSkill.objects.create(
+            profile=profile,
+            skill=skill,
+            raw_name="Python",
+            normalized_name="python",
+            source="manual",
+            is_confirmed=True,
+        )
+        pdf = self._pdf_file(
+            "Amina Ben Ali\n"
+            "Location: Tunis\n"
+            "Email: amina@example.test\n"
+            "Phone: +33 6 12 34 56 78\n"
+            "Skills:\n"
+            "Python\n"
+        )
+        cv = CVUpload.objects.create(
+            user=self.user, file=pdf, original_filename="cv_dup.pdf",
+            file_hash="hash_dup", file_size=pdf.size, is_active=True
+        )
+
+        CVParsingService.parse(cv)
+
+        self.assertEqual(ProfileSkill.objects.filter(profile=profile, normalized_name="python").count(), 1)
+
+    @patch('apps.cvs.services.parsing.CVLLMExtractionService.extract_structured')
+    @patch('apps.recommendations.services.staleness.RecommendationStalenessService.mark_user_recommendations_stale')
+    def test_staleness_only_when_skill_state_changes(self, mock_mark_stale, mock_llm):
+        mock_llm.return_value = {'enabled': False, 'extracted_data': {}, 'warnings': []}
+        profile = CandidateProfile.objects.create(user=self.user)
+        skill = Skill.objects.create(canonical_name="Python", slug="python", category="backend")
+        SkillAlias.objects.create(skill=skill, alias="Python", normalized_alias=normalize_skill_text("Python"))
+        ProfileSkill.objects.create(
+            profile=profile,
+            skill=skill,
+            raw_name="Python",
+            normalized_name="python",
+            source="manual",
+            is_confirmed=True,
+        )
+        pdf = self._pdf_file(
+            "Amina Ben Ali\n"
+            "Location: Tunis\n"
+            "Email: amina@example.test\n"
+            "Phone: +33 6 12 34 56 78\n"
+            "Skills:\n"
+            "Python\n"
+        )
+        cv = CVUpload.objects.create(
+            user=self.user, file=pdf, original_filename="cv_stale.pdf",
+            file_hash="hash_stale", file_size=pdf.size, is_active=True
+        )
+
+        CVParsingService.parse(cv)
+
+        mock_mark_stale.assert_not_called()
+
     def test_parsing_normalizes_current_level_labels_before_profile_save(self):
         self.assertEqual(CVParsingService._normalize_current_level("Junior"), "junior")
         self.assertEqual(CVParsingService._normalize_current_level("Intermédiaire"), "mid")

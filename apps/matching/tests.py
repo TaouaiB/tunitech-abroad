@@ -1462,3 +1462,126 @@ class MatchRowIdentityTests(TestCase):
         # And the history endpoint never leaks another user's rows.
         other_history = MatchResultService.list_user_matches(self.other_user)
         self.assertNotIn(str(mine.public_id), self._public_ids(other_history))
+
+
+@override_settings(PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"])
+class RecomputeCurrentMatchesTests(TestCase):
+    def setUp(self):
+        self.user = create_test_user(
+            username="recomputeuser",
+            email="recompute@example.test",
+        )
+        self.other_user = create_test_user(
+            username="recomputeother",
+            email="recomputeother@example.test",
+        )
+        self.other_profile = CandidateProfile.objects.create(
+            user=self.other_user,
+            years_experience=1.0,
+            current_level="junior",
+            target_country="France",
+            target_roles=["Frontend Developer"],
+            french_level="basic",
+            profile_completion_score=60,
+        )
+        self.profile = CandidateProfile.objects.create(
+            user=self.user,
+            years_experience=3.0,
+            current_level="mid_level",
+            target_country="France",
+            target_roles=["Backend Developer"],
+            french_level="intermediate",
+            english_level="fluent",
+            relocation_preference="yes",
+            remote_preference="hybrid",
+            profile_completion_score=80,
+        )
+        self.python = Skill.objects.create(
+            canonical_name="Python",
+            slug="python",
+            category=SkillCategory.PROGRAMMING_LANGUAGE,
+            is_active=True,
+        )
+        SkillAlias.objects.create(
+            skill=self.python, alias="Python", normalized_alias="python"
+        )
+        ProfileSkill.objects.create(
+            profile=self.profile,
+            raw_name="Python",
+            normalized_name="python",
+            skill=self.python,
+        )
+
+        self.source = JobSource.objects.create(
+            name="France Travail",
+            slug="france-travail-recompute",
+            source_type=SourceType.FIXTURE,
+        )
+        self.job_one = self._job("recompute-1", "Backend Developer")
+        self.job_two = self._job("recompute-2", "Python Engineer")
+
+    def _job(self, source_job_id, title):
+        now = timezone.now()
+        raw = RawJobRecord.objects.create(
+            source=self.source,
+            source_job_id=source_job_id,
+            raw_payload_json={},
+            payload_hash=source_job_id,
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+        )
+        return NormalizedJob.objects.create(
+            source=self.source,
+            raw_record=raw,
+            source_job_id=source_job_id,
+            title=title,
+            company_name="Tech Corp",
+            location="Paris",
+            country="France",
+            city="Paris",
+            contract_type="CDI",
+            remote_type=RemoteType.HYBRID,
+            job_type=JobType.FULL_TIME_JOB,
+            experience_level=ExperienceLevel.MID_LEVEL,
+            description="Build backend systems.",
+            status=JobStatus.ACTIVE,
+            required_skills_json=["Python"],
+            optional_skills_json=[],
+            language_requirements_json={},
+            classification_json={
+                "family": "software_development",
+                "is_it": True,
+                "confidence": "high",
+            },
+            first_seen_at=now,
+            last_seen_at=now,
+            last_fetched_at=now,
+        )
+
+    def test_recompute_only_latest_row_per_user_job(self):
+        first = MatchResultService.create_match_result(self.user, self.job_one)
+        second = MatchResultService.create_match_result(self.user, self.job_one)
+        other_job_match = MatchResultService.create_match_result(self.user, self.job_two)
+        other_user_match = MatchResultService.create_match_result(self.other_user, self.job_one)
+
+        first_updated = first.updated_at
+        second_updated = second.updated_at
+        other_job_updated = other_job_match.updated_at
+        other_user_updated = other_user_match.updated_at
+
+        refreshed_count = MatchResultService.recompute_current_matches_for_user(self.user)
+        self.assertEqual(refreshed_count, 2)
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        other_job_match.refresh_from_db()
+        other_user_match.refresh_from_db()
+
+        # Historical row (first) must stay unchanged.
+        self.assertEqual(first.updated_at, first_updated)
+        # Latest row per user/job must be recomputed.
+        self.assertGreater(second.updated_at, second_updated)
+        self.assertGreater(other_job_match.updated_at, other_job_updated)
+        # Other user's row must not be touched.
+        self.assertEqual(other_user_match.updated_at, other_user_updated)
