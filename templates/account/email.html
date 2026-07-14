@@ -16,34 +16,30 @@
       <div class="card grid">
           {% if user.emailaddress_set.all %}
               <p style="margin-bottom: 16px; color: var(--text-muted);">Les adresses email suivantes sont associées à votre compte :</p>
-              <form action="{% url 'account_email' %}" class="email_list" method="post" style="display: grid; gap: 16px; margin-bottom: 32px;">
-                  {% csrf_token %}
-                  <div class="blockLabels" style="display: grid; gap: 12px;">
-                      {% for emailaddress in user.emailaddress_set.all %}
-                          <label for="email_radio_{{forloop.counter}}" style="display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); cursor: pointer;">
-                              <input id="email_radio_{{forloop.counter}}" type="radio" name="email" {% if emailaddress.primary or user.emailaddress_set.count == 1 %}checked="checked"{% endif %} value="{{emailaddress.email}}" style="accent-color: var(--brand); width: 16px; height: 16px; margin: 0;"/>
-                              <span style="font-weight: 500;">{{ emailaddress.email }}</span>
+              <div class="email_list" style="display:grid;gap:12px;margin-bottom:32px;min-width:0;">
+                      {% for emailaddress in emailaddresses %}
+                          <form action="{% url 'account_email' %}" method="post" style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);min-width:0;">
+                              {% csrf_token %}<input type="hidden" name="email" value="{{ emailaddress.email }}">
+                              <span style="font-weight:500;overflow-wrap:anywhere;word-break:break-word;min-width:0;flex:1 1 220px;">{{ emailaddress.email }}</span>
 
-                              <div style="display: flex; gap: 8px; margin-left: auto;">
+                              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                                   {% if emailaddress.verified %}
                                       <span class="small" style="color: var(--good); background: rgba(52, 168, 83, 0.1); padding: 4px 8px; border-radius: 4px;">Vérifiée</span>
                                   {% else %}
                                       <span class="small" style="color: var(--warn); background: rgba(251, 188, 5, 0.1); padding: 4px 8px; border-radius: 4px;">Non vérifiée</span>
                                   {% endif %}
                                   {% if emailaddress.primary %}
-                                      <span class="small" style="color: var(--brand); background: rgba(66, 133, 244, 0.1); padding: 4px 8px; border-radius: 4px;">Principale</span>
+                                      <span class="small" data-fr="Principale" data-en="Primary" style="color: var(--brand); background: rgba(66, 133, 244, 0.1); padding: 4px 8px; border-radius: 4px;">Principale</span>
                                   {% endif %}
                               </div>
-                          </label>
+                              <div class="pill-row" style="flex:1 1 100%;flex-wrap:wrap;margin-top:4px;">
+                                  {% if not emailaddress.primary %}<button class="btn secondary" type="submit" name="action_primary">Définir comme principale</button>{% endif %}
+                                  {% if not emailaddress.verified %}<button class="btn secondary" type="submit" name="action_send">Renvoyer la vérification</button>{% endif %}
+                                  <button class="btn secondary" style="color:var(--bad);" type="submit" name="action_remove">Supprimer</button>
+                              </div>
+                          </form>
                       {% endfor %}
-                  </div>
-
-                  <div class="pill-row" style="margin-top: 8px;">
-                      <button class="btn secondary" type="submit" name="action_primary">Définir comme principale</button>
-                      <button class="btn secondary" type="submit" name="action_send">Renvoyer la vérification</button>
-                      <button class="btn secondary" style="color: var(--bad);" type="submit" name="action_remove">Supprimer</button>
-                  </div>
-              </form>
+              </div>
           {% endif %}
 
           <h3 class="h2" style="margin-top: 16px; margin-bottom: 16px; padding-top: 24px; border-top: 1px solid var(--line);">Ajouter une adresse email</h3>

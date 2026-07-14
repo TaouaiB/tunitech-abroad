@@ -108,6 +108,14 @@ BROAD_TECHNICAL_CANONICALS = {
     "digital project management",
     "technology selection",
     "specifications writing",
+    "artificial intelligence",
+    "devops",
+    "windows",
+}
+
+ROLE_LIKE_CANONICALS = {
+    "data engineer",
+    "network engineer",
 }
 
 SPECIFIC_API_CANONICALS = {
@@ -180,6 +188,9 @@ def classify_skill_candidate(
 
     if is_generic_source_phrase(normalized_raw):
         return SkillPolicyDecision(SkillCandidateKind.SOURCE_METADATA, False, False)
+
+    if canonical in ROLE_LIKE_CANONICALS or normalized_raw in ROLE_LIKE_CANONICALS:
+        return SkillPolicyDecision(SkillCandidateKind.REJECTED_NOISE, False, False)
 
     if normalized_raw in API_TESTING_TERMS:
         return SkillPolicyDecision(SkillCandidateKind.BROAD_TECHNICAL, True, False, Decimal("0.400"))

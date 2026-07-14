@@ -15,6 +15,7 @@ METADATA_NOISE_TERMS = {
     "verifie",
     "verifiee",
     "verifies",
+    "langues non precisees",
 }
 
 

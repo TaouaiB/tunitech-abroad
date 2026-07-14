@@ -20,13 +20,15 @@
             <h2 class="h2" data-i18n="Account & Security">Compte & Sécurité</h2>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
               <div style="width:56px;height:56px;border-radius:18px;background:var(--panel2);color:var(--brand);display:grid;place-items:center;font-weight:900;font-size:20px;border:1px solid var(--line);">{{ user.email|make_list|first|upper }}</div>
-              <div><strong style="font-size:18px;display:block;">{{ user.candidate_profile.full_name|default:user.email }}</strong><span class="small">{{ user.email }}</span></div>
+              <div><strong style="font-size:18px;display:block;">{{ user.get_full_name|default:user.email }}</strong><span class="small">{{ user.email }}</span></div>
             </div>
-            <div class="account-box">
-              <div class="field"><label data-i18n="First name">Prénom</label><div class="input">{{ user.first_name|default:'-' }}</div></div>
-              <div class="field"><label data-i18n="Last name">Nom</label><div class="input">{{ user.last_name|default:'-' }}</div></div>
+            <form method="post" action="{% url 'dashboard:account' %}" class="account-box">
+              {% csrf_token %}<input type="hidden" name="account_action" value="update_names">
+              <div class="field"><label for="{{ name_form.first_name.id_for_label }}" data-i18n="First name">Prénom</label>{{ name_form.first_name }}{% if name_form.first_name.errors %}<div class="error" style="display:block">{{ name_form.first_name.errors.0 }}</div>{% endif %}</div>
+              <div class="field"><label for="{{ name_form.last_name.id_for_label }}" data-i18n="Last name">Nom</label>{{ name_form.last_name }}{% if name_form.last_name.errors %}<div class="error" style="display:block">{{ name_form.last_name.errors.0 }}</div>{% endif %}</div>
               <div class="field"><label>Email</label><div class="input">{{ user.email }}</div></div>
-            </div>
+              <div class="pill-row"><button class="btn primary" type="submit" data-i18n="Save settings">Enregistrer</button></div>
+            </form>
             <div class="pill-row" style="margin-top:12px;">
               <a class="btn secondary" href="{% if user.has_usable_password %}{% url 'account_change_password' %}{% else %}{% url 'account_set_password' %}{% endif %}" data-i18n="{% if user.has_usable_password %}Change my password{% else %}Add a password{% endif %}">{% if user.has_usable_password %}Changer mon mot de passe{% else %}Ajouter un mot de passe{% endif %}</a>
             </div>

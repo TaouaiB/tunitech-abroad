@@ -48,26 +48,30 @@
                             <div>
                                 <b data-i18n="Strong">Fort</b>
                                 <div class="small">
-                                    {% if match.strong_skills_json %}
-                                        {% for skill in match.strong_skills_json|slice:":4" %}{{ skill.name|default:skill }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                    {% with strong_skills=match|canonical_strong_skills %}
+                                    {% if strong_skills %}
+                                        {% for skill in strong_skills|slice:":4" %}{{ skill.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
                                     {% else %}
                                         <span data-fr="Score global calculé à {{ match.fit_score }}%." data-en="Overall score calculated at {{ match.fit_score }}%.">Score global calculé à {{ match.fit_score }}%.</span>
                                     {% endif %}
+                                    {% endwith %}
                                 </div>
                             </div>
                         </div>
                         <div class="notice">
-                            <span class="dot {% if match.missing_required_skills_json %}bad{% else %}good{% endif %}"></span>
+                            {% with required_gaps=match|canonical_missing_required_skills %}
+                            <span class="dot {% if required_gaps %}bad{% else %}good{% endif %}"></span>
                             <div>
                                 <b data-i18n="Gap">Écart</b>
                                 <div class="small">
-                                    {% if match.missing_required_skills_json %}
-                                        {% for skill in match.missing_required_skills_json|slice:":4" %}{{ skill.name|default:skill }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                    {% if required_gaps %}
+                                        {% for skill in required_gaps|slice:":4" %}{{ skill.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
                                     {% else %}
                                         Aucun écart requis majeur détecté.
                                     {% endif %}
                                 </div>
                             </div>
+                            {% endwith %}
                         </div>
                         <div class="notice">
                             <span class="dot {% if match.language_score >= 60 %}good{% else %}warn{% endif %}"></span>
@@ -79,60 +83,47 @@
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-2">
-                    <div class="card">
-                        <h2 class="h2" data-fr="Points forts" data-en="Strengths">Points forts</h2>
-                        {% if match.strong_skills_json %}
-                        <div class="pill-row">
-                            {% for skill in match.strong_skills_json %}
-                                <span class="skill ok">{{ skill.name|default:skill }}</span>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <p class="small" data-fr="Aucun point fort identifié." data-en="No strength identified yet.">Aucun point fort identifié.</p>
-                        {% endif %}
-                    </div>
-                    <div class="card">
-                        <h2 class="h2" data-fr="Compétences manquantes" data-en="Missing skills">Compétences manquantes</h2>
-                        {% if match.missing_required_skills_json %}
-                        <div class="pill-row">
-                            {% for skill in match.missing_required_skills_json %}
-                                <span class="skill missing">{{ skill.name|default:skill }}</span>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <p class="small" style="color:var(--good)">Vous possédez toutes les compétences requises.</p>
-                        {% endif %}
+                <div class="card">
+                    <h2 class="h2" data-fr="Compétences techniques" data-en="Technical skills">Compétences techniques</h2>
+                    <div class="pill-row" data-canonical-job-skills>
+                        {% for skill in match|match_job_skills %}
+                            <span class="skill {% if skill.status == 'strong' %}ok{% elif skill.status == 'missing' %}missing{% elif skill.status == 'warning' %}warn{% else %}{{ skill.name|skill_color }}{% endif %}" data-canonical-skill>{{ skill.name }}</span>
+                        {% endfor %}
                     </div>
                 </div>
-                {% if match.missing_optional_skills_json %}
+                {% with optional_gaps=match|canonical_missing_optional_skills %}
+                {% if optional_gaps %}
                 <div class="card">
                     <h2 class="h2">Compétences optionnelles à renforcer</h2>
                     <div class="pill-row">
-                        {% for skill in match.missing_optional_skills_json %}
-                            <span class="pill warn">{{ skill.name|default:skill }}</span>
+                        {% for skill in optional_gaps %}
+                            <span class="pill warn">{{ skill.name }}</span>
                         {% endfor %}
                     </div>
                 </div>
                 {% endif %}
-                {% if match.recommended_actions_json %}
+                {% endwith %}
+                {% with actions=match|user_match_actions %}
+                {% if actions %}
                 <div class="card">
                     <h2 class="h2" data-fr="Actions recommandées" data-en="Recommended actions">Actions recommandées</h2>
                     <div class="notice-list">
-                        {% for action in match.recommended_actions_json %}
+                        {% for action in actions %}
                         <div class="notice">
-                            <span class="dot {% if match.missing_required_skills_json %}bad{% elif match.missing_optional_skills_json %}warn{% else %}good{% endif %}"></span>
+                            <span class="dot warn"></span>
                             <div><b class="match-action-text" data-fr="{{ action }}">{{ action }}</b></div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
                 {% endif %}
-                {% if match.human_risk_flags %}
+                {% endwith %}
+                {% with risk_flags=match|user_risk_flags %}
+                {% if risk_flags %}
                 <div class="card">
                     <h2 class="h2" data-fr="Points de vigilance" data-en="Watch points">Points de vigilance</h2>
                     <div class="notice-list">
-                        {% for flag in match.human_risk_flags %}
+                        {% for flag in risk_flags %}
                         <div class="notice">
                             <span class="dot warn"></span>
                             <div><b>{{ flag }}</b></div>
@@ -141,6 +132,7 @@
                     </div>
                 </div>
                 {% endif %}
+                {% endwith %}
                 {% if match.location_score == 0 %}
                 <div class="card">
                     <h2 class="h2">Mobilité / contrat</h2>
@@ -185,7 +177,6 @@
   function vigilanceToEnglish(fr){
     const text = (fr || "").trim();
     const map = {
-      "Expérience non précisée": "Experience not specified",
       "Expérience insuffisante": "Insufficient experience",
       "Signal technique insuffisant": "Insufficient technical signal"
     };
@@ -265,7 +256,7 @@
 
       card.querySelectorAll(".notice-list b").forEach(el => {
         const current = el.textContent.trim();
-        const fr = el.getAttribute("data-fr") || (current === "Experience not specified" ? "Expérience non précisée" : current);
+        const fr = el.getAttribute("data-fr") || current;
         const en = el.getAttribute("data-en") || vigilanceToEnglish(fr);
 
         el.classList.add("match-vigilance-text");

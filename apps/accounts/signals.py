@@ -2,6 +2,7 @@ from django.dispatch import receiver
 from allauth.account.signals import user_signed_up
 from allauth.socialaccount.signals import social_account_added, social_account_updated
 from .services.account_provisioning import AccountProvisioningService
+from .services.user_identity import UserIdentityService
 
 @receiver(user_signed_up)
 def trigger_account_provisioning(request, user, **kwargs):
@@ -19,17 +20,13 @@ def handle_social_account_updated(request, sociallogin, **kwargs):
     populate_profile_from_social_data(sociallogin.user, sociallogin)
 
 def populate_profile_from_social_data(user, sociallogin):
+    data = sociallogin.account.extra_data
+    UserIdentityService.initialize_social_names(user, data)
     if hasattr(user, 'candidate_profile'):
         profile = user.candidate_profile
-        data = sociallogin.account.extra_data
         provider = sociallogin.account.provider
         
         update_fields = []
-        name = data.get('name') or data.get('full_name')
-        if name and not profile.full_name:
-            profile.full_name = name
-            update_fields.append('full_name')
-            
         avatar_url = data.get('picture') if provider == 'google' else data.get('avatar_url')
         if avatar_url and not profile.avatar_url:
             profile.avatar_url = avatar_url

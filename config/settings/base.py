@@ -302,6 +302,7 @@ LOGIN_REDIRECT_URL = "/jobs/"
 LOGOUT_REDIRECT_URL = "/jobs/"
 
 ACCOUNT_ADAPTER = "apps.accounts.adapters.TuniTechAccountAdapter"
+ACCOUNT_FORMS = {"add_email": "apps.accounts.forms.SafeAddEmailForm"}
 SOCIALACCOUNT_ADAPTER = "apps.accounts.adapters.TuniTechSocialAccountAdapter"
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = False
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True

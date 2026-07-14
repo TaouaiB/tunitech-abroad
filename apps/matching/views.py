@@ -48,6 +48,7 @@ class QuickMatchView(View):
                     entered_skills=form.cleaned_data['skills'],
                     experience_level=form.cleaned_data['experience_level'],
                     french_level=form.cleaned_data['french_level'],
+                    english_level=form.cleaned_data.get('english_level', ''),
                     ip_address=ip_address
                 )
                 return render(request, "matching/partials/quick_match_result.html", {"session": session, "job": job})

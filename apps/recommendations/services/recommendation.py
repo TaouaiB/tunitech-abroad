@@ -9,9 +9,9 @@ from apps.jobs.models import NormalizedJob, JobStatus
 from apps.jobs.services.eligibility import JobEligibilityService
 from apps.matching.services.match_result import MatchResultService
 from apps.matching.services.scoring import MatchScoringService
+from apps.matching.services.policy_version import RECOMMENDATION_VERSION
 from apps.recommendations.models import JobRecommendation, RecommendationRun
 
-RECOMMENDATION_VERSION = "reco_v1"
 MAX_RECOMMENDATIONS = 20
 
 @dataclass(frozen=True)

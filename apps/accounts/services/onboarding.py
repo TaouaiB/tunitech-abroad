@@ -68,6 +68,7 @@ class OnboardingRedirectService:
             "/accounts/password/reset/done/",
             "/accounts/password/reset/key/",
             "/accounts/confirm-email/",
+            "/dashboard/account/",
         )
         if any(path.startswith(prefix) for prefix in account_allowed_prefixes):
             return None

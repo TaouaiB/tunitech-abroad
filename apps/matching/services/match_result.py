@@ -1,5 +1,4 @@
 import logging
-from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
@@ -9,6 +8,7 @@ from apps.matching.services.scoring import MatchScoringService
 from apps.cvs.models import CVUpload
 from apps.jobs.models import NormalizedJob
 from apps.jobs.services.query import JobQueryService
+from apps.matching.services.policy_version import MATCH_SCORING_VERSION
 
 try:
     from apps.analytics.services.user_event import UserEventService
@@ -151,15 +151,47 @@ class MatchResultService:
         profile = match.profile
         current_cv = CVUpload.objects.filter(user=match.user, is_active=True).first()
         return (
-            match.profile_snapshot_json != cls._profile_snapshot(profile)
+            match.scoring_version != MATCH_SCORING_VERSION
+            or match.profile_snapshot_json != cls._profile_snapshot(profile)
             or match.cv_upload_id != (current_cv.id if current_cv else None)
         )
 
     @classmethod
-    def refresh_if_stale(cls, match: MatchResult) -> MatchResult:
-        if cls._is_stale(match):
-            return cls.update_current_match_for_job(match.user, match.job, cv_upload=None)
+    def _recompute_in_place(cls, match: MatchResult) -> MatchResult:
+        """Recompute the score for the requested match row in place.
+
+        Preserves the row's `public_id` so the requested object never silently
+        becomes another row. This is the refresh contract used by
+        `refresh_if_stale` and the public match-history endpoints.
+        """
+        public_job = JobQueryService.get_public_job(match.job.public_id)
+        cv_upload = CVUpload.objects.filter(user=match.user, is_active=True).first()
+        score_result = MatchScoringService.calculate(
+            profile=match.profile, job=public_job, cv_upload=cv_upload
+        )
+        payload = cls._payload(
+            user=match.user,
+            profile=match.profile,
+            public_job=public_job,
+            cv_upload=cv_upload,
+            score_result=score_result,
+        )
+        for field, value in payload.items():
+            if field != "user":
+                setattr(match, field, value)
+        match.updated_at = timezone.now()
+        match.save(update_fields=[field for field in payload if field != "user"] + ["updated_at"])
         return match
+
+    @classmethod
+    def refresh_if_stale(cls, match: MatchResult) -> MatchResult:
+        if not cls._is_stale(match):
+            return match
+        # Refresh the requested row in place to preserve its `public_id`.
+        # This avoids the previous behavior where `update_current_match_for_job`
+        # could update/return the latest row for the job, surfacing a different
+        # `public_id` than the URL requested.
+        return cls._recompute_in_place(match)
 
     @staticmethod
     def get_user_match(user, public_id) -> MatchResult:
@@ -169,7 +201,11 @@ class MatchResultService:
         return MatchResultService.refresh_if_stale(match)
 
     @staticmethod
-    def list_user_matches(user) -> QuerySet[MatchResult]:
+    def list_user_matches(user) -> list[MatchResult]:
+        # Read-only. The history page must never mutate historical rows.
+        # Refresh of stale rows is the responsibility of the guarded local
+        # management command, controlled production refresh, or the explicit
+        # per-row refresh in `get_user_match(requested_public_id)`.
         if not user.is_authenticated:
             raise PermissionDenied("User must be authenticated.")
-        return MatchResult.objects.filter(user=user).order_by("-created_at")
+        return list(MatchResult.objects.filter(user=user).order_by("-created_at"))

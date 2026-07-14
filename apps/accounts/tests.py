@@ -162,7 +162,7 @@ class AccountProvisioningServiceTests(TestCase):
             AccountProvisioningService.provision_new_user(user)
 
             profile = CandidateProfile.objects.get(user=user)
-            self.assertEqual(profile.full_name, 'Github User')
+            self.assertEqual(profile.full_name, '')
             self.assertEqual(profile.github_url, 'https://github.com/ghuser')
             self.assertEqual(profile.location, 'Tunis')
         except ImportError:
@@ -314,7 +314,7 @@ class SocialAccountAdapterTests(TestCase):
         )
         populate_profile_from_social_data(user, google_login)
         user.candidate_profile.refresh_from_db()
-        self.assertEqual(user.candidate_profile.full_name, "Google Candidate")
+        self.assertEqual(user.candidate_profile.full_name, "")
         self.assertEqual(user.candidate_profile.avatar_url, "https://lh3.googleusercontent.test/avatar.png")
         self.assertEqual(user.candidate_profile.website_url, "https://profiles.google.test/candidate")
 
@@ -335,7 +335,7 @@ class SocialAccountAdapterTests(TestCase):
         )
         populate_profile_from_social_data(github_user, github_login)
         github_user.candidate_profile.refresh_from_db()
-        self.assertEqual(github_user.candidate_profile.full_name, "GitHub Candidate")
+        self.assertEqual(github_user.candidate_profile.full_name, "")
         self.assertEqual(github_user.candidate_profile.avatar_url, "https://avatars.githubusercontent.test/u/1")
         self.assertEqual(github_user.candidate_profile.github_url, "https://github.com/candidate")
         self.assertEqual(github_user.candidate_profile.location, "Tunis")

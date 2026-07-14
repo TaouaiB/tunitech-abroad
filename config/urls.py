@@ -17,6 +17,7 @@ from allauth.account import views as allauth_views
 from apps.core.services.health import HealthCheckService
 from apps.analytics.admin_views import admin_operations_view, data_quality_dashboard_view
 from apps.cvs.admin_views import admin_cv_download
+from apps.accounts.views import SafeEmailView
 
 import logging
 
@@ -76,6 +77,7 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
     path("health/", health, name="health"),
     path("accounts/signup/", signup_redirect_wrapper, name="account_signup"),
+    path("accounts/email/", SafeEmailView.as_view(), name="account_email"),
     path("accounts/", include("allauth.urls")),
     path("dashboard/", include("apps.dashboard.urls")),
     path("dashboard/recommendations/", include("apps.recommendations.urls")),
