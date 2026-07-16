@@ -19,7 +19,10 @@ Behavior is fail-closed and deterministic:
      the target row receives its registry UUID (only if its current
      value is null) and the legacy old row receives a fixed, embedded
      tombstone UUIDv4 that does not collide with the registry;
-3. Any other existing row aborts the migration with a concise
+3. The invalid taxonomy artifact ``Langues non précisées`` receives
+   a fixed embedded tombstone UUIDv4 and is made inactive without
+   deleting the row or its relations.
+4. Any other existing row aborts the migration with a concise
    ``RuntimeError`` listing only canonical names and their
    active/inactive state. No random UUIDv4 generation occurs at
    runtime.
@@ -287,7 +290,6 @@ REGISTRY_UUID_BY_CANONICAL = {
     "Kubernetes": "d52ae3a4-709e-46aa-a7f8-0bb135348669",
     "LAN": "99c6123e-580f-4aa1-9ef1-b30d3e20e657",
     "LLM Optimization": "6049f622-b668-4cb1-addf-668bdbc27cfe",
-    "Langues non précisées": "a380962e-299b-4583-9c90-b0c0a35367ea",
     "Laravel": "f3c1392d-71ea-4e8d-ac5e-d68c0de3726e",
     "Leadership": "dbdae7f2-674b-4f59-8978-10a976adc0d8",
     "Lerna": "e4450433-2b12-4212-987a-c0cb5942b15d",
@@ -575,13 +577,20 @@ LEGACY_OLD_BY_TARGET = {
 }
 
 
-# Fixed tombstone UUIDs for legacy canonicals. Generated once from a
-# fixed-seed RNG and now committed. They are deterministic, unique,
-# non-v4-collision with the registry, and used only when the target
-# canonical row already exists alongside the legacy old row.
+# Fixed tombstone UUIDs for legacy canonicals. These committed UUIDv4
+# values are deterministic, unique, do not collide with the registry,
+# and are used only when the target canonical row already exists
+# alongside the legacy old row.
 LEGACY_TOMBSTONE_UUID_BY_OLD = {
     ".NET Core": "23b14296-d0ce-4897-a7fc-1489331f86de",
     "ASP.NET": "695b1103-b4a4-49e5-b8fc-2414cde5ffda",
+}
+
+
+# Frozen invalid taxonomy artifacts are preserved for referential safety,
+# assigned fixed non-canonical tombstone identities, and made inactive.
+INVALID_ARTIFACT_UUID_BY_CANONICAL = {
+    "Langues non précisées": "0b71fefd-ea81-42e1-a4e1-2d84d3497960",
 }
 
 
@@ -624,10 +633,25 @@ def populate_skill_uid(apps, schema_editor):
     for old_name, tombstone_str in LEGACY_TOMBSTONE_UUID_BY_OLD.items():
         _validate_v4(uuid.UUID(tombstone_str))
     tombstone_uuids = {uuid.UUID(s) for s in LEGACY_TOMBSTONE_UUID_BY_OLD.values()}
+    invalid_artifact_uuids = {
+        uuid.UUID(s) for s in INVALID_ARTIFACT_UUID_BY_CANONICAL.values()
+    }
+    for uid in invalid_artifact_uuids:
+        _validate_v4(uid)
     if tombstone_uuids & registry_uuids:
         raise RuntimeError(
             "Legacy tombstone UUID collides with a registry UUID; the "
             "migration is unsafe."
+        )
+    if invalid_artifact_uuids & (registry_uuids | tombstone_uuids):
+        raise RuntimeError(
+            "Invalid-artifact tombstone UUID collides with a registry or "
+            "legacy tombstone UUID; the migration is unsafe."
+        )
+    if len(invalid_artifact_uuids) != len(INVALID_ARTIFACT_UUID_BY_CANONICAL):
+        raise RuntimeError(
+            "Invalid-artifact mapping contains duplicate UUIDs; the migration "
+            "is unsafe."
         )
     legacy_old_set = set(LEGACY_OLD_BY_TARGET.values())
     if set(LEGACY_TOMBSTONE_UUID_BY_OLD.keys()) != legacy_old_set:
@@ -668,6 +692,9 @@ def populate_skill_uid(apps, schema_editor):
                 # tombstone UUID; the target row keeps its registry UUID
                 # (which the target-row pass below assigns).
                 new_uid = uuid.UUID(LEGACY_TOMBSTONE_UUID_BY_OLD[name])
+        elif name in INVALID_ARTIFACT_UUID_BY_CANONICAL:
+            new_uid = uuid.UUID(INVALID_ARTIFACT_UUID_BY_CANONICAL[name])
+            skill.is_active = False
         else:
             unknown_rows.append({
                 "canonical_name": name,
@@ -683,7 +710,10 @@ def populate_skill_uid(apps, schema_editor):
             )
         seen_uuids.add(new_uid)
         skill.skill_uid = new_uid
-        skill.save(update_fields=["skill_uid"])
+        update_fields = ["skill_uid"]
+        if name in INVALID_ARTIFACT_UUID_BY_CANONICAL:
+            update_fields.append("is_active")
+        skill.save(update_fields=update_fields)
 
     if unknown_rows:
         raise RuntimeError(

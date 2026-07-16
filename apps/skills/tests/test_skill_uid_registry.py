@@ -7,6 +7,7 @@ for every non-seed canonical entry.
 """
 
 import ast
+import importlib
 import json
 import uuid
 from collections import Counter
@@ -24,6 +25,7 @@ from apps.skills.services.skill_uid_registry import (
     registry_count,
     registry_entries,
     registry_path,
+    require_skill_uid,
     registry_version,
     reset_cache,
 )
@@ -89,6 +91,7 @@ class SkillUidRegistryFileTests(SimpleTestCase):
 
     def test_count_matches_entries(self):
         self.assertEqual(self.data["count"], len(self.data["skills"]))
+        self.assertEqual(self.data["count"], 522)
 
     def test_declares_approved_non_seed_provenance(self):
         self.assertIn("approved_non_seed_canonical_names", self.data)
@@ -98,6 +101,22 @@ class SkillUidRegistryFileTests(SimpleTestCase):
         declared = self.data.get("approved_non_seed_canonical_count")
         actual = len(self.data.get("approved_non_seed_canonical_names", []))
         self.assertEqual(declared, actual)
+        self.assertEqual(actual, 14)
+
+    def test_invalid_language_artifact_is_not_canonical(self):
+        names = {entry["canonical_name"] for entry in self.data["skills"]}
+        values = {entry["skill_uid"] for entry in self.data["skills"]}
+        approved = set(self.data["approved_non_seed_canonical_names"])
+        self.assertNotIn("Langues non précisées", names)
+        self.assertNotIn("Langues non précisées", approved)
+        self.assertNotIn("a380962e-299b-4583-9c90-b0c0a35367ea", values)
+
+    def test_registry_generation_wording_is_factual(self):
+        wording = f"{self.data['description']} {self.data['generator']}".lower()
+        self.assertNotIn("fixed seed", wording)
+        self.assertNotIn("fixed-seed", wording)
+        self.assertIn("generated once", wording)
+        self.assertIn("committed immutable identities", wording)
 
 
 class SkillUidRegistryServiceTests(SimpleTestCase):
@@ -138,6 +157,10 @@ class SkillUidRegistryServiceTests(SimpleTestCase):
     def test_get_skill_uid_missing_raises(self):
         with self.assertRaises(KeyError):
             get_skill_uid("Definitely Not A Canonical Skill Name 9999")
+
+    def test_require_skill_uid_missing_raises_clearly(self):
+        with self.assertRaisesRegex(ValueError, "required canonical skill"):
+            require_skill_uid("Definitely Not A Canonical Skill Name 9999")
 
     def test_has_skill_uid(self):
         self.assertTrue(has_skill_uid("Python"))
@@ -221,6 +244,25 @@ class SkillUidRegistryServiceTests(SimpleTestCase):
         }
         self.assertEqual(embedded, json_map)
 
+    def test_invalid_artifact_tombstone_is_unique_v4(self):
+        migration = importlib.import_module(
+            "apps.skills.migrations.0003_populate_skill_uid"
+        )
+        invalid = migration.INVALID_ARTIFACT_UUID_BY_CANONICAL
+        self.assertEqual(
+            set(invalid),
+            {"Langues non précisées"},
+        )
+        invalid_uids = {uuid.UUID(raw) for raw in invalid.values()}
+        legacy_uids = {
+            uuid.UUID(raw)
+            for raw in migration.LEGACY_TOMBSTONE_UUID_BY_OLD.values()
+        }
+        registry_uids = {uuid.UUID(raw) for _, raw in registry_entries()}
+        self.assertTrue(all(uid.version == 4 for uid in invalid_uids))
+        self.assertFalse(invalid_uids & legacy_uids)
+        self.assertFalse(invalid_uids & registry_uids)
+
 
 class SkillUidRegistryProvenanceDbTests(TestCase):
     """Provenance tests that require the default database (run the seed)."""
@@ -260,6 +302,10 @@ class SkillUidRegistryProvenanceDbTests(TestCase):
             registry, seeded | approved,
             "Registry names must exactly equal seed names UNION approved_non_seed_canonical_names",
         )
+        self.assertEqual(len(seeded), 508)
+        self.assertEqual(len(approved), 14)
+        self.assertEqual(len(registry), 522)
+        self.assertNotIn("Langues non précisées", seeded)
 
 
 class SkillUidRegistrySeedAlignmentTests(TestCase):

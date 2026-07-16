@@ -20,6 +20,7 @@ migration ``0003_populate_skill_uid``, not the seed.
 """
 
 import uuid
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.db import transaction
@@ -78,6 +79,27 @@ class SeedServiceRegistryIntegrationTests(TestCase):
             for s in Skill.objects.filter(source="seed")
         }
         self.assertEqual(first_uuids, second_uuids)
+
+    def test_seed_never_creates_or_reactivates_invalid_language_artifact(self):
+        invalid_name = "Langues non précisées"
+        tombstone = uuid.UUID("0b71fefd-ea81-42e1-a4e1-2d84d3497960")
+
+        SkillSeedService.seed_initial_taxonomy()
+        self.assertFalse(Skill.objects.filter(canonical_name=invalid_name).exists())
+
+        artifact = Skill.objects.create(
+            canonical_name=invalid_name,
+            slug="langues-non-precisees",
+            category="other",
+            is_active=False,
+            source="legacy_artifact",
+            skill_uid=tombstone,
+        )
+        SkillSeedService.seed_initial_taxonomy()
+
+        artifact.refresh_from_db()
+        self.assertFalse(artifact.is_active)
+        self.assertEqual(artifact.skill_uid, tombstone)
 
     def test_seed_repeated_does_not_rotate_uuids(self):
         SkillSeedService.seed_initial_taxonomy()
@@ -222,6 +244,37 @@ class SeedServiceRegistryFailureTests(TestCase):
         legacy.refresh_from_db()
         self.assertEqual(legacy.canonical_name, ".NET Core")
         self.assertNotEqual(legacy.skill_uid, get_skill_uid(".NET"))
+
+    def test_rename_missing_target_registry_identity_aborts_before_mutation(self):
+        old_row = Skill.objects.create(
+            canonical_name=".NET Core",
+            slug="dotnet-core",
+            category="backend",
+        )
+        target_row = Skill.objects.create(
+            canonical_name=".NET",
+            slug="dotnet",
+            category="backend",
+        )
+        alias = SkillAlias.objects.create(
+            skill=old_row,
+            alias="legacy dotnet alias",
+            normalized_alias="legacy dotnet alias",
+        )
+
+        with patch(
+            "apps.skills.services.seed.require_skill_uid",
+            side_effect=ValueError("missing target registry identity"),
+        ):
+            with self.assertRaisesRegex(ValueError, "missing target registry identity"):
+                SkillSeedService._rename_legacy_canonical_skill(".NET Core", ".NET")
+
+        old_row.refresh_from_db()
+        target_row.refresh_from_db()
+        alias.refresh_from_db()
+        self.assertTrue(old_row.is_active)
+        self.assertTrue(target_row.is_active)
+        self.assertEqual(alias.skill_id, old_row.pk)
 
     def test_legacy_aspnet_rename_fails_when_uuid_does_not_match_target(self):
         # Equivalent coverage for the ASP.NET -> ASP.NET Core legacy

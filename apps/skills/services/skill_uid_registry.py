@@ -174,6 +174,17 @@ def get_skill_uid(canonical_name: str) -> uuid.UUID:
     return _load_registry_cached().name_to_uid[canonical_name]
 
 
+def require_skill_uid(canonical_name: str) -> uuid.UUID:
+    """Return the required registry UUID with a domain-specific error."""
+    try:
+        return get_skill_uid(canonical_name)
+    except KeyError:
+        raise ValueError(
+            "Skill UID registry is missing the required canonical skill "
+            f"{canonical_name!r}."
+        ) from None
+
+
 def has_skill_uid(canonical_name: str) -> bool:
     """Return True if the canonical name is in the registry."""
     return canonical_name in _load_registry_cached().name_to_uid

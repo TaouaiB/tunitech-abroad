@@ -7,6 +7,7 @@ from apps.skills.services.phase_15d_decisions import approved_taxonomy_decisions
 from apps.skills.services.skill_uid_registry import (
     get_skill_uid,
     has_skill_uid,
+    require_skill_uid,
 )
 
 class SkillSeedItem(TypedDict):
@@ -697,6 +698,7 @@ class SkillSeedService:
 
     @classmethod
     def _rename_legacy_canonical_skill(cls, old_name: str, new_name: str) -> None:
+        target_uid = require_skill_uid(new_name)
         old_skill = Skill.objects.filter(canonical_name=old_name).first()
         if not old_skill:
             return
@@ -713,14 +715,6 @@ class SkillSeedService:
             # responsible for ensuring that. If it does not match, the
             # seed aborts and the operator must apply the data migration
             # first.
-            if not has_skill_uid(new_name):
-                raise ValueError(
-                    "Skill UID registry is missing an entry for the "
-                    f"target canonical name {new_name!r} of legacy rename "
-                    f"{old_name!r} -> {new_name!r}. The rename cannot be "
-                    "validated against the registry."
-                )
-            target_uid = get_skill_uid(new_name)
             if old_skill.skill_uid != target_uid:
                 raise ValueError(
                     "Legacy canonical rename refuses to rotate "
@@ -745,19 +739,17 @@ class SkillSeedService:
         # untouched (it is either a legacy tombstone UUID assigned by
         # the data migration or an environment-specific identity that
         # the migration will not change again).
-        if has_skill_uid(new_name):
-            target_registry_uid = get_skill_uid(new_name)
-            if new_skill.skill_uid != target_registry_uid:
-                raise ValueError(
-                    "Existing target canonical skill has a different "
-                    "skill_uid than the committed registry; the seed "
-                    "refuses to rotate it. "
-                    f"canonical_name={new_name!r} "
-                    f"row={new_skill.skill_uid} "
-                    f"registry={target_registry_uid}. "
-                    "Apply the unapplied data migration "
-                    "``0003_populate_skill_uid`` before running the seed again."
-                )
+        if new_skill.skill_uid != target_uid:
+            raise ValueError(
+                "Existing target canonical skill has a different "
+                "skill_uid than the committed registry; the seed "
+                "refuses to rotate it. "
+                f"canonical_name={new_name!r} "
+                f"row={new_skill.skill_uid} "
+                f"registry={target_uid}. "
+                "Apply the unapplied data migration "
+                "``0003_populate_skill_uid`` before running the seed again."
+            )
 
         for alias in old_skill.aliases.all():
             if not SkillAlias.objects.filter(normalized_alias=alias.normalized_alias).exclude(pk=alias.pk).exists():

@@ -64,30 +64,20 @@ class Skill(models.Model):
         loudly when an existing row's ``skill_uid`` does not already
         match the registry; they may never rewrite a persisted identity.
         """
-        try:
-            if self.pk is not None:
-                current = (
-                    type(self)
-                    .objects.filter(pk=self.pk)
-                    .values_list("skill_uid", flat=True)
-                    .first()
+        if self.pk is not None:
+            current = (
+                type(self)
+                .objects.filter(pk=self.pk)
+                .values_list("skill_uid", flat=True)
+                .first()
+            )
+            if current is not None and current != self.skill_uid:
+                raise ValueError(
+                    "Skill.skill_uid is immutable. "
+                    f"Existing={current} attempted={self.skill_uid} "
+                    f"canonical_name={self.canonical_name!r}"
                 )
-                if current is not None and current != self.skill_uid:
-                    raise ValueError(
-                        "Skill.skill_uid is immutable. "
-                        f"Existing={current} attempted={self.skill_uid} "
-                        f"canonical_name={self.canonical_name!r}"
-                    )
-            super().save(*args, **kwargs)
-        finally:
-            # Defensive: ensure no hidden bypass state leaks onto the
-            # instance if an exception occurs inside save().
-            for attr in ("_skill_uid_rename_in_progress",):
-                if hasattr(self, attr):
-                    try:
-                        delattr(self, attr)
-                    except AttributeError:
-                        pass
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.canonical_name

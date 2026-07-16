@@ -1,13 +1,12 @@
 {
   "version": 1,
-  "description": "Canonical TuniAtlas Jobs skill taxonomy UUIDv4 registry. The UUIDv4 values in this file were generated once from a fixed-seed RNG and are now committed immutable identities. Each row is a stable cross-environment identity for the Skill model. The registry is append-only.",
+  "description": "Canonical TuniAtlas Jobs skill taxonomy UUIDv4 registry. UUIDv4 values were generated once and are now committed immutable identities. Each canonical row is a stable cross-environment identity for the Skill model, and retired identities are never reused.",
   "generated_at": "2026-07-16T00:00:00Z",
-  "generator": "uuid.uuid4 generated once from a fixed seed; values are now committed immutable identities",
-  "count": 523,
+  "generator": "UUIDv4 values were generated once and are now committed immutable identities.",
+  "count": 522,
   "approved_non_seed_canonical_names": [
     "Crystal Reports",
     "IBM i",
-    "Langues non précisées",
     "Make",
     "Maven",
     "MyReport",
@@ -21,7 +20,7 @@
     "WinDev",
     "n8n"
   ],
-  "approved_non_seed_canonical_count": 15,
+  "approved_non_seed_canonical_count": 14,
   "skills": [
     {
       "canonical_name": ".NET",
@@ -1018,10 +1017,6 @@
     {
       "canonical_name": "LLM Optimization",
       "skill_uid": "6049f622-b668-4cb1-addf-668bdbc27cfe"
-    },
-    {
-      "canonical_name": "Langues non précisées",
-      "skill_uid": "a380962e-299b-4583-9c90-b0c0a35367ea"
     },
     {
       "canonical_name": "Laravel",
