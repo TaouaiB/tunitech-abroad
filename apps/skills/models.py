@@ -56,48 +56,38 @@ class Skill(models.Model):
 
         ``skill_uid`` is a stable cross-environment identity. Direct SQL
         and ``QuerySet.update()`` bypass ``save()`` and are prohibited for
-        this field — use the committed registry and the seed/data
-        migrations instead.
+        this field — use the committed registry and the data migration
+        ``0003_populate_skill_uid`` to provision it on existing rows.
+
+        There is no public or private model helper that bypasses this
+        invariant. The seed and rename code paths must therefore fail
+        loudly when an existing row's ``skill_uid`` does not already
+        match the registry; they may never rewrite a persisted identity.
         """
-        if self.pk is not None and not getattr(self, "_skill_uid_rename_in_progress", False):
-            current = (
-                type(self)
-                .objects.filter(pk=self.pk)
-                .values_list("skill_uid", flat=True)
-                .first()
-            )
-            if current is not None and current != self.skill_uid:
-                raise ValueError(
-                    "Skill.skill_uid is immutable. "
-                    f"Existing={current} attempted={self.skill_uid} "
-                    f"canonical_name={self.canonical_name!r}"
+        try:
+            if self.pk is not None:
+                current = (
+                    type(self)
+                    .objects.filter(pk=self.pk)
+                    .values_list("skill_uid", flat=True)
+                    .first()
                 )
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def set_skill_uid_for_rename(cls, instance, new_skill_uid):
-        """Set ``skill_uid`` on an instance during a canonical rename.
-
-        The seed service uses this helper when a legacy ``canonical_name``
-        is migrated to a new ``canonical_name`` (for example, the
-        ``.NET Core`` → ``.NET`` rename). The new ``skill_uid`` must come
-        from the committed registry. The helper bypasses the
-        ``save()`` immutability check exactly once and clears the bypass
-        flag afterwards. Application code outside the seed service must
-        not call this.
-        """
-        if isinstance(new_skill_uid, uuid.UUID):
-            new_uid = new_skill_uid
-        else:
-            new_uid = uuid.UUID(str(new_skill_uid))
-        if new_uid.version != 4:
-            raise ValueError(
-                f"Refusing to set non-UUIDv4 skill_uid via rename helper: {new_uid!s}"
-            )
-        instance._skill_uid_rename_in_progress = True
-        instance.skill_uid = new_uid
-        instance.save(update_fields=["skill_uid", "updated_at"])
-        instance._skill_uid_rename_in_progress = False
+                if current is not None and current != self.skill_uid:
+                    raise ValueError(
+                        "Skill.skill_uid is immutable. "
+                        f"Existing={current} attempted={self.skill_uid} "
+                        f"canonical_name={self.canonical_name!r}"
+                    )
+            super().save(*args, **kwargs)
+        finally:
+            # Defensive: ensure no hidden bypass state leaks onto the
+            # instance if an exception occurs inside save().
+            for attr in ("_skill_uid_rename_in_progress",):
+                if hasattr(self, attr):
+                    try:
+                        delattr(self, attr)
+                    except AttributeError:
+                        pass
 
     def __str__(self):
         return self.canonical_name

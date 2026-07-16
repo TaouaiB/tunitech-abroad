@@ -32,11 +32,20 @@ class SkillMaterializationTests(TestCase):
             last_seen_at=timezone.now(),
             last_fetched_at=timezone.now(),
         )
-        self.python_skill = Skill.objects.create(canonical_name="Python", slug="python", is_active=True)
+        from apps.skills.services.skill_uid_registry import get_skill_uid, reset_cache
+        reset_cache()
+        # Use the registry UUID so the seed does not abort on UUID drift.
+        self.python_skill = Skill.objects.create(
+            canonical_name="Python", slug="python", is_active=True,
+            skill_uid=get_skill_uid("Python"),
+        )
         SkillAlias.objects.create(skill=self.python_skill, normalized_alias="python")
         SkillAlias.objects.create(skill=self.python_skill, normalized_alias="python3")
-        
-        self.django_skill = Skill.objects.create(canonical_name="Django", slug="django", is_active=True)
+
+        self.django_skill = Skill.objects.create(
+            canonical_name="Django", slug="django", is_active=True,
+            skill_uid=get_skill_uid("Django"),
+        )
         SkillAlias.objects.create(skill=self.django_skill, normalized_alias="django")
         SkillAlias.objects.create(skill=self.django_skill, normalized_alias="django framework")
 

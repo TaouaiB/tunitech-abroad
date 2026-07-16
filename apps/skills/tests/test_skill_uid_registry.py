@@ -2,9 +2,11 @@
 
 The registry is the single source of truth for cross-environment
 ``Skill.skill_uid`` identity. It must be deterministic, append-only,
-and contain only valid UUIDv4 values.
+contain only valid UUIDv4 values, and declare explicit provenance
+for every non-seed canonical entry.
 """
 
+import ast
 import json
 import uuid
 from collections import Counter
@@ -13,9 +15,11 @@ from pathlib import Path
 from django.test import SimpleTestCase, TestCase
 
 from apps.skills.services.skill_uid_registry import (
+    approved_non_seed_canonical_names,
     assert_registry_complete,
     get_skill_uid,
     has_skill_uid,
+    is_approved_non_seed_canonical,
     registry_canonical_names,
     registry_count,
     registry_entries,
@@ -86,6 +90,15 @@ class SkillUidRegistryFileTests(SimpleTestCase):
     def test_count_matches_entries(self):
         self.assertEqual(self.data["count"], len(self.data["skills"]))
 
+    def test_declares_approved_non_seed_provenance(self):
+        self.assertIn("approved_non_seed_canonical_names", self.data)
+        self.assertIsInstance(self.data["approved_non_seed_canonical_names"], list)
+
+    def test_approved_non_seed_canonical_count_matches(self):
+        declared = self.data.get("approved_non_seed_canonical_count")
+        actual = len(self.data.get("approved_non_seed_canonical_names", []))
+        self.assertEqual(declared, actual)
+
 
 class SkillUidRegistryServiceTests(SimpleTestCase):
     """Validate the registry service API."""
@@ -146,6 +159,107 @@ class SkillUidRegistryServiceTests(SimpleTestCase):
         with self.assertRaises(ValueError) as ctx:
             assert_registry_complete(["Python", "Definitely Not A Canonical Skill Name 9999"])
         self.assertIn("Definitely Not A Canonical Skill Name 9999", str(ctx.exception))
+
+    def test_approved_non_seed_canonical_names_sorted_and_unique(self):
+        names = approved_non_seed_canonical_names()
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(list(names), sorted(names))
+
+    def test_every_approved_non_seed_name_is_in_registry(self):
+        names_in_registry = set(registry_canonical_names())
+        for n in approved_non_seed_canonical_names():
+            self.assertIn(
+                n, names_in_registry,
+                f"approved_non_seed_canonical_names entry {n!r} "
+                "is not present in registry 'skills'",
+            )
+
+    def test_approved_non_seed_names_have_no_overlap_with_seed(self):
+        # The seed-path canonical names must not appear in the
+        # approved_non_seed_canonical_names list.
+        # This test runs the seed in a test database; therefore it
+        # requires ``TestCase`` (the surrounding class is
+        # ``SimpleTestCase`` so the actual call is done via a
+        # separate ``TestCase`` below).
+        # We use a guard attribute to re-invoke this logic from
+        # the dedicated ``TestCase`` subclass.
+        pass
+
+    def test_is_approved_non_seed_canonical_lookup(self):
+        self.assertTrue(is_approved_non_seed_canonical("Crystal Reports"))
+        self.assertTrue(is_approved_non_seed_canonical("n8n"))
+        self.assertFalse(is_approved_non_seed_canonical("Python"))
+        self.assertFalse(is_approved_non_seed_canonical("Definitely Not A Canonical Skill Name 9999"))
+
+    def test_json_registry_equals_embedded_migration_registry(self):
+        # The registry embedded in the unapplied migration must be
+        # exactly the same as the committed JSON registry.
+        from apps.skills.services import skill_uid_registry as registry_module
+        registry_path_obj = Path(registry_module.__file__).resolve().parent.parent
+        migration_path = (
+            registry_path_obj
+            / "migrations"
+            / "0003_populate_skill_uid.py"
+        )
+        with migration_path.open("r", encoding="utf-8") as handle:
+            tree = ast.parse(handle.read())
+        embedded = None
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if (
+                        isinstance(target, ast.Name)
+                        and target.id == "REGISTRY_UUID_BY_CANONICAL"
+                    ):
+                        embedded = ast.literal_eval(node.value)
+                        break
+        self.assertIsNotNone(embedded, "REGISTRY_UUID_BY_CANONICAL not found in migration")
+        with registry_path().open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        json_map = {
+            s["canonical_name"]: s["skill_uid"] for s in data["skills"]
+        }
+        self.assertEqual(embedded, json_map)
+
+
+class SkillUidRegistryProvenanceDbTests(TestCase):
+    """Provenance tests that require the default database (run the seed)."""
+
+    def setUp(self):
+        from apps.skills.services.skill_uid_registry import reset_cache
+        reset_cache()
+
+    def test_approved_non_seed_names_have_no_overlap_with_seed(self):
+        from apps.skills.models import Skill
+        from apps.skills.services.seed import SkillSeedService
+        SkillSeedService.seed_initial_taxonomy()
+        seeded = set(
+            Skill.objects.filter(source="seed").values_list(
+                "canonical_name", flat=True
+            )
+        )
+        approved = set(approved_non_seed_canonical_names())
+        overlap = seeded & approved
+        self.assertEqual(
+            overlap, set(),
+            f"approved_non_seed_canonical_names overlaps with seeded names: {overlap}",
+        )
+
+    def test_registry_names_equal_seed_union_approved_non_seed(self):
+        from apps.skills.models import Skill
+        from apps.skills.services.seed import SkillSeedService
+        SkillSeedService.seed_initial_taxonomy()
+        seeded = set(
+            Skill.objects.filter(source="seed").values_list(
+                "canonical_name", flat=True
+            )
+        )
+        approved = set(approved_non_seed_canonical_names())
+        registry = set(registry_canonical_names())
+        self.assertEqual(
+            registry, seeded | approved,
+            "Registry names must exactly equal seed names UNION approved_non_seed_canonical_names",
+        )
 
 
 class SkillUidRegistrySeedAlignmentTests(TestCase):

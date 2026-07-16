@@ -25,7 +25,8 @@ import textwrap
 import uuid
 
 from django.conf import settings
-from django.test import SimpleTestCase
+from django.db import connection
+from django.test import SimpleTestCase, TransactionTestCase
 
 from apps.skills.services.skill_uid_registry import (
     get_skill_uid,
@@ -192,40 +193,170 @@ class SkillUidMigrationStep2Tests(SimpleTestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(str(rows[0]["skill_uid"]), str(get_skill_uid("Python")))
 
-    def test_step2_generates_uuid_for_orphan_row(self):
-        state = _run_child(
-            _CHILD_RUN_AND_DUMP,
-            {
-                "target_migration": MIGRATION_POPULATE,
-                "insert_rows": [
-                    {"canonical_name": "Legacy Orphan Skill",
-                     "slug": "legacy-orphan-skill", "category": "other"}
-                ],
-            },
-        )
-        rows = state["rows"]
-        self.assertEqual(len(rows), 1)
-        self.assertFalse(has_skill_uid("Legacy Orphan Skill"))
-        u = uuid.UUID(rows[0]["skill_uid"])
-        self.assertEqual(u.version, 4)
-
     def test_step2_assigns_unique_uuids_to_mixed_rows(self):
         rows_to_insert = [
             {"canonical_name": n, "slug": n.lower().replace(" ", "-"),
              "category": "other"}
-            for n in ["Python", "PostgreSQL", "Legacy Orphan A", "Legacy Orphan B"]
+            for n in ["Python", "PostgreSQL"]
         ]
         state = _run_child(
             _CHILD_RUN_AND_DUMP,
             {"target_migration": MIGRATION_POPULATE, "insert_rows": rows_to_insert},
         )
         rows = state["rows"]
-        self.assertEqual(len(rows), 4)
+        self.assertEqual(len(rows), 2)
         uuids = [str(r["skill_uid"]) for r in rows]
-        self.assertEqual(len(set(uuids)), 4)
+        self.assertEqual(len(set(uuids)), 2)
         for r in rows:
             u = uuid.UUID(r["skill_uid"])
             self.assertEqual(u.version, 4)
+
+    def test_step2_legacy_dotnet_old_only_receives_target_uuid(self):
+        # Legacy ``.NET Core`` row exists, registry target ``.NET``
+        # does not: the old row gets the target registry UUID. A
+        # later in-place rename preserves that UUID.
+        state = _run_child(
+            _CHILD_RUN_AND_DUMP,
+            {
+                "target_migration": MIGRATION_POPULATE,
+                "insert_rows": [
+                    {"canonical_name": ".NET Core", "slug": "dotnet-core",
+                     "category": "backend"},
+                ],
+            },
+        )
+        rows = state["rows"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["canonical_name"], ".NET Core")
+        self.assertEqual(
+            str(rows[0]["skill_uid"]), str(get_skill_uid(".NET"))
+        )
+
+    def test_step2_legacy_dotnet_both_rows_get_distinct_uuids(self):
+        # Both ``.NET Core`` and ``.NET`` exist: the target gets the
+        # registry UUID, the legacy old row gets the fixed tombstone
+        # UUID. No random generation.
+        state = _run_child(
+            _CHILD_RUN_AND_DUMP,
+            {
+                "target_migration": MIGRATION_POPULATE,
+                "insert_rows": [
+                    {"canonical_name": ".NET Core", "slug": "dotnet-core",
+                     "category": "backend"},
+                    {"canonical_name": ".NET", "slug": "dotnet",
+                     "category": "backend"},
+                ],
+            },
+        )
+        rows = state["rows"]
+        self.assertEqual(len(rows), 2)
+        by_name = {r["canonical_name"]: r for r in rows}
+        self.assertEqual(
+            str(by_name[".NET"]["skill_uid"]),
+            str(get_skill_uid(".NET")),
+        )
+        self.assertEqual(
+            str(by_name[".NET Core"]["skill_uid"]),
+            "23b14296-d0ce-4897-a7fc-1489331f86de",
+        )
+        # The two UUIDs are distinct
+        self.assertNotEqual(
+            by_name[".NET"]["skill_uid"], by_name[".NET Core"]["skill_uid"]
+        )
+
+    def test_step2_legacy_aspnet_old_only_receives_target_uuid(self):
+        state = _run_child(
+            _CHILD_RUN_AND_DUMP,
+            {
+                "target_migration": MIGRATION_POPULATE,
+                "insert_rows": [
+                    {"canonical_name": "ASP.NET", "slug": "aspdotnet",
+                     "category": "backend"},
+                ],
+            },
+        )
+        rows = state["rows"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["canonical_name"], "ASP.NET")
+        self.assertEqual(
+            str(rows[0]["skill_uid"]), str(get_skill_uid("ASP.NET Core"))
+        )
+
+    def test_step2_aborts_on_unknown_active_row(self):
+        # An unknown active row must abort the migration with a
+        # concise ``RuntimeError`` listing canonical names and
+        # active/inactive state. No random UUIDv4 generation.
+        result = subprocess.run(
+            [sys.executable, "-c", _CHILD_RUN_AND_DUMP, PROJECT_ROOT, TEST_DB_NAME],
+            input=json.dumps({
+                "target_migration": MIGRATION_POPULATE,
+                "insert_rows": [
+                    {"canonical_name": "Python", "slug": "python",
+                     "category": "programming_language"},
+                    {"canonical_name": "Unknown Active Skill",
+                     "slug": "unknown-active", "category": "other"},
+                ],
+            }),
+            capture_output=True,
+            text=True,
+            cwd=PROJECT_ROOT,
+            timeout=300,
+        )
+        # The migration aborted with a non-zero return code
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Migration aborted", result.stderr)
+        self.assertIn("Unknown Active Skill", result.stderr)
+        self.assertIn("active", result.stderr)
+
+    def test_step2_aborts_on_unknown_inactive_row(self):
+        result = subprocess.run(
+            [sys.executable, "-c", _CHILD_RUN_AND_DUMP, PROJECT_ROOT, TEST_DB_NAME],
+            input=json.dumps({
+                "target_migration": MIGRATION_POPULATE,
+                "insert_rows": [
+                    {"canonical_name": "Python", "slug": "python",
+                     "category": "programming_language"},
+                    {"canonical_name": "Unknown Inactive Skill",
+                     "slug": "unknown-inactive", "category": "other",
+                     "is_active": False},
+                ],
+            }),
+            capture_output=True,
+            text=True,
+            cwd=PROJECT_ROOT,
+            timeout=300,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Migration aborted", result.stderr)
+        self.assertIn("Unknown Inactive Skill", result.stderr)
+        self.assertIn("inactive", result.stderr)
+
+    def test_step2_all_finalized_uuids_are_unique_and_v4(self):
+        # A realistic mix: two registry rows, two legacy-old rows
+        # with the target absent, and one legacy-both scenario.
+        # All resulting UUIDs must be unique and UUIDv4.
+        rows_to_insert = [
+            {"canonical_name": "Python", "slug": "python",
+             "category": "programming_language"},
+            {"canonical_name": "PostgreSQL", "slug": "postgresql",
+             "category": "database"},
+            {"canonical_name": ".NET Core", "slug": "dotnet-core",
+             "category": "backend"},
+            {"canonical_name": "ASP.NET", "slug": "aspdotnet",
+             "category": "backend"},
+            {"canonical_name": ".NET", "slug": "dotnet",
+             "category": "backend"},
+        ]
+        state = _run_child(
+            _CHILD_RUN_AND_DUMP,
+            {"target_migration": MIGRATION_POPULATE, "insert_rows": rows_to_insert},
+        )
+        rows = state["rows"]
+        self.assertEqual(len(rows), 5)
+        uuids = [str(r["skill_uid"]) for r in rows]
+        self.assertEqual(len(set(uuids)), 5)
+        for u in uuids:
+            self.assertEqual(uuid.UUID(u).version, 4)
 
 
 class SkillUidMigrationStep3Tests(SimpleTestCase):
@@ -252,3 +383,137 @@ class SkillUidMigrationStep3Tests(SimpleTestCase):
         self.assertFalse(field.editable)
         self.assertTrue(field.unique)
         self.assertFalse(field.null)
+
+
+class SkillUidMigrationReverseTests(SimpleTestCase):
+    """Reverse migration must restore the prior schema."""
+
+    def test_reverse_from_finalize_to_initial_removes_field(self):
+        # Apply all four migrations on an isolated DB, then reverse
+        # back to 0001_initial and verify the field is gone.
+        script = textwrap.dedent("""
+            import os, sys, json, django
+            sys.path.insert(0, '__PROJ__')
+            os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
+            django.setup()
+            from django.db import connection, connections
+            DB = '__TEST_DB__'
+            with connection.cursor() as cur:
+                cur.execute('DROP DATABASE IF EXISTS "' + DB + '"')
+                cur.execute('CREATE DATABASE "' + DB + '"')
+            connection.close()
+            conn = connections['default']
+            conn.settings_dict['NAME'] = DB
+            conn.connect()
+            from django.test.utils import setup_databases, teardown_databases
+            old = setup_databases(verbosity=0, interactive=False, keepdb=False)
+            try:
+                from django.core.management import call_command
+                call_command('migrate', 'skills', '0004_skill_skill_uid_finalize', verbosity=0)
+                with connection.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO skills_skill "
+                        "(canonical_name, slug, category, is_active, source, skill_uid, created_at, updated_at) "
+                        "VALUES (%s, %s, %s, %s, %s, gen_random_uuid(), NOW(), NOW())",
+                        ['Python', 'python', 'programming_language', True, 'seed'],
+                    )
+                call_command('migrate', 'skills', '0001_initial', verbosity=0)
+                with connection.cursor() as cur:
+                    cur.execute(
+                        "SELECT column_name FROM information_schema.columns "
+                        "WHERE table_name = 'skills_skill' AND column_name = 'skill_uid'"
+                    )
+                    cols = cur.fetchall()
+                print('---BEGIN---')
+                print(json.dumps({'skill_uid_columns': [c[0] for c in cols]}))
+                print('---END---')
+            finally:
+                teardown_databases(old, verbosity=0)
+        """).strip().replace("__PROJ__", PROJECT_ROOT).replace("__TEST_DB__", TEST_DB_NAME)
+        result = subprocess.run(
+            [sys.executable, "-c", script, PROJECT_ROOT, TEST_DB_NAME],
+            capture_output=True, text=True, cwd=PROJECT_ROOT, timeout=300,
+        )
+        self.assertEqual(
+            result.returncode, 0,
+            f"Reverse migration child failed: stdout={result.stdout} stderr={result.stderr}",
+        )
+        out = result.stdout
+        begin = out.find("---BEGIN---")
+        end = out.find("---END---")
+        self.assertGreaterEqual(begin, 0)
+        self.assertGreater(end, begin)
+        state = json.loads(out[begin + len("---BEGIN---"):end].strip())
+        self.assertEqual(
+            state["skill_uid_columns"], [],
+            "Reverse migration must remove the skill_uid column",
+        )
+
+    def test_local_database_not_modified(self):
+        # Verify the normal local development database still has no
+        # skill_uid column and only the 0001 migration applied.
+        # This test needs the real default database; promote it to
+        # ``TransactionTestCase`` via the sibling class below.
+        pass
+
+
+class SkillUidMigrationLocalDatabaseChecks(TransactionTestCase):
+    """Verify the normal local database is unchanged.
+
+    The Django test runner points ``connection`` at the test
+    database. We open a separate ``psycopg`` connection to the
+    normal local development database to inspect its state without
+    touching the test database.
+    """
+
+    def _open_local_connection(self):
+        import os
+        import psycopg
+        from django.conf import settings as dj_settings
+        db = dj_settings.DATABASES["default"]
+        # Resolve the local DB name (the same one used for dev), not
+        # the test DB name. ``test_tunitech_abroad`` is the test DB.
+        target_name = db["NAME"]
+        # If running inside a test context, the NAME is overridden
+        # to test_<name>; in that case derive the local name.
+        if target_name.startswith("test_"):
+            target_name = target_name[len("test_"):]
+        # Allow override via env for safety
+        target_name = os.environ.get("TUNIATLAS_LOCAL_DB_NAME", target_name)
+        conn = psycopg.connect(
+            dbname=target_name,
+            user=db.get("USER"),
+            password=db.get("PASSWORD"),
+            host=db.get("HOST", "localhost"),
+            port=db.get("PORT", "5432"),
+        )
+        return conn, target_name
+
+    def test_local_database_has_no_skill_uid_column(self):
+        conn, _ = self._open_local_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT column_name FROM information_schema.columns
+                    WHERE table_name = 'skills_skill' AND column_name = 'skill_uid'
+                """)
+                self.assertIsNone(
+                    cur.fetchone(),
+                    "Normal local database must not have skill_uid column",
+                )
+        finally:
+            conn.close()
+
+    def test_local_database_only_has_initial_migration(self):
+        conn, _ = self._open_local_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT name FROM django_migrations
+                    WHERE app = 'skills'
+                    ORDER BY id
+                """)
+                applied = [r[0] for r in cur.fetchall()]
+            self.assertEqual(applied, ["0001_initial"])
+        finally:
+            conn.close()

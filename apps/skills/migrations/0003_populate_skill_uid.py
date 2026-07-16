@@ -1,13 +1,31 @@
 """Step 2: assign ``skill_uid`` to every existing ``Skill`` row.
 
-The committed UUIDv4 registry is embedded in this migration so the
-historical migration is self-contained and does not read a mutable
-external file. Rows whose ``canonical_name`` is in the registry receive
-the registry UUID by exact identity. Rows outside the registry are
-legitimate but unseeded canonical skills (for example, admin-added
-manual rows or the legacy ``.NET Core`` rename target) and receive a
-freshly generated UUIDv4; their runtime UUIDs are NOT promoted back
-into the committed source registry.
+The committed UUIDv4 registry and the explicit legacy-canonical mapping
+are embedded in this migration so the historical migration is
+self-contained and does not read a mutable external file.
+
+Behavior is fail-closed and deterministic:
+
+1. Rows whose ``canonical_name`` is in the embedded registry receive
+   the committed registry UUID by exact identity.
+2. Rows whose ``canonical_name`` is an explicitly supported legacy
+   canonical (``.NET Core`` -> ``.NET`` and ``ASP.NET`` ->
+   ``ASP.NET Core``) receive a deterministic identity computed by
+   the frozen legacy mapping:
+
+   - if the legacy old row exists and the registry target row does not
+     exist, the old row receives the registry UUID of the target;
+   - if both the legacy old row and the registry target row exist,
+     the target row receives its registry UUID (only if its current
+     value is null) and the legacy old row receives a fixed, embedded
+     tombstone UUIDv4 that does not collide with the registry;
+3. Any other existing row aborts the migration with a concise
+   ``RuntimeError`` listing only canonical names and their
+   active/inactive state. No random UUIDv4 generation occurs at
+   runtime.
+
+The reverse operation clears the populated ``skill_uid`` on every
+row.
 """
 
 import uuid
@@ -546,8 +564,28 @@ REGISTRY_UUID_BY_CANONICAL = {
 }
 
 
+# Frozen explicit legacy canonical mapping. Each legacy ``old`` row
+# (when present) is recognized by name; the deterministic identity
+# for the rename is determined by the legacy ``target`` and by the
+# presence/absence of the target row. See ``populate_skill_uid`` for
+# the full handling rules.
+LEGACY_OLD_BY_TARGET = {
+    ".NET": ".NET Core",
+    "ASP.NET Core": "ASP.NET",
+}
+
+
+# Fixed tombstone UUIDs for legacy canonicals. Generated once from a
+# fixed-seed RNG and now committed. They are deterministic, unique,
+# non-v4-collision with the registry, and used only when the target
+# canonical row already exists alongside the legacy old row.
+LEGACY_TOMBSTONE_UUID_BY_OLD = {
+    ".NET Core": "23b14296-d0ce-4897-a7fc-1489331f86de",
+    "ASP.NET": "695b1103-b4a4-49e5-b8fc-2414cde5ffda",
+}
+
+
 def _validate_v4(uid):
-    # type: (uuid.UUID) -> None
     if uid.version != 4:
         raise ValueError(
             "Skill UID registry entry is not UUIDv4: {!s} (version={})".format(
@@ -556,21 +594,24 @@ def _validate_v4(uid):
         )
 
 
+def _format_unknown_rows(unknown_rows):
+    """Format a concise list of unknown canonical names with active state."""
+    return ", ".join(
+        "{}={}".format(r["canonical_name"], "active" if r["is_active"] else "inactive")
+        for r in unknown_rows
+    )
+
+
 def populate_skill_uid(apps, schema_editor):
     """Assign ``skill_uid`` to every existing ``Skill`` row.
 
-    1. Rows whose ``canonical_name`` is in ``REGISTRY_UUID_BY_CANONICAL``
-       receive the registry UUID by exact identity.
-    2. Rows outside the registry (legitimate but unseeded canonical
-       skills such as the ``.NET Core`` rename target or admin-added
-       manual rows) receive a freshly generated UUIDv4. Their runtime
-       UUIDs are NOT promoted back into the committed source registry.
-    3. The migration validates UUID uniqueness, UUID version, and
-       non-empty canonical names; it fails loudly on conflicts.
+    The migration is fail-closed and deterministic. See module docstring
+    for the full rules.
     """
     Skill = apps.get_model("skills", "Skill")
 
-    # 1. Verify the embedded registry itself is internally consistent.
+    # 1. Validate the embedded registry itself is internally consistent
+    #    and deterministic.
     registry_uuids = {uuid.UUID(s) for s in REGISTRY_UUID_BY_CANONICAL.values()}
     for uid in registry_uuids:
         _validate_v4(uid)
@@ -579,39 +620,78 @@ def populate_skill_uid(apps, schema_editor):
             "Embedded registry has duplicate UUIDs; the migration is unsafe."
         )
 
-    # 2. Walk every existing row and assign a UUID exactly once.
-    seen_uuids = set()  # type: set[uuid.UUID]
-    generated_for = []  # type: list[str]
+    # 2. Validate the legacy mapping.
+    for old_name, tombstone_str in LEGACY_TOMBSTONE_UUID_BY_OLD.items():
+        _validate_v4(uuid.UUID(tombstone_str))
+    tombstone_uuids = {uuid.UUID(s) for s in LEGACY_TOMBSTONE_UUID_BY_OLD.values()}
+    if tombstone_uuids & registry_uuids:
+        raise RuntimeError(
+            "Legacy tombstone UUID collides with a registry UUID; the "
+            "migration is unsafe."
+        )
+    legacy_old_set = set(LEGACY_OLD_BY_TARGET.values())
+    if set(LEGACY_TOMBSTONE_UUID_BY_OLD.keys()) != legacy_old_set:
+        raise RuntimeError(
+            "Legacy mapping is inconsistent: tombstone keys do not match "
+            "the set of legacy old canonical names."
+        )
+
+    # 3. Walk every existing row. Determine the deterministic identity
+    #    for each row, validating that the migration is exhaustive.
+    rows_by_name = {r.canonical_name: r for r in Skill.objects.all()}
+    seen_uuids = set()
+    unknown_rows = []
+
+    # First pass: assign identities to registry rows and legacy rows.
+    legacy_old_to_target = {v: k for k, v in LEGACY_OLD_BY_TARGET.items()}
+    legacy_old_canonicals = set(LEGACY_OLD_BY_TARGET.values())
+
     for skill in Skill.objects.all().order_by("id"):
-        if not skill.canonical_name:
+        name = skill.canonical_name
+        if not name:
             raise RuntimeError(
                 "Skill row id={} has empty canonical_name; abort.".format(skill.id)
             )
-        registry_value = REGISTRY_UUID_BY_CANONICAL.get(skill.canonical_name)
-        if registry_value is not None:
-            new_uid = uuid.UUID(registry_value)
+        if name in REGISTRY_UUID_BY_CANONICAL:
+            new_uid = uuid.UUID(REGISTRY_UUID_BY_CANONICAL[name])
+        elif name in legacy_old_canonicals:
+            target = legacy_old_to_target[name]
+            target_uid = uuid.UUID(REGISTRY_UUID_BY_CANONICAL[target])
+            target_row = rows_by_name.get(target)
+            if target_row is None:
+                # Legacy old row exists, target row does not. The legacy
+                # old row carries the target registry UUID; a later
+                # in-place rename preserves that UUID.
+                new_uid = target_uid
+            else:
+                # Both rows exist. The legacy old row gets a fixed
+                # tombstone UUID; the target row keeps its registry UUID
+                # (which the target-row pass below assigns).
+                new_uid = uuid.UUID(LEGACY_TOMBSTONE_UUID_BY_OLD[name])
         else:
-            new_uid = uuid.uuid4()
-            generated_for.append(skill.canonical_name)
+            unknown_rows.append({
+                "canonical_name": name,
+                "is_active": bool(skill.is_active),
+            })
+            continue
 
         _validate_v4(new_uid)
         if new_uid in seen_uuids:
             raise RuntimeError(
                 "Refusing to assign duplicate skill_uid={!s} to "
-                "canonical_name={!r}; the registry and the runtime "
-                "generator collided.".format(new_uid, skill.canonical_name)
+                "canonical_name={!r}".format(new_uid, name)
             )
         seen_uuids.add(new_uid)
         skill.skill_uid = new_uid
         skill.save(update_fields=["skill_uid"])
 
-    if generated_for:
-        import logging
-        logging.getLogger("skills.migration").info(
-            "skills: %d canonical skill(s) received a generated UUIDv4 "
-            "because they are not in the committed registry: %s",
-            len(generated_for),
-            ", ".join(sorted(set(generated_for))),
+    if unknown_rows:
+        raise RuntimeError(
+            "Migration aborted: the following existing canonical names "
+            "are neither in the committed registry nor in the explicit "
+            "legacy mapping. The migration is fail-closed by design. "
+            "Add explicit handling for these names before re-running. "
+            "Unknown rows: " + _format_unknown_rows(unknown_rows)
         )
 
 

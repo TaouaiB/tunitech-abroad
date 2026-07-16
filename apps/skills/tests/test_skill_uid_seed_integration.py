@@ -3,22 +3,32 @@
 The seed service must:
 - use the registry UUID for every canonical skill it creates;
 - preserve the existing ``skill_uid`` on rows that already match;
-- converge legacy canonical renames onto the registry UUID via the
-  controlled ``set_skill_uid_for_rename`` helper;
+- never rotate or rewrite an existing ``skill_uid`` at runtime;
+- fail loudly when an existing canonical row carries a UUID that
+  does not match the committed registry;
+- fail loudly when a legacy canonical row carries a UUID that does
+  not match the target registry UUID (the migration must have
+  converged the legacy row first);
 - remain idempotent across re-runs;
-- fail loudly if the registry is missing an entry for a seeded skill.
+- fail loudly if the registry is missing an entry for a seeded skill;
+- roll back the entire seed transaction when a mismatch is detected.
+
+There is no public or private model helper that bypasses the
+``Skill.skill_uid`` immutability invariant. Converging a legacy row
+on the registry UUID is the responsibility of the unapplied data
+migration ``0003_populate_skill_uid``, not the seed.
 """
 
 import uuid
 
 from django.test import TestCase
+from django.db import transaction
 
 from apps.skills.models import Skill, SkillAlias
 from apps.skills.services.seed import SkillSeedService
 from apps.skills.services.skill_uid_registry import (
     get_skill_uid,
     has_skill_uid,
-    registry_canonical_names,
     reset_cache,
 )
 
@@ -82,19 +92,23 @@ class SeedServiceRegistryIntegrationTests(TestCase):
         )
         self.assertEqual(sorted(first_uuids), sorted(last_uuids))
 
-    def test_seed_aligns_legacy_dotnet_rename_with_registry(self):
+    def test_legacy_dotnet_rename_preserves_target_uuid(self):
+        # The migration is responsible for assigning the registry
+        # UUID to the legacy ``.NET Core`` row before the seed runs.
+        # The seed rename only preserves the existing UUID.
         from apps.skills.services.normalizer import normalize_skill_text
 
-        # Simulate the legacy '.NET Core' row that exists in older databases
         legacy_dotnet = Skill.objects.create(
             canonical_name=".NET Core",
             slug="dotnet-core",
             category="backend",
+            skill_uid=get_skill_uid(".NET"),
         )
         legacy_aspnet = Skill.objects.create(
             canonical_name="ASP.NET",
             slug="aspdotnet",
             category="backend",
+            skill_uid=get_skill_uid("ASP.NET Core"),
         )
         SkillAlias.objects.create(
             skill=legacy_dotnet,
@@ -109,7 +123,9 @@ class SeedServiceRegistryIntegrationTests(TestCase):
 
         SkillSeedService.seed_initial_taxonomy()
 
-        # The legacy rows were renamed in place and now carry the registry UUID
+        # The legacy rows were renamed in place; their existing
+        # ``skill_uid`` is preserved (identity migration, not a
+        # rotation).
         renamed_dotnet = Skill.objects.get(canonical_name=".NET")
         self.assertEqual(renamed_dotnet.skill_uid, get_skill_uid(".NET"))
         renamed_aspnet = Skill.objects.get(canonical_name="ASP.NET Core")
@@ -120,21 +136,9 @@ class SeedServiceRegistryIntegrationTests(TestCase):
         self.assertFalse(Skill.objects.filter(canonical_name=".NET Core").exists())
         self.assertFalse(Skill.objects.filter(canonical_name="ASP.NET").exists())
 
-    def test_seed_aligns_existing_row_with_registry_uuid(self):
-        # Pre-existing row created by a different code path with a random UUID
-        Skill.objects.create(
-            canonical_name="Python",
-            slug="python",
-            category="programming_language",
-        )
-        # Run the seed
-        SkillSeedService.seed_initial_taxonomy()
-        python = Skill.objects.get(canonical_name="Python")
-        self.assertEqual(python.skill_uid, get_skill_uid("Python"))
-
 
 class SeedServiceRegistryFailureTests(TestCase):
-    """Seed must fail safely when the registry is missing an entry."""
+    """Seed must fail loudly and roll back on any skill_uid drift."""
 
     def setUp(self):
         reset_cache()
@@ -154,17 +158,176 @@ class SeedServiceRegistryFailureTests(TestCase):
                 SkillSeedService.seed_initial_taxonomy()
             self.assertIn("Python", str(ctx.exception))
 
-    def test_legacy_dotnet_rename_keeps_aliases(self):
+    def test_seed_fails_loudly_on_existing_uuid_drift(self):
+        # An existing row with the wrong UUID must abort the seed.
+        # This proves the runtime never rotates skill_uid.
+        existing = Skill.objects.create(
+            canonical_name="Python",
+            slug="python",
+            category="programming_language",
+        )
+        # Confirm the row's UUID does NOT match the registry
+        self.assertNotEqual(existing.skill_uid, get_skill_uid("Python"))
+
+        with self.assertRaises(ValueError) as ctx:
+            SkillSeedService.seed_initial_taxonomy()
+        self.assertIn("Python", str(ctx.exception))
+        self.assertIn("refuses to rotate", str(ctx.exception))
+
+        # The existing row's UUID is preserved unchanged
+        existing.refresh_from_db()
+        self.assertNotEqual(existing.skill_uid, get_skill_uid("Python"))
+
+    def test_seed_failure_rolls_back_transaction(self):
+        # Pre-existing mismatched row triggers a failure; the entire
+        # transaction must roll back so partial alias or skill
+        # creations are not visible after the failure.
+        Skill.objects.create(
+            canonical_name="Python",
+            slug="python",
+            category="programming_language",
+        )
+        # Snapshot state before the failed seed
+        skills_before = Skill.objects.count()
+        aliases_before = SkillAlias.objects.count()
+        try:
+            with transaction.atomic():
+                SkillSeedService.seed_initial_taxonomy()
+        except ValueError:
+            pass
+        # After the failed seed, no additional skills or aliases
+        # should be present in the database.
+        self.assertEqual(Skill.objects.count(), skills_before)
+        self.assertEqual(SkillAlias.objects.count(), aliases_before)
+
+    def test_legacy_dotnet_rename_fails_when_uuid_does_not_match_target(self):
+        # Simulate a legacy ``.NET Core`` row whose skill_uid was
+        # never converged to the target registry UUID (for example,
+        # the data migration was skipped). The seed must abort
+        # before mutating the row.
+        legacy = Skill.objects.create(
+            canonical_name=".NET Core",
+            slug="dotnet-core",
+            category="backend",
+            # Default uuid.uuid4() != get_skill_uid(".NET")
+            skill_uid=uuid.uuid4(),
+        )
+
+        with self.assertRaises(ValueError) as ctx:
+            SkillSeedService.seed_initial_taxonomy()
+        self.assertIn(".NET Core", str(ctx.exception))
+        self.assertIn("refuses to rotate", str(ctx.exception))
+
+        # The legacy row is left unchanged (rename did not happen)
+        legacy.refresh_from_db()
+        self.assertEqual(legacy.canonical_name, ".NET Core")
+        self.assertNotEqual(legacy.skill_uid, get_skill_uid(".NET"))
+
+    def test_legacy_aspnet_rename_fails_when_uuid_does_not_match_target(self):
+        # Equivalent coverage for the ASP.NET -> ASP.NET Core legacy
+        # rename. Only exercised when the registry already has the
+        # target identity.
+        legacy = Skill.objects.create(
+            canonical_name="ASP.NET",
+            slug="aspdotnet",
+            category="backend",
+            skill_uid=uuid.uuid4(),
+        )
+
+        with self.assertRaises(ValueError) as ctx:
+            SkillSeedService.seed_initial_taxonomy()
+        self.assertIn("ASP.NET", str(ctx.exception))
+        self.assertIn("refuses to rotate", str(ctx.exception))
+
+        legacy.refresh_from_db()
+        self.assertEqual(legacy.canonical_name, "ASP.NET")
+        self.assertNotEqual(legacy.skill_uid, get_skill_uid("ASP.NET Core"))
+
+    def test_legacy_dotnet_rename_succeeds_when_uuid_matches(self):
+        # The migration's responsibility: assign the target registry
+        # UUID to the legacy row. The seed must then rename in place
+        # and preserve the UUID.
         from apps.skills.services.normalizer import normalize_skill_text
 
         legacy = Skill.objects.create(
-            canonical_name=".NET Core", slug="dotnet-core", category="backend"
+            canonical_name=".NET Core",
+            slug="dotnet-core",
+            category="backend",
+            skill_uid=get_skill_uid(".NET"),
         )
         SkillAlias.objects.create(
             skill=legacy,
             alias=".NET Core",
             normalized_alias=normalize_skill_text(".NET Core"),
         )
+
         SkillSeedService.seed_initial_taxonomy()
-        alias = SkillAlias.objects.get(normalized_alias=normalize_skill_text(".NET Core"))
+
+        renamed = Skill.objects.get(canonical_name=".NET")
+        self.assertEqual(renamed.skill_uid, get_skill_uid(".NET"))
+        # Alias was preserved on the renamed skill
+        alias = SkillAlias.objects.get(
+            normalized_alias=normalize_skill_text(".NET Core")
+        )
         self.assertEqual(alias.skill.canonical_name, ".NET")
+
+    def test_two_row_legacy_scenario_preserves_both_uuids(self):
+        # Old row and target row both exist. Preserve both UUIDs.
+        # The legacy old row's UUID is the tombstone UUID (would be
+        # assigned by the migration in production).
+        LEGACY_TOMBSTONE_DOTNET = uuid.UUID(
+            "23b14296-d0ce-4897-a7fc-1489331f86de"
+        )
+
+        old_row = Skill.objects.create(
+            canonical_name=".NET Core",
+            slug="dotnet-core",
+            category="backend",
+            skill_uid=LEGACY_TOMBSTONE_DOTNET,
+        )
+        target_row = Skill.objects.create(
+            canonical_name=".NET",
+            slug="dotnet",
+            category="backend",
+            skill_uid=get_skill_uid(".NET"),
+        )
+
+        SkillSeedService.seed_initial_taxonomy()
+
+        # The target row keeps its registry UUID
+        target_after = Skill.objects.get(canonical_name=".NET")
+        self.assertEqual(target_after.skill_uid, get_skill_uid(".NET"))
+        # The old row was deactivated, not deleted
+        old_after = Skill.objects.get(pk=old_row.pk)
+        self.assertFalse(old_after.is_active)
+        # Its UUID is preserved (not rotated to the target's UUID)
+        self.assertEqual(old_after.skill_uid, LEGACY_TOMBSTONE_DOTNET)
+
+    def test_two_row_legacy_scenario_fails_on_target_uuid_drift(self):
+        # Old row and target row both exist. If the target's UUID
+        # does not match the registry, the seed must abort.
+        LEGACY_TOMBSTONE_DOTNET = uuid.UUID(
+            "23b14296-d0ce-4897-a7fc-1489331f86de"
+        )
+        Skill.objects.create(
+            canonical_name=".NET Core",
+            slug="dotnet-core",
+            category="backend",
+            skill_uid=LEGACY_TOMBSTONE_DOTNET,
+        )
+        target_with_wrong_uuid = Skill.objects.create(
+            canonical_name=".NET",
+            slug="dotnet",
+            category="backend",
+            skill_uid=uuid.uuid4(),  # wrong
+        )
+
+        with self.assertRaises(ValueError) as ctx:
+            SkillSeedService.seed_initial_taxonomy()
+        self.assertIn("refuses to rotate", str(ctx.exception))
+
+        # Both rows left unchanged
+        old_row = Skill.objects.get(canonical_name=".NET Core")
+        self.assertEqual(old_row.skill_uid, LEGACY_TOMBSTONE_DOTNET)
+        target_row = Skill.objects.get(canonical_name=".NET")
+        self.assertEqual(target_row.skill_uid, target_with_wrong_uuid.skill_uid)

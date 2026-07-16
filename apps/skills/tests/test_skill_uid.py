@@ -97,3 +97,34 @@ class SkillUidModelTests(TestCase):
         SkillForm = modelform_factory(Skill, fields=["canonical_name", "slug", "category"])
         form = SkillForm()
         self.assertNotIn("skill_uid", form.fields)
+
+    def test_no_runtime_mutation_helper_exists(self):
+        # There is no public or private model helper that bypasses the
+        # ``skill_uid`` immutability invariant. The seed and rename code
+        # paths must never rewrite a persisted identity.
+        self.assertFalse(hasattr(Skill, "set_skill_uid_for_rename"))
+        self.assertFalse(
+            hasattr(Skill(), "_skill_uid_rename_in_progress"),
+            "Skill instances must not carry a hidden bypass flag",
+        )
+
+    def test_no_bypass_state_after_failed_save(self):
+        # If save() raises, no hidden bypass state may remain on the
+        # instance.
+        skill = Skill.objects.create(canonical_name="Haskell", slug="haskell")
+        original = skill.skill_uid
+        # Simulate a hypothetical bypass flag the seed/rename code
+        # might have left behind
+        skill._skill_uid_rename_in_progress = True
+        # Trigger save with a UUID change; immutability must still
+        # reject the change and the defensive finally must clear the
+        # bypass flag.
+        skill.skill_uid = uuid.UUID("11111111-2222-4333-8444-777777777777")
+        with self.assertRaises(ValueError):
+            skill.save()
+        self.assertFalse(
+            hasattr(skill, "_skill_uid_rename_in_progress"),
+            "Failed save must not leak hidden bypass state on the instance",
+        )
+        skill.refresh_from_db()
+        self.assertEqual(skill.skill_uid, original)

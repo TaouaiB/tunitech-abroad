@@ -633,15 +633,23 @@ class SkillSeedService:
                 if created:
                     skills_created += 1
                 else:
-                    # Existing row: align skill_uid with the committed registry
-                    # for the canonical identity. The save() immutability check
-                    # protects against accidental rotation; the rename helper
-                    # below is the only authorized path to update skill_uid on
-                    # an existing row, and it is only used here to converge an
-                    # environment-specific legacy UUID onto the registry UUID
-                    # for the same canonical_name.
+                    # Existing row: ``skill_uid`` is immutable. If the
+                    # persisted UUID does not already match the committed
+                    # registry UUID for this canonical name, the seed must
+                    # abort. Rotating the UUID would silently rewrite the
+                    # cross-environment identity of a known canonical
+                    # skill; that contract is owned by the registry and by
+                    # the unapplied data migration only.
                     if skill.skill_uid != skill_uid:
-                        Skill.set_skill_uid_for_rename(skill, skill_uid)
+                        raise ValueError(
+                            "Existing canonical skill has a different "
+                            "skill_uid than the committed registry; the "
+                            "seed refuses to rotate it. "
+                            f"canonical_name={canonical!r} "
+                            f"row={skill.skill_uid} "
+                            f"registry={skill_uid}. "
+                            "Resolve the drift before running the seed again."
+                        )
 
                 aliases: List[str] = item["aliases"]
                 for alias_text in aliases:
@@ -696,19 +704,60 @@ class SkillSeedService:
         new_slug = cls._slug_for_canonical(new_name)
         new_skill = Skill.objects.filter(canonical_name=new_name).first()
         if not new_skill:
+            # Old row exists, target row absent. Rename in place and
+            # preserve the existing ``skill_uid``. A canonical rename
+            # represents the same skill, so its identity must not
+            # change. The persisted ``skill_uid`` must already equal the
+            # committed registry UUID for the new canonical name; the
+            # unapplied data migration ``0003_populate_skill_uid`` is
+            # responsible for ensuring that. If it does not match, the
+            # seed aborts and the operator must apply the data migration
+            # first.
+            if not has_skill_uid(new_name):
+                raise ValueError(
+                    "Skill UID registry is missing an entry for the "
+                    f"target canonical name {new_name!r} of legacy rename "
+                    f"{old_name!r} -> {new_name!r}. The rename cannot be "
+                    "validated against the registry."
+                )
+            target_uid = get_skill_uid(new_name)
+            if old_skill.skill_uid != target_uid:
+                raise ValueError(
+                    "Legacy canonical rename refuses to rotate "
+                    "skill_uid. The persisted UUID for "
+                    f"{old_name!r} does not match the committed "
+                    f"registry UUID for {new_name!r}: "
+                    f"row={old_skill.skill_uid} registry={target_uid}. "
+                    "Apply the unapplied data migration "
+                    "``0003_populate_skill_uid`` to converge legacy rows "
+                    "before running the seed again."
+                )
             old_skill.canonical_name = new_name
             old_skill.slug = new_slug
             old_skill.source = old_skill.source or "seed"
             old_skill.save(update_fields=["canonical_name", "slug", "source", "updated_at"])
-            # After the rename, align skill_uid with the committed registry for
-            # the new canonical identity. Use the controlled rename helper
-            # because the in-place rename is an identity migration, not a
-            # rotation of the existing skill_uid.
-            if has_skill_uid(new_name):
-                target_uid = get_skill_uid(new_name)
-                if old_skill.skill_uid != target_uid:
-                    Skill.set_skill_uid_for_rename(old_skill, target_uid)
             return
+
+        # Old row and target row both exist. Preserve both UUIDs. Move
+        # safe aliases to the target as before, and deactivate the old
+        # row. The target's ``skill_uid`` must already equal the
+        # committed registry UUID; the old row's ``skill_uid`` is left
+        # untouched (it is either a legacy tombstone UUID assigned by
+        # the data migration or an environment-specific identity that
+        # the migration will not change again).
+        if has_skill_uid(new_name):
+            target_registry_uid = get_skill_uid(new_name)
+            if new_skill.skill_uid != target_registry_uid:
+                raise ValueError(
+                    "Existing target canonical skill has a different "
+                    "skill_uid than the committed registry; the seed "
+                    "refuses to rotate it. "
+                    f"canonical_name={new_name!r} "
+                    f"row={new_skill.skill_uid} "
+                    f"registry={target_registry_uid}. "
+                    "Apply the unapplied data migration "
+                    "``0003_populate_skill_uid`` before running the seed again."
+                )
 
         for alias in old_skill.aliases.all():
             if not SkillAlias.objects.filter(normalized_alias=alias.normalized_alias).exclude(pk=alias.pk).exists():

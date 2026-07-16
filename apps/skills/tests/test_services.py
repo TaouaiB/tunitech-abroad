@@ -26,13 +26,25 @@ def create_test_user(
 
 class NormalizerServiceTests(TestCase):
     def setUp(self):
-        self.react = Skill.objects.create(canonical_name="React", slug="react")
+        from apps.skills.services.skill_uid_registry import get_skill_uid, reset_cache
+        reset_cache()
+        # Use the registry UUID so the seed does not abort on UUID drift.
+        self.react = Skill.objects.create(
+            canonical_name="React", slug="react",
+            skill_uid=get_skill_uid("React"),
+        )
         SkillAlias.objects.create(skill=self.react, alias="ReactJS", normalized_alias="reactjs")
 
-        self.postgres = Skill.objects.create(canonical_name="PostgreSQL", slug="postgresql")
+        self.postgres = Skill.objects.create(
+            canonical_name="PostgreSQL", slug="postgresql",
+            skill_uid=get_skill_uid("PostgreSQL"),
+        )
         SkillAlias.objects.create(skill=self.postgres, alias="Postgres", normalized_alias="postgres")
 
-        self.python = Skill.objects.create(canonical_name="Python", slug="python")
+        self.python = Skill.objects.create(
+            canonical_name="Python", slug="python",
+            skill_uid=get_skill_uid("Python"),
+        )
         SkillAlias.objects.create(skill=self.python, alias="Python3", normalized_alias="python3")
 
     def test_text_normalization(self):

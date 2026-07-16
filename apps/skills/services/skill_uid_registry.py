@@ -6,7 +6,9 @@ used by the seed service, migrations, and tests.
 The registry is a single source of truth for cross-environment
 identity of canonical skills. New canonical skills must be appended
 to ``apps/skills/data/skill_uid_registry_v1.json`` (or its successor)
-before they are produced by the seed path.
+before they are produced by the seed path. Every registry entry not
+produced by the seed path must be explicitly listed in the
+``approved_non_seed_canonical_names`` provenance field.
 """
 
 from __future__ import annotations
@@ -27,14 +29,31 @@ def _registry_path() -> Path:
     return Path(__file__).resolve().parent.parent / "data" / _REGISTRY_FILENAME
 
 
+class _RegistryData:
+    __slots__ = (
+        "name_to_uid",
+        "ordered_entries",
+        "version",
+        "approved_non_seed_canonical_names",
+    )
+
+    def __init__(self, name_to_uid, ordered_entries, version,
+                 approved_non_seed_canonical_names):
+        self.name_to_uid = name_to_uid
+        self.ordered_entries = ordered_entries
+        self.version = version
+        self.approved_non_seed_canonical_names = approved_non_seed_canonical_names
+
+
 @lru_cache(maxsize=1)
-def _load_registry_cached() -> Tuple[Dict[str, uuid.UUID], Tuple[Tuple[str, str], ...], int]:
+def _load_registry_cached() -> _RegistryData:
     """Load and validate the registry.
 
-    Returns a tuple of:
-        - mapping from canonical_name -> UUID
-        - ordered tuple of (canonical_name, skill_uid_str) pairs
-        - registry version
+    Validates that:
+    - every registry entry is a unique (canonical_name, UUIDv4) pair
+    - the registry is deterministically ordered
+    - the ``approved_non_seed_canonical_names`` provenance list is
+      sorted, unique, and every listed name exists in the registry
     """
     path = _registry_path()
     if not path.exists():
@@ -87,7 +106,48 @@ def _load_registry_cached() -> Tuple[Dict[str, uuid.UUID], Tuple[Tuple[str, str]
         name_to_uid[name] = uid
         ordered.append((name, raw_uid))
 
-    return name_to_uid, tuple(ordered), version
+    # Deterministic order check
+    names = [n for n, _ in ordered]
+    if names != sorted(names):
+        raise ValueError("Skill UID registry 'skills' is not deterministically ordered")
+
+    # Provenance: approved_non_seed_canonical_names
+    raw_approved = data.get("approved_non_seed_canonical_names")
+    if raw_approved is None:
+        raise ValueError(
+            "Skill UID registry must declare 'approved_non_seed_canonical_names'"
+        )
+    if not isinstance(raw_approved, list):
+        raise ValueError(
+            "Skill UID registry 'approved_non_seed_canonical_names' must be a list"
+        )
+    for n in raw_approved:
+        if not isinstance(n, str) or not n:
+            raise ValueError(
+                f"approved_non_seed_canonical_names contains an invalid entry: {n!r}"
+            )
+        if n not in name_to_uid:
+            raise ValueError(
+                f"approved_non_seed_canonical_names entry not present in 'skills': {n!r}"
+            )
+    approved_sorted = sorted(set(raw_approved))
+    if list(raw_approved) != approved_sorted:
+        raise ValueError(
+            "approved_non_seed_canonical_names must be sorted and unique"
+        )
+    declared_count = data.get("approved_non_seed_canonical_count")
+    if declared_count is not None and declared_count != len(approved_sorted):
+        raise ValueError(
+            "approved_non_seed_canonical_count does not match "
+            f"len(approved_non_seed_canonical_names): {declared_count} vs {len(approved_sorted)}"
+        )
+
+    return _RegistryData(
+        name_to_uid=name_to_uid,
+        ordered_entries=tuple(ordered),
+        version=version,
+        approved_non_seed_canonical_names=tuple(approved_sorted),
+    )
 
 
 def reset_cache() -> None:
@@ -97,8 +157,7 @@ def reset_cache() -> None:
 
 def registry_version() -> int:
     """Return the registry schema version."""
-    _load_registry_cached.cache_clear()
-    return _load_registry_cached()[2]
+    return _load_registry_cached().version
 
 
 def registry_path() -> Path:
@@ -112,32 +171,38 @@ def get_skill_uid(canonical_name: str) -> uuid.UUID:
     Raises:
         KeyError: if the canonical name is not present in the registry.
     """
-    name_to_uid, _, _ = _load_registry_cached()
-    return name_to_uid[canonical_name]
+    return _load_registry_cached().name_to_uid[canonical_name]
 
 
 def has_skill_uid(canonical_name: str) -> bool:
     """Return True if the canonical name is in the registry."""
-    name_to_uid, _, _ = _load_registry_cached()
-    return canonical_name in name_to_uid
+    return canonical_name in _load_registry_cached().name_to_uid
 
 
 def registry_canonical_names() -> Tuple[str, ...]:
     """Return registry canonical names in their committed order."""
-    _, ordered, _ = _load_registry_cached()
-    return tuple(name for name, _ in ordered)
+    data = _load_registry_cached()
+    return tuple(n for n, _ in data.ordered_entries)
 
 
 def registry_entries() -> Tuple[Tuple[str, str], ...]:
     """Return registry entries as ``(canonical_name, skill_uid_str)`` pairs."""
-    _, ordered, _ = _load_registry_cached()
-    return ordered
+    return _load_registry_cached().ordered_entries
 
 
 def registry_count() -> int:
     """Return the number of canonical skills in the registry."""
-    _, ordered, _ = _load_registry_cached()
-    return len(ordered)
+    return len(_load_registry_cached().ordered_entries)
+
+
+def approved_non_seed_canonical_names() -> Tuple[str, ...]:
+    """Return the sorted list of explicitly approved non-seed canonical names."""
+    return _load_registry_cached().approved_non_seed_canonical_names
+
+
+def is_approved_non_seed_canonical(canonical_name: str) -> bool:
+    """Return True if the canonical name is in the explicit non-seed provenance list."""
+    return canonical_name in approved_non_seed_canonical_names()
 
 
 def assert_registry_complete(seed_canonical_names: Iterable[str]) -> None:
@@ -146,7 +211,7 @@ def assert_registry_complete(seed_canonical_names: Iterable[str]) -> None:
     Raises:
         ValueError: when at least one seed canonical name is missing.
     """
-    name_to_uid, _, _ = _load_registry_cached()
+    name_to_uid = _load_registry_cached().name_to_uid
     missing = sorted({n for n in seed_canonical_names if n not in name_to_uid})
     if missing:
         raise ValueError(

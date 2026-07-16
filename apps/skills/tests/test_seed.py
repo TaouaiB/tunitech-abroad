@@ -93,15 +93,21 @@ class SeedServiceTests(TestCase):
 
     def test_phase_16d_seed_repairs_legacy_dotnet_canonical_rows(self):
         from apps.skills.services.normalizer import normalize_skill_text
+        from apps.skills.services.skill_uid_registry import get_skill_uid
+        # Simulate the post-migration state: the legacy ``.NET Core``
+        # row carries the target ``.NET`` registry UUID (assigned by
+        # the unapplied data migration ``0003_populate_skill_uid``).
         legacy_dotnet = Skill.objects.create(
             canonical_name=".NET Core",
             slug="dotnet-core",
             category="backend",
+            skill_uid=get_skill_uid(".NET"),
         )
         legacy_aspnet = Skill.objects.create(
             canonical_name="ASP.NET",
             slug="aspdotnet",
             category="backend",
+            skill_uid=get_skill_uid("ASP.NET Core"),
         )
         SkillAlias.objects.create(
             skill=legacy_dotnet,

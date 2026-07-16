@@ -1,9 +1,27 @@
 {
   "version": 1,
-  "description": "Canonical TuniAtlas Jobs skill taxonomy UUIDv4 registry. Stable cross-environment identity for the Skill model. Append-only.",
+  "description": "Canonical TuniAtlas Jobs skill taxonomy UUIDv4 registry. The UUIDv4 values in this file were generated once from a fixed-seed RNG and are now committed immutable identities. Each row is a stable cross-environment identity for the Skill model. The registry is append-only.",
   "generated_at": "2026-07-16T00:00:00Z",
-  "generator": "uuid.uuid4 (deterministic seed)",
+  "generator": "uuid.uuid4 generated once from a fixed seed; values are now committed immutable identities",
   "count": 523,
+  "approved_non_seed_canonical_names": [
+    "Crystal Reports",
+    "IBM i",
+    "Langues non précisées",
+    "Make",
+    "Maven",
+    "MyReport",
+    "OVHcloud",
+    "PL/SQL",
+    "PeopleSoft",
+    "Playwright",
+    "Quarkus",
+    "SharePoint",
+    "SignalR",
+    "WinDev",
+    "n8n"
+  ],
+  "approved_non_seed_canonical_count": 15,
   "skills": [
     {
       "canonical_name": ".NET",
