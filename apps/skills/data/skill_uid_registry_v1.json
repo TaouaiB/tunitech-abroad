@@ -1,0 +1,2101 @@
+{
+  "version": 1,
+  "description": "Canonical TuniAtlas Jobs skill taxonomy UUIDv4 registry. Stable cross-environment identity for the Skill model. Append-only.",
+  "generated_at": "2026-07-16T00:00:00Z",
+  "generator": "uuid.uuid4 (deterministic seed)",
+  "count": 523,
+  "skills": [
+    {
+      "canonical_name": ".NET",
+      "skill_uid": "4a251d4e-4420-4b49-a0d7-eba352f9cf5f"
+    },
+    {
+      "canonical_name": "ABAP",
+      "skill_uid": "4566ff7a-1494-4177-a7de-41caa34e613e"
+    },
+    {
+      "canonical_name": "AI Coding Assistants",
+      "skill_uid": "d7a34661-7f3d-4a55-9b8a-7509a5d027f4"
+    },
+    {
+      "canonical_name": "AI Guardrails",
+      "skill_uid": "33031049-828f-40b5-aa69-80040fae8d49"
+    },
+    {
+      "canonical_name": "AJAX",
+      "skill_uid": "37ecf707-cea1-489f-ad3f-bbdc10ca8e14"
+    },
+    {
+      "canonical_name": "API",
+      "skill_uid": "ea158e6a-fa95-4598-a08a-e524a0bce755"
+    },
+    {
+      "canonical_name": "ARM Architecture",
+      "skill_uid": "0510f182-7785-44b6-b611-c0d800a38202"
+    },
+    {
+      "canonical_name": "ASP.NET Core",
+      "skill_uid": "913a7b10-86d5-4f2e-b57a-c77c192e27b4"
+    },
+    {
+      "canonical_name": "ASPICE",
+      "skill_uid": "01155fcf-f7ed-41d7-b692-65da791616be"
+    },
+    {
+      "canonical_name": "AVEVA InTouch",
+      "skill_uid": "95e046e2-413e-47bb-aa77-49f5dd121e7f"
+    },
+    {
+      "canonical_name": "AVEVA System Platform",
+      "skill_uid": "f763de2b-1a4d-4865-9b79-ef24c902ff8b"
+    },
+    {
+      "canonical_name": "AWS",
+      "skill_uid": "fc578e55-5644-4d97-ac52-1b7e3a2ce659"
+    },
+    {
+      "canonical_name": "AZ-500",
+      "skill_uid": "c5032a1e-a4fb-45d8-84dd-45785308a4fc"
+    },
+    {
+      "canonical_name": "Active Directory",
+      "skill_uid": "dd32cc0b-ed01-48a5-bd63-41147567e16c"
+    },
+    {
+      "canonical_name": "ActiveMQ",
+      "skill_uid": "a61b4a5c-545a-40bb-9153-bbd00b97a59e"
+    },
+    {
+      "canonical_name": "Agile",
+      "skill_uid": "b9fabbaf-1c11-4e4b-bba3-44641482652c"
+    },
+    {
+      "canonical_name": "Airflow",
+      "skill_uid": "52b9d871-ed73-4ea2-8513-d63bf96cd82a"
+    },
+    {
+      "canonical_name": "Akamai",
+      "skill_uid": "4fb8e513-53ae-40a2-9027-252e3f5a8d99"
+    },
+    {
+      "canonical_name": "Algolia",
+      "skill_uid": "99168851-20e3-4283-8102-9a25ece7bc63"
+    },
+    {
+      "canonical_name": "Alpine Linux",
+      "skill_uid": "eb00b4e4-133b-4e2f-a964-0b0830e84806"
+    },
+    {
+      "canonical_name": "Alteryx",
+      "skill_uid": "fe50ae9b-d923-44f7-852a-7b1445aeadc3"
+    },
+    {
+      "canonical_name": "Android Development",
+      "skill_uid": "5af7c563-2469-4cd4-b519-a2acaefb65eb"
+    },
+    {
+      "canonical_name": "Angular",
+      "skill_uid": "1351fec7-a0ee-4c57-809c-d6703895ac31"
+    },
+    {
+      "canonical_name": "Ansible",
+      "skill_uid": "baf1a4ed-7005-466b-999c-eb3b557a2646"
+    },
+    {
+      "canonical_name": "Ant Design",
+      "skill_uid": "218b9b80-efe9-4bfd-8382-9a6095462112"
+    },
+    {
+      "canonical_name": "Apache",
+      "skill_uid": "649fd344-e245-4cdf-8b5c-05d061de7eb8"
+    },
+    {
+      "canonical_name": "AppDynamics",
+      "skill_uid": "880c715f-2ec9-4f23-a93b-c1ab73155559"
+    },
+    {
+      "canonical_name": "Application Security",
+      "skill_uid": "b0225c26-2324-4706-a6b7-bc38ec51ee61"
+    },
+    {
+      "canonical_name": "ArangoDB",
+      "skill_uid": "7c3775b6-b0ae-47d1-8058-5ee7fd261f93"
+    },
+    {
+      "canonical_name": "Arch Linux",
+      "skill_uid": "6ef8a4dc-7464-4a89-a7a3-07ed3f3df18f"
+    },
+    {
+      "canonical_name": "Argo CD",
+      "skill_uid": "0b616ef4-1801-4273-85ca-44916d53e593"
+    },
+    {
+      "canonical_name": "Artifactory",
+      "skill_uid": "3afde20b-71c7-42e7-87e9-3f1556337352"
+    },
+    {
+      "canonical_name": "Artificial Intelligence",
+      "skill_uid": "8f00b727-fafa-4ca5-bc30-d11f20981737"
+    },
+    {
+      "canonical_name": "Asana",
+      "skill_uid": "b1d50a21-c01f-4f7c-83f8-3747dd0701bc"
+    },
+    {
+      "canonical_name": "Athena",
+      "skill_uid": "bd42acf5-084a-45e4-bb2d-872a24221c3e"
+    },
+    {
+      "canonical_name": "Auth0",
+      "skill_uid": "4251f8fe-a8ae-4488-9eed-8262410aa249"
+    },
+    {
+      "canonical_name": "Automated Testing",
+      "skill_uid": "ea1aa34b-32be-44f3-b872-7ed16d99003d"
+    },
+    {
+      "canonical_name": "Automation",
+      "skill_uid": "9bd1a831-38b6-40d1-9042-79d385c879c4"
+    },
+    {
+      "canonical_name": "Avro",
+      "skill_uid": "9ec5f73e-0401-4554-a67d-5b03baac47aa"
+    },
+    {
+      "canonical_name": "Azure",
+      "skill_uid": "0dfb40a4-07c3-4b35-85e9-7d65c324f2ec"
+    },
+    {
+      "canonical_name": "Azure AI Search",
+      "skill_uid": "e109940d-f7f3-4981-a734-da6d6675718d"
+    },
+    {
+      "canonical_name": "Azure Data Factory",
+      "skill_uid": "1c8332de-ad5e-46a0-b853-2df09366392c"
+    },
+    {
+      "canonical_name": "Azure DevOps",
+      "skill_uid": "252c7cc3-0f8f-4255-96cd-9e18cb2352a2"
+    },
+    {
+      "canonical_name": "Azure OpenAI",
+      "skill_uid": "e60391fd-0222-42d6-922f-d9cb93c4cd39"
+    },
+    {
+      "canonical_name": "Babel",
+      "skill_uid": "57cc44a9-f817-4bb2-860f-6a71938d69a0"
+    },
+    {
+      "canonical_name": "Backend Development",
+      "skill_uid": "c985aeb7-ea38-4099-9f33-bf71027e9720"
+    },
+    {
+      "canonical_name": "Bare Metal Programming",
+      "skill_uid": "6b43cb83-888a-42ad-83b9-8997b8552203"
+    },
+    {
+      "canonical_name": "BigQuery",
+      "skill_uid": "07627c73-c51a-41ab-9a4d-b1ea0163f9b4"
+    },
+    {
+      "canonical_name": "Bitbucket",
+      "skill_uid": "76be0869-40e8-4f2f-b2cf-7805d6798cba"
+    },
+    {
+      "canonical_name": "Bitrise",
+      "skill_uid": "33108ac6-cf68-43fd-8c04-7ffb745f3699"
+    },
+    {
+      "canonical_name": "Blockchain",
+      "skill_uid": "81df2d67-e6f9-442b-88a0-17684367f8fc"
+    },
+    {
+      "canonical_name": "Bluetooth",
+      "skill_uid": "6938ed8a-e884-4b53-b911-1709a21119a6"
+    },
+    {
+      "canonical_name": "Bluetooth Low Energy",
+      "skill_uid": "6bf3d447-20db-461f-97b2-098d3f837630"
+    },
+    {
+      "canonical_name": "Board Support Package",
+      "skill_uid": "f088e2ce-b645-450a-914d-d9d06d399900"
+    },
+    {
+      "canonical_name": "BookStack",
+      "skill_uid": "7bcb75ac-41ec-480f-a1f0-4821d36eb950"
+    },
+    {
+      "canonical_name": "Bootstrap",
+      "skill_uid": "a97406e3-8d83-46cc-93d3-2e2c82b21761"
+    },
+    {
+      "canonical_name": "Boto3",
+      "skill_uid": "cef96b7a-ec34-4787-bcb9-1c05b13337e9"
+    },
+    {
+      "canonical_name": "Buildroot",
+      "skill_uid": "dfc4b91a-cca9-4ab8-9ad7-8cc770e9f52c"
+    },
+    {
+      "canonical_name": "Bulma",
+      "skill_uid": "b95220bb-35d1-4030-b2c2-1511946ade79"
+    },
+    {
+      "canonical_name": "C",
+      "skill_uid": "34ea8fec-5a83-42ce-8af7-23b664266bec"
+    },
+    {
+      "canonical_name": "C#",
+      "skill_uid": "6a6a0c42-8364-4330-9f9d-b3f7c6c8098c"
+    },
+    {
+      "canonical_name": "C++",
+      "skill_uid": "6c772d64-e34f-4cca-8fe3-0bc0af22da2e"
+    },
+    {
+      "canonical_name": "CAN Bus",
+      "skill_uid": "8f58d16c-fa26-4ae3-9823-13330308b8d2"
+    },
+    {
+      "canonical_name": "CI/CD",
+      "skill_uid": "5de7380a-7a1f-478f-b3cd-bb05079b61b6"
+    },
+    {
+      "canonical_name": "CICS",
+      "skill_uid": "250a2720-fcc9-48e5-8ffb-28ab19ebbfec"
+    },
+    {
+      "canonical_name": "CISM",
+      "skill_uid": "d1f1d8f3-4f54-44c1-8b5f-1ed227ee925b"
+    },
+    {
+      "canonical_name": "CISSP",
+      "skill_uid": "f4378858-4e63-4b20-a621-fc8ca2cd1ef0"
+    },
+    {
+      "canonical_name": "CMMS",
+      "skill_uid": "159c87c4-d9a2-4522-a95d-9358b45d8d47"
+    },
+    {
+      "canonical_name": "COBOL",
+      "skill_uid": "ee2f1723-09ff-4f75-bf83-49ba63283664"
+    },
+    {
+      "canonical_name": "CRAC Systems",
+      "skill_uid": "e06381db-dd7c-4a40-9dc7-983333d7f1e6"
+    },
+    {
+      "canonical_name": "CSS3",
+      "skill_uid": "dd77aa49-0270-4dfa-8790-d191fff59e17"
+    },
+    {
+      "canonical_name": "Cassandra",
+      "skill_uid": "2e820c7c-96b1-46fa-920c-2b5d4000c321"
+    },
+    {
+      "canonical_name": "Celery",
+      "skill_uid": "8b30b411-ff86-4cd2-b821-9547af40f263"
+    },
+    {
+      "canonical_name": "CentOS",
+      "skill_uid": "14421774-a668-436b-ad8e-e98cac1e1853"
+    },
+    {
+      "canonical_name": "Centreon",
+      "skill_uid": "494b24e7-259f-467a-9d26-9eb746bddd78"
+    },
+    {
+      "canonical_name": "Chakra UI",
+      "skill_uid": "ce4d94ed-905c-4393-85f7-11ff6078d1a0"
+    },
+    {
+      "canonical_name": "Chart.js",
+      "skill_uid": "d24328a4-42de-48ab-aaa1-101526360c16"
+    },
+    {
+      "canonical_name": "Chef",
+      "skill_uid": "96239807-9779-437e-b695-2d5ba430ec5a"
+    },
+    {
+      "canonical_name": "CircleCI",
+      "skill_uid": "d51786a0-d72f-45bb-8523-f309f9eb53ef"
+    },
+    {
+      "canonical_name": "Claude Code",
+      "skill_uid": "ed3a3861-6eeb-4a35-8341-bc93ec56bc52"
+    },
+    {
+      "canonical_name": "Cloud",
+      "skill_uid": "cf9b0d01-a9e6-4586-91bb-e438347d36c3"
+    },
+    {
+      "canonical_name": "Cloud Security",
+      "skill_uid": "845978ab-0305-480c-9312-4e86b5b9a6b8"
+    },
+    {
+      "canonical_name": "Cloudera",
+      "skill_uid": "abbe50f1-9e98-4307-b7f3-1170f000e5b4"
+    },
+    {
+      "canonical_name": "Cloudflare",
+      "skill_uid": "6302a8b6-371a-48ab-96a4-ee827dba54b8"
+    },
+    {
+      "canonical_name": "Code Review",
+      "skill_uid": "d21b4a6e-943c-49e4-9ba2-17de061ce761"
+    },
+    {
+      "canonical_name": "Communication",
+      "skill_uid": "fe834e46-84d0-4920-b85a-4cce90d84382"
+    },
+    {
+      "canonical_name": "Confluence",
+      "skill_uid": "993dbe8b-16ab-41a7-af88-a0e55a26e0b1"
+    },
+    {
+      "canonical_name": "Consul",
+      "skill_uid": "96558f2e-0ab6-43f7-a402-609e8d7e43a6"
+    },
+    {
+      "canonical_name": "Copilot Studio",
+      "skill_uid": "0e9e0a2b-5148-464f-b6a9-96ab124b8bf4"
+    },
+    {
+      "canonical_name": "CoreOS",
+      "skill_uid": "131f754e-6342-4733-8d69-dd9e0d683fc0"
+    },
+    {
+      "canonical_name": "Corrective Maintenance",
+      "skill_uid": "f2975788-6a2c-41ef-a33c-66a19d48d8ba"
+    },
+    {
+      "canonical_name": "CouchDB",
+      "skill_uid": "34ced228-99a2-4fc9-9e75-88fe72f3bb4b"
+    },
+    {
+      "canonical_name": "Couchbase",
+      "skill_uid": "61ac4da3-4c01-45aa-af75-d1017c03216d"
+    },
+    {
+      "canonical_name": "Cryptography",
+      "skill_uid": "631237d9-7a71-47aa-8748-3105fe22ad4a"
+    },
+    {
+      "canonical_name": "Crystal Reports",
+      "skill_uid": "d2ce5648-df02-4662-8b8c-a10aab445415"
+    },
+    {
+      "canonical_name": "Cybersecurity",
+      "skill_uid": "a6fea3b6-64b2-4e5e-a3c9-b9bdc16dc8bb"
+    },
+    {
+      "canonical_name": "Cypress",
+      "skill_uid": "c1a76e01-e94b-48b9-a66b-a7bb8ba93b7b"
+    },
+    {
+      "canonical_name": "D3.js",
+      "skill_uid": "e0fe774f-6af3-4689-b3c5-330a9721fb11"
+    },
+    {
+      "canonical_name": "DFU",
+      "skill_uid": "12837f0b-a801-4075-a4f2-29b9f9fd09ce"
+    },
+    {
+      "canonical_name": "Dart",
+      "skill_uid": "61a1e7ae-e3e4-4e71-be79-14ea06f16c94"
+    },
+    {
+      "canonical_name": "Data Center Operations",
+      "skill_uid": "b1709193-4219-4c4a-8062-33f245e37e4e"
+    },
+    {
+      "canonical_name": "Data Engineering",
+      "skill_uid": "34da21de-55d7-44cf-a404-581e70ed891c"
+    },
+    {
+      "canonical_name": "Data Lake",
+      "skill_uid": "5cab209e-e2ca-4a29-87ec-9e2fdca28c50"
+    },
+    {
+      "canonical_name": "Data Mesh",
+      "skill_uid": "416ee7a0-fefc-4747-8f97-1ccc28a65897"
+    },
+    {
+      "canonical_name": "Data Modeling",
+      "skill_uid": "bcb924aa-42e0-4229-9ffa-0acadd8660da"
+    },
+    {
+      "canonical_name": "Data Science",
+      "skill_uid": "d6f363d3-825c-4e20-942f-8013de2add43"
+    },
+    {
+      "canonical_name": "Data Security",
+      "skill_uid": "c0209578-72ae-4705-aca0-083e40486e39"
+    },
+    {
+      "canonical_name": "Data Warehouse",
+      "skill_uid": "12e569b3-2026-4a3c-9167-7b45eacde913"
+    },
+    {
+      "canonical_name": "DataOps",
+      "skill_uid": "126e460b-be15-4075-a0db-b147f3f38207"
+    },
+    {
+      "canonical_name": "Database Security",
+      "skill_uid": "3826038b-a6cd-4662-ad2f-c85428574aa3"
+    },
+    {
+      "canonical_name": "Databricks",
+      "skill_uid": "f363bcbb-b3c0-4fc5-be50-0bea73c832cb"
+    },
+    {
+      "canonical_name": "Datadog",
+      "skill_uid": "9b6000d4-c6ee-4171-8380-570034cfb14e"
+    },
+    {
+      "canonical_name": "Dataiku",
+      "skill_uid": "dab03732-b3a8-496c-b475-5d8926c1a703"
+    },
+    {
+      "canonical_name": "Debian",
+      "skill_uid": "a974ee74-ee09-4832-954f-47863a45a96a"
+    },
+    {
+      "canonical_name": "Debugging",
+      "skill_uid": "19ee4283-f12c-4661-858d-0f70b99e5d6d"
+    },
+    {
+      "canonical_name": "Deep Learning",
+      "skill_uid": "8e2db151-61a0-4625-a6c0-92fa3375edf4"
+    },
+    {
+      "canonical_name": "Design Patterns",
+      "skill_uid": "0d391c0b-097c-44d7-b058-fa01c2dc2d03"
+    },
+    {
+      "canonical_name": "DevOps",
+      "skill_uid": "b0b20f4b-5aba-4d32-8290-f12ab7dd98de"
+    },
+    {
+      "canonical_name": "Device Drivers",
+      "skill_uid": "c479ae81-43e2-4e8b-a87e-9465cb9630e2"
+    },
+    {
+      "canonical_name": "Diagnostic",
+      "skill_uid": "81634888-014a-427c-b349-1868e1ef7138"
+    },
+    {
+      "canonical_name": "Digital Project Management",
+      "skill_uid": "6887dbf6-1c50-49bb-9490-5f916a884264"
+    },
+    {
+      "canonical_name": "DigitalOcean",
+      "skill_uid": "c3adb1ef-9bfe-4bee-b7e6-49311aab67f8"
+    },
+    {
+      "canonical_name": "Disaster Recovery",
+      "skill_uid": "156e70fa-bbe8-4ede-8d42-50bb318a271c"
+    },
+    {
+      "canonical_name": "Distributed Systems",
+      "skill_uid": "ad878562-ce21-4c8d-8f77-e55e0f707970"
+    },
+    {
+      "canonical_name": "Django",
+      "skill_uid": "53b70017-038f-4a81-9083-3b3f40fc6be7"
+    },
+    {
+      "canonical_name": "Django ORM",
+      "skill_uid": "ba7175d5-4ca1-4425-8f3b-f9088995169d"
+    },
+    {
+      "canonical_name": "DocFX",
+      "skill_uid": "1914a45b-9efc-4dbe-bb2c-493ba157db2f"
+    },
+    {
+      "canonical_name": "Docker",
+      "skill_uid": "36bde562-7e00-47cc-9565-8158e5d8caa6"
+    },
+    {
+      "canonical_name": "Docker Compose",
+      "skill_uid": "5cd1d619-602e-4549-8b39-8c18f3979505"
+    },
+    {
+      "canonical_name": "Drupal",
+      "skill_uid": "1399ae0a-5769-41be-97b0-45f92ccb7398"
+    },
+    {
+      "canonical_name": "DynamoDB",
+      "skill_uid": "16a6f37e-24f2-4ff9-a367-8701ecf86ab9"
+    },
+    {
+      "canonical_name": "Dynatrace",
+      "skill_uid": "bd581b9e-e3b6-4d10-b7a5-14262df36c88"
+    },
+    {
+      "canonical_name": "EN 50128",
+      "skill_uid": "44202da8-3354-4560-b7ec-12a93c9f854e"
+    },
+    {
+      "canonical_name": "ERP",
+      "skill_uid": "267a282c-e2d8-40fb-88d7-649d97329de9"
+    },
+    {
+      "canonical_name": "ERTMS",
+      "skill_uid": "33081411-e202-496c-aef4-e3afeda76985"
+    },
+    {
+      "canonical_name": "ESLint",
+      "skill_uid": "c5c615ca-8d2f-4427-8d8b-0560e717844d"
+    },
+    {
+      "canonical_name": "ETL",
+      "skill_uid": "4d365a93-fe71-4eda-b461-b150070acb01"
+    },
+    {
+      "canonical_name": "EViews",
+      "skill_uid": "5b36d0c0-3e2d-4dc3-a443-baf31c434534"
+    },
+    {
+      "canonical_name": "Eclipse IDE",
+      "skill_uid": "07f3069a-7953-42d1-91fe-b962dfbb03ae"
+    },
+    {
+      "canonical_name": "Elasticsearch",
+      "skill_uid": "4c1ccb79-4a0b-4c39-933c-f09cef6834ae"
+    },
+    {
+      "canonical_name": "Embedded Linux",
+      "skill_uid": "921d92b0-885b-4d8b-8e69-2c264cc46d96"
+    },
+    {
+      "canonical_name": "Embedded Systems",
+      "skill_uid": "1eff6a8b-bc60-4e93-a403-9c2d86a94f46"
+    },
+    {
+      "canonical_name": "Emotion",
+      "skill_uid": "bc17616f-60b3-490c-89bb-efb510b10e9a"
+    },
+    {
+      "canonical_name": "Endpoint Security",
+      "skill_uid": "4dd9bcc8-7e35-4c2d-9ad2-2655b542cc1e"
+    },
+    {
+      "canonical_name": "Entity Framework",
+      "skill_uid": "5476358e-8dcd-4779-9507-fd6d9ef6a754"
+    },
+    {
+      "canonical_name": "Entity Framework Core",
+      "skill_uid": "979f500d-de87-4f16-b9a5-1002d0d6e537"
+    },
+    {
+      "canonical_name": "Entra ID",
+      "skill_uid": "c9cd5c49-8907-4b84-8ecd-19f1917a82d9"
+    },
+    {
+      "canonical_name": "Etcd",
+      "skill_uid": "547dc005-b5df-41c4-b40c-1913bd22eddf"
+    },
+    {
+      "canonical_name": "Ethernet",
+      "skill_uid": "fc693f98-6db5-4ecf-8f6a-ebaf7f25ae4f"
+    },
+    {
+      "canonical_name": "Excel",
+      "skill_uid": "4ced5bc1-e23e-4ca3-9e0d-8638710bb51c"
+    },
+    {
+      "canonical_name": "Express.js",
+      "skill_uid": "ea5f5003-c9f6-4f5a-9e55-c561c3af9255"
+    },
+    {
+      "canonical_name": "FOTA",
+      "skill_uid": "f7b2101a-511b-4144-a7d3-7df14ac50f1c"
+    },
+    {
+      "canonical_name": "FPGA/VHDL",
+      "skill_uid": "99337b05-0517-4ba0-8262-bebba08216e9"
+    },
+    {
+      "canonical_name": "FastAPI",
+      "skill_uid": "6270986d-1990-4008-9278-8af06d4f0646"
+    },
+    {
+      "canonical_name": "Fastly",
+      "skill_uid": "d468f8c9-0c7f-466f-84cc-77068525cd78"
+    },
+    {
+      "canonical_name": "Fedora",
+      "skill_uid": "4eed08e0-6cd4-489c-b413-90461628b4ed"
+    },
+    {
+      "canonical_name": "Figma",
+      "skill_uid": "2f304420-7877-4ed8-9775-87ad6c14a241"
+    },
+    {
+      "canonical_name": "Firebase",
+      "skill_uid": "a75ec3d1-21c6-49db-abca-30b20fd43cc6"
+    },
+    {
+      "canonical_name": "Firewall",
+      "skill_uid": "0411fc90-872a-4e45-aee2-9493bc5eb8dc"
+    },
+    {
+      "canonical_name": "Flask",
+      "skill_uid": "d56b028e-87b8-4cc0-9923-4be981a7488d"
+    },
+    {
+      "canonical_name": "Flutter",
+      "skill_uid": "be335dcf-5b04-4e15-b6f0-7aa3e21c157f"
+    },
+    {
+      "canonical_name": "Foundation",
+      "skill_uid": "3723d63f-6735-4fb4-9645-431886313dcd"
+    },
+    {
+      "canonical_name": "FreeRTOS",
+      "skill_uid": "df0fa16b-570e-4379-acd9-546b4c4a77cb"
+    },
+    {
+      "canonical_name": "Freshservice",
+      "skill_uid": "a8c359e3-7e84-4a5a-9450-b63126c03fdd"
+    },
+    {
+      "canonical_name": "Frontend Development",
+      "skill_uid": "52ce432d-0461-4a01-924a-c034d63a9052"
+    },
+    {
+      "canonical_name": "Full Stack Development",
+      "skill_uid": "5c63668f-ebc4-4317-b976-c0b712a064ef"
+    },
+    {
+      "canonical_name": "GCC",
+      "skill_uid": "9ad59efe-fe4c-48ed-ba6b-e369d320db68"
+    },
+    {
+      "canonical_name": "GCIH",
+      "skill_uid": "cb8471c7-fa63-48ab-845b-bf014018a76c"
+    },
+    {
+      "canonical_name": "GDB",
+      "skill_uid": "400e70da-884b-43f7-8eb9-19e3d10b17e5"
+    },
+    {
+      "canonical_name": "GLPI",
+      "skill_uid": "4fc28f43-794f-45f4-ab9f-166638cc0301"
+    },
+    {
+      "canonical_name": "GRC",
+      "skill_uid": "2dcc2d66-76be-4da5-ae89-84e6dac257ad"
+    },
+    {
+      "canonical_name": "Gatling",
+      "skill_uid": "664190ea-92ac-412d-afbf-cddee3e490e3"
+    },
+    {
+      "canonical_name": "Gatsby",
+      "skill_uid": "eb3e6a96-7eef-4137-b0b0-0b414e42d369"
+    },
+    {
+      "canonical_name": "Generative AI",
+      "skill_uid": "fbb70847-8aee-43d2-9c3e-bc98739fc98f"
+    },
+    {
+      "canonical_name": "Gensim",
+      "skill_uid": "0b3825b5-7429-4bd0-a6b6-687bb1d66a6b"
+    },
+    {
+      "canonical_name": "Git",
+      "skill_uid": "22b68f2a-5902-49b8-bf32-262c4b26264c"
+    },
+    {
+      "canonical_name": "GitHub",
+      "skill_uid": "c2ddeb58-0c25-4303-865a-d9b313e509a0"
+    },
+    {
+      "canonical_name": "GitHub Actions",
+      "skill_uid": "720cc972-2322-4fbf-b13e-0d15796495ce"
+    },
+    {
+      "canonical_name": "GitHub Copilot",
+      "skill_uid": "ec645846-29c3-4e44-9b1d-7a106f0241af"
+    },
+    {
+      "canonical_name": "GitLab",
+      "skill_uid": "f31aabe4-014e-4ebc-b0c0-5de0661bce8c"
+    },
+    {
+      "canonical_name": "GitLab CI/CD",
+      "skill_uid": "53f02d2a-3ca8-41d8-92e6-a877b51df3bc"
+    },
+    {
+      "canonical_name": "GlassFish",
+      "skill_uid": "c959cb9e-2c93-4635-b3d5-c49611a07b42"
+    },
+    {
+      "canonical_name": "Go",
+      "skill_uid": "f7a43379-4c89-4837-a2eb-1b703de36752"
+    },
+    {
+      "canonical_name": "Google Cloud",
+      "skill_uid": "1e68d114-3857-48b1-858f-faf21b05c81d"
+    },
+    {
+      "canonical_name": "Google Cloud Dataproc",
+      "skill_uid": "0a3b015b-fbed-494d-b937-d15a581b7584"
+    },
+    {
+      "canonical_name": "Google Pub/Sub",
+      "skill_uid": "6651bf67-44ad-4c8a-84cd-178490abc692"
+    },
+    {
+      "canonical_name": "Google Sheets",
+      "skill_uid": "5c027681-1960-4a10-b36f-d8b95d1766cb"
+    },
+    {
+      "canonical_name": "Google Test",
+      "skill_uid": "2704cbfd-6734-4cfa-af4f-ca5fb52f19eb"
+    },
+    {
+      "canonical_name": "Grafana",
+      "skill_uid": "0badf359-ab78-4efc-84da-b8a50c5a1f72"
+    },
+    {
+      "canonical_name": "GraphQL",
+      "skill_uid": "4868a38b-8a7a-46f2-b153-a10b8d2daa3d"
+    },
+    {
+      "canonical_name": "GraphQL Apollo",
+      "skill_uid": "af146430-9c4e-41f0-a492-f373067b3ced"
+    },
+    {
+      "canonical_name": "HBase",
+      "skill_uid": "0f23ccb2-9e51-4937-8aaf-2054159d14dc"
+    },
+    {
+      "canonical_name": "HTML5",
+      "skill_uid": "852217cb-f0ac-40e1-af47-e3176697b759"
+    },
+    {
+      "canonical_name": "HVAC",
+      "skill_uid": "694c2f90-e3a0-41a9-9cb6-1d587c66dc77"
+    },
+    {
+      "canonical_name": "Hadoop",
+      "skill_uid": "4cb077e7-05de-457d-ae21-1f60ce2789a3"
+    },
+    {
+      "canonical_name": "Hardware Maintenance",
+      "skill_uid": "fd2d239b-b625-4266-942c-2e87ece1e2d9"
+    },
+    {
+      "canonical_name": "Hardware Repair",
+      "skill_uid": "bc0cfda9-69d3-4002-9071-01879cb7438a"
+    },
+    {
+      "canonical_name": "Hardware Troubleshooting",
+      "skill_uid": "fcef1ed3-97f6-4ee8-827b-0e888c3b693b"
+    },
+    {
+      "canonical_name": "Helm",
+      "skill_uid": "3ff244c0-2fdb-4758-8c4e-5b4f9b6f4a14"
+    },
+    {
+      "canonical_name": "Heroku",
+      "skill_uid": "142ec810-4163-4223-837a-1d7a64c12264"
+    },
+    {
+      "canonical_name": "Hibernate",
+      "skill_uid": "93e63df3-47f7-4460-a7dd-e936451fd1f3"
+    },
+    {
+      "canonical_name": "Highcharts",
+      "skill_uid": "8c10c20a-2f2b-410c-a23f-720faf181f37"
+    },
+    {
+      "canonical_name": "Hortonworks",
+      "skill_uid": "455a646c-56af-4b72-a6d1-2396bac16aac"
+    },
+    {
+      "canonical_name": "HubSpot",
+      "skill_uid": "200a4e58-df90-4f56-9877-5bc083ec8999"
+    },
+    {
+      "canonical_name": "Hugging Face",
+      "skill_uid": "fc493d32-ca0a-4e50-8363-ac0b464f4fde"
+    },
+    {
+      "canonical_name": "Husky",
+      "skill_uid": "3ee99535-9581-48af-9119-6ab8eb36af8d"
+    },
+    {
+      "canonical_name": "I2C",
+      "skill_uid": "b86db815-9f09-449c-b442-0dc1b131d6c4"
+    },
+    {
+      "canonical_name": "IAM",
+      "skill_uid": "d3933516-d977-4967-8abf-0cfacbd7c77e"
+    },
+    {
+      "canonical_name": "IBM Cognos",
+      "skill_uid": "1901e8a2-816f-46ca-abdf-36ca809fa45d"
+    },
+    {
+      "canonical_name": "IBM Mainframe",
+      "skill_uid": "6f049372-6226-49e8-b11a-813cb8996f4d"
+    },
+    {
+      "canonical_name": "IBM i",
+      "skill_uid": "7fdc243d-e1cb-4f6a-b900-be31be5e4f00"
+    },
+    {
+      "canonical_name": "IIS",
+      "skill_uid": "79632247-9ecb-46ea-a75f-471c7f4f87c4"
+    },
+    {
+      "canonical_name": "ISO 26262",
+      "skill_uid": "bc355094-a554-49c7-b727-031bd6ed7b89"
+    },
+    {
+      "canonical_name": "ISO 27001",
+      "skill_uid": "58a32484-51d7-483c-b4f9-0797fc469aca"
+    },
+    {
+      "canonical_name": "ISO 27005",
+      "skill_uid": "483c1f8b-d3a3-4bcc-aa9c-bfb7db54a5f8"
+    },
+    {
+      "canonical_name": "IT Asset Management",
+      "skill_uid": "f4dea6e6-9edb-499f-8d95-80725ea6481f"
+    },
+    {
+      "canonical_name": "IT Deployment",
+      "skill_uid": "7502ce67-ada2-4ae1-b755-969a2b189c2e"
+    },
+    {
+      "canonical_name": "IT Inventory Management",
+      "skill_uid": "30a8f998-daaa-49c3-9607-ec3c80ca4e0e"
+    },
+    {
+      "canonical_name": "IT Support",
+      "skill_uid": "99140bcc-6649-46f1-8787-082bcf85a84a"
+    },
+    {
+      "canonical_name": "Icinga",
+      "skill_uid": "cb0db1a3-1145-4a1a-a708-a595d1b0281c"
+    },
+    {
+      "canonical_name": "Industrial Automation",
+      "skill_uid": "71ecfe67-bdcb-45e5-9502-e7b28ca1b6e2"
+    },
+    {
+      "canonical_name": "Industrial Networking",
+      "skill_uid": "c8bc905e-5b06-4458-ae98-f59fd3f16d84"
+    },
+    {
+      "canonical_name": "Infrastructure as Code",
+      "skill_uid": "1297360e-bef5-462e-b58d-b38a740703dd"
+    },
+    {
+      "canonical_name": "Intervention Tracking",
+      "skill_uid": "752bdc5a-b221-4c66-aebc-6c89485eea5d"
+    },
+    {
+      "canonical_name": "Ionic",
+      "skill_uid": "de83e06e-3195-485f-b54b-1f3294824433"
+    },
+    {
+      "canonical_name": "Istio",
+      "skill_uid": "630ccd2d-a26a-4db4-9069-cdb9efb6d907"
+    },
+    {
+      "canonical_name": "JCL",
+      "skill_uid": "46054325-dd71-4c50-9605-cb623af0ce96"
+    },
+    {
+      "canonical_name": "JMP",
+      "skill_uid": "a5eb81e7-dfea-442c-8b6f-a9592f8f3763"
+    },
+    {
+      "canonical_name": "JPA",
+      "skill_uid": "6a54aac5-1daa-4c5d-9062-26d08e13ad3b"
+    },
+    {
+      "canonical_name": "JSON",
+      "skill_uid": "0601f8e5-1339-431b-a976-57af6c1490e0"
+    },
+    {
+      "canonical_name": "JUnit",
+      "skill_uid": "1406fb44-bd35-49f6-a21c-970216590880"
+    },
+    {
+      "canonical_name": "Java",
+      "skill_uid": "f19a88cc-5bcc-4be8-b3a0-511e6033f1b2"
+    },
+    {
+      "canonical_name": "JavaScript",
+      "skill_uid": "839472ba-1a64-4d8a-9330-59b4a87e8de0"
+    },
+    {
+      "canonical_name": "Jenkins",
+      "skill_uid": "446d7832-db7f-45c8-940c-a622eda18f13"
+    },
+    {
+      "canonical_name": "Jest",
+      "skill_uid": "60a0b56a-6bfe-4dc7-9d7a-ded8f6206259"
+    },
+    {
+      "canonical_name": "Jetty",
+      "skill_uid": "286e3bef-9588-4c31-8068-7ba751dafaa3"
+    },
+    {
+      "canonical_name": "Jira",
+      "skill_uid": "fe180b6e-6103-491a-825c-0be1d091af09"
+    },
+    {
+      "canonical_name": "Joomla",
+      "skill_uid": "6661978a-9b63-45f5-b414-cdeb62a7ba84"
+    },
+    {
+      "canonical_name": "Jupyter",
+      "skill_uid": "5b656a0d-db88-4b31-abe9-9e28acf11331"
+    },
+    {
+      "canonical_name": "KNIME",
+      "skill_uid": "4a2b866f-7710-4375-9aae-070c7a543472"
+    },
+    {
+      "canonical_name": "Kafka",
+      "skill_uid": "92c5d8e4-acb3-4b51-92f6-0645828e4819"
+    },
+    {
+      "canonical_name": "Kanban",
+      "skill_uid": "892d2d98-a643-4392-a0e4-707544291b23"
+    },
+    {
+      "canonical_name": "Keras",
+      "skill_uid": "d742abb7-1662-4e9f-a1ae-d795b456c259"
+    },
+    {
+      "canonical_name": "Kibana",
+      "skill_uid": "b0e2b812-59eb-4312-b070-0bbbdee99320"
+    },
+    {
+      "canonical_name": "Kotlin",
+      "skill_uid": "9d7c6493-6f6e-4673-b1f2-0cc409b892bc"
+    },
+    {
+      "canonical_name": "Kubeflow",
+      "skill_uid": "f7836975-c9ca-47b5-abbf-d4085154dbe4"
+    },
+    {
+      "canonical_name": "Kubernetes",
+      "skill_uid": "d52ae3a4-709e-46aa-a7f8-0bb135348669"
+    },
+    {
+      "canonical_name": "LAN",
+      "skill_uid": "99c6123e-580f-4aa1-9ef1-b30d3e20e657"
+    },
+    {
+      "canonical_name": "LLM Optimization",
+      "skill_uid": "6049f622-b668-4cb1-addf-668bdbc27cfe"
+    },
+    {
+      "canonical_name": "Langues non précisées",
+      "skill_uid": "a380962e-299b-4583-9c90-b0c0a35367ea"
+    },
+    {
+      "canonical_name": "Laravel",
+      "skill_uid": "f3c1392d-71ea-4e8d-ac5e-d68c0de3726e"
+    },
+    {
+      "canonical_name": "Leadership",
+      "skill_uid": "dbdae7f2-674b-4f59-8978-10a976adc0d8"
+    },
+    {
+      "canonical_name": "Lerna",
+      "skill_uid": "e4450433-2b12-4212-987a-c0cb5942b15d"
+    },
+    {
+      "canonical_name": "Less",
+      "skill_uid": "526ddef1-0cb5-4387-a3f3-b247a550f215"
+    },
+    {
+      "canonical_name": "Linode",
+      "skill_uid": "307d5754-01fc-4c92-bc4f-51143072bb8a"
+    },
+    {
+      "canonical_name": "Linux",
+      "skill_uid": "9493e23a-9808-4615-b1b8-7ac37cb3e2cc"
+    },
+    {
+      "canonical_name": "Logstash",
+      "skill_uid": "b1b4d453-365f-45b4-a783-caf1aad84ef0"
+    },
+    {
+      "canonical_name": "Looker",
+      "skill_uid": "f2e2ab20-d442-437c-9b9f-fb7327c2a561"
+    },
+    {
+      "canonical_name": "Luigi",
+      "skill_uid": "8220211c-da8b-40ca-9a16-3e30b412dcaa"
+    },
+    {
+      "canonical_name": "MATLAB",
+      "skill_uid": "2b203db4-49dc-46ed-9170-b259d4d410c0"
+    },
+    {
+      "canonical_name": "MLflow",
+      "skill_uid": "7799a1dc-9b36-432d-9255-5df9305a1e09"
+    },
+    {
+      "canonical_name": "MVC",
+      "skill_uid": "032b36bd-51ca-4125-95df-bf6d1db3c2c2"
+    },
+    {
+      "canonical_name": "Machine Learning",
+      "skill_uid": "6a507200-d994-4b35-bba4-523a63ccf7ff"
+    },
+    {
+      "canonical_name": "Magento",
+      "skill_uid": "d9eddd11-638b-406b-a90d-65a634971e79"
+    },
+    {
+      "canonical_name": "Mainframe",
+      "skill_uid": "93341cc3-c0fd-48a5-82fa-ea6754937cf7"
+    },
+    {
+      "canonical_name": "Make",
+      "skill_uid": "6d5901bf-c3c9-4de8-bfa4-1e1e9cbbc62f"
+    },
+    {
+      "canonical_name": "MapR",
+      "skill_uid": "7259c5f1-ecb1-464e-8d23-3d3213c82fa9"
+    },
+    {
+      "canonical_name": "MariaDB",
+      "skill_uid": "f7d6481c-b990-4a57-b0cf-5686a7849ee0"
+    },
+    {
+      "canonical_name": "Markdown",
+      "skill_uid": "fb868c02-99ee-4bac-bdb3-1a14298cd432"
+    },
+    {
+      "canonical_name": "Material UI",
+      "skill_uid": "7e6592b9-7d81-4151-8553-6a48048a62e4"
+    },
+    {
+      "canonical_name": "Mathematica",
+      "skill_uid": "20b5cb40-cb40-41d7-8cb2-19e8262a45b9"
+    },
+    {
+      "canonical_name": "Maven",
+      "skill_uid": "0586b26b-2d43-443c-89c7-236bc3e8b2d0"
+    },
+    {
+      "canonical_name": "Meilisearch",
+      "skill_uid": "0511add2-37b3-4c33-838f-1d22ac08b904"
+    },
+    {
+      "canonical_name": "Memcached",
+      "skill_uid": "68dca12b-fd01-4883-b45c-625677da576b"
+    },
+    {
+      "canonical_name": "Metabase",
+      "skill_uid": "25b3c95e-3063-4fc7-94e1-a55af53d26ca"
+    },
+    {
+      "canonical_name": "MicroStrategy",
+      "skill_uid": "0cf1b4a5-ab52-4b1f-b6b6-72b612f28116"
+    },
+    {
+      "canonical_name": "Microservices",
+      "skill_uid": "8111cbc6-6f86-4d70-81dc-c077cfb0d340"
+    },
+    {
+      "canonical_name": "Microsoft 365",
+      "skill_uid": "b1ac063a-8495-4023-a8c3-a1f1cb00d5c7"
+    },
+    {
+      "canonical_name": "Microsoft Dynamics",
+      "skill_uid": "de2ebe21-0a8d-4ae4-b537-5f355cb3faa9"
+    },
+    {
+      "canonical_name": "Minitab",
+      "skill_uid": "bdd100e7-5cb2-4404-b878-fc314f268282"
+    },
+    {
+      "canonical_name": "Mocha",
+      "skill_uid": "8647c8c9-5973-4551-abdc-93848b736ce5"
+    },
+    {
+      "canonical_name": "MongoDB",
+      "skill_uid": "b737c18d-4431-4492-a664-27cdf5bf1b7f"
+    },
+    {
+      "canonical_name": "Mongoose",
+      "skill_uid": "33f45eb4-54b7-4c75-9573-fd280441159d"
+    },
+    {
+      "canonical_name": "Monitoring",
+      "skill_uid": "7c698ef7-d37a-4f49-8020-331f1df568f8"
+    },
+    {
+      "canonical_name": "Multithreading",
+      "skill_uid": "841dc10d-d286-4dea-af73-a816527cf611"
+    },
+    {
+      "canonical_name": "MyReport",
+      "skill_uid": "a808dc44-a4f6-478c-9f99-c47934e8df1e"
+    },
+    {
+      "canonical_name": "MySQL",
+      "skill_uid": "83854f98-1b45-49df-a865-fae08779188a"
+    },
+    {
+      "canonical_name": "NATS",
+      "skill_uid": "123820ab-19fc-4176-b9e8-3fb0cfbca2e9"
+    },
+    {
+      "canonical_name": "NIS2",
+      "skill_uid": "654cecc6-f9df-4bbf-b2f7-ea3f72ef4985"
+    },
+    {
+      "canonical_name": "NLTK",
+      "skill_uid": "7d36d242-f2c6-4f71-aa7e-26657f9f457a"
+    },
+    {
+      "canonical_name": "Nagios",
+      "skill_uid": "38c6dcbd-d721-49b1-b0ec-bbcc9e33ff54"
+    },
+    {
+      "canonical_name": "Neo4j",
+      "skill_uid": "b37f8275-87a5-4d03-8487-ddbb0e95e6be"
+    },
+    {
+      "canonical_name": "NestJS",
+      "skill_uid": "3c6d4c7c-428e-4941-8806-6e7424ead7e7"
+    },
+    {
+      "canonical_name": "NetSuite",
+      "skill_uid": "26f40f89-7323-437f-b085-376a93f58b4c"
+    },
+    {
+      "canonical_name": "Netlify",
+      "skill_uid": "03e9f21f-430e-44f6-9274-b5fbdd007cfc"
+    },
+    {
+      "canonical_name": "Network Security",
+      "skill_uid": "8d4fa80d-a1e3-4d88-8c84-d8078c56b5bf"
+    },
+    {
+      "canonical_name": "New Relic",
+      "skill_uid": "4de554ab-7b3a-462f-baa2-8158b35f938e"
+    },
+    {
+      "canonical_name": "Next.js",
+      "skill_uid": "8c9efbc2-3ed6-4074-8732-717c836ecf53"
+    },
+    {
+      "canonical_name": "Nexus Repository",
+      "skill_uid": "25a386f8-4d47-4808-8286-e35a7b0ca447"
+    },
+    {
+      "canonical_name": "NgRx",
+      "skill_uid": "28be2e9f-3d4f-4be0-b863-f5b39000c7a6"
+    },
+    {
+      "canonical_name": "Nginx",
+      "skill_uid": "0edc66da-4c63-4ec8-8ff1-70c7237d35be"
+    },
+    {
+      "canonical_name": "NoSQL",
+      "skill_uid": "9d3fce73-0580-442f-862d-ed20aa7fdc9b"
+    },
+    {
+      "canonical_name": "Node.js",
+      "skill_uid": "b96e47e5-9cb3-4f6c-83f9-9c69856b256d"
+    },
+    {
+      "canonical_name": "Nomad",
+      "skill_uid": "3c586062-02ca-4d19-9fa6-1b2e237e7b69"
+    },
+    {
+      "canonical_name": "Notion",
+      "skill_uid": "977a9c5e-0dca-4a3f-b7f7-5bc5b7787739"
+    },
+    {
+      "canonical_name": "NumPy",
+      "skill_uid": "de74e8c8-1087-47c3-83be-8c12c9fe88d0"
+    },
+    {
+      "canonical_name": "Nuxt.js",
+      "skill_uid": "7b4c642c-5132-4ff0-b773-e7bd0910d80a"
+    },
+    {
+      "canonical_name": "Nvidia CUDA",
+      "skill_uid": "ed66709a-c537-42a3-ab19-16564928feb3"
+    },
+    {
+      "canonical_name": "Nx",
+      "skill_uid": "58dae9f1-5fd8-48b5-a6dd-86996911656e"
+    },
+    {
+      "canonical_name": "OPC-UA",
+      "skill_uid": "4811b5bf-fc74-40db-8694-4e7a7a0c7157"
+    },
+    {
+      "canonical_name": "ORC",
+      "skill_uid": "72a5231d-48dc-4455-a423-1199dbc7d75a"
+    },
+    {
+      "canonical_name": "OVHcloud",
+      "skill_uid": "5f40f91d-d8f1-42ea-8456-78a93739d67a"
+    },
+    {
+      "canonical_name": "OWASP",
+      "skill_uid": "fc192cdf-de4f-42f3-8e79-99953a2a37ed"
+    },
+    {
+      "canonical_name": "Object-Oriented Programming",
+      "skill_uid": "0d5e07d4-8fad-441c-8a9f-68990cfa5dcd"
+    },
+    {
+      "canonical_name": "Objective-C",
+      "skill_uid": "160652d2-9007-4a13-83e1-2c18fd54f9bc"
+    },
+    {
+      "canonical_name": "Odoo",
+      "skill_uid": "e530dc9e-3e74-48a2-822b-6d6ca1ddae64"
+    },
+    {
+      "canonical_name": "Office 365",
+      "skill_uid": "171ef284-cc1c-4ec9-bd06-faabfaeda6f0"
+    },
+    {
+      "canonical_name": "OpenCV",
+      "skill_uid": "8f42671e-dddd-4faf-a2dc-83e423809dc2"
+    },
+    {
+      "canonical_name": "OpenShift",
+      "skill_uid": "e446e78c-cbe6-4da9-a553-cff482883e72"
+    },
+    {
+      "canonical_name": "Operating System Installation",
+      "skill_uid": "7d1225ff-c467-4afd-abff-697888086b63"
+    },
+    {
+      "canonical_name": "Oracle DB",
+      "skill_uid": "96435d5f-2ba9-4619-82bd-9d8c21005519"
+    },
+    {
+      "canonical_name": "Oracle ERP",
+      "skill_uid": "ea54aa9e-4797-420c-9dde-8f6b8365c959"
+    },
+    {
+      "canonical_name": "PCVue",
+      "skill_uid": "25741403-25ef-4064-b7ba-ee5238d08fce"
+    },
+    {
+      "canonical_name": "PDU Systems",
+      "skill_uid": "b3ff821b-cbc7-430f-ac90-2ebbaad4f97b"
+    },
+    {
+      "canonical_name": "PHP",
+      "skill_uid": "ffd12177-cc04-4ec6-b572-ff3127d698d1"
+    },
+    {
+      "canonical_name": "PHPUnit",
+      "skill_uid": "f6d5ff1f-a0ad-4293-ab7f-42e25ed06a75"
+    },
+    {
+      "canonical_name": "PL/SQL",
+      "skill_uid": "1ca727fa-e769-45fb-8d4a-099231285fb9"
+    },
+    {
+      "canonical_name": "PWA",
+      "skill_uid": "a12b574d-2d3e-4e50-84e3-2521aeeace31"
+    },
+    {
+      "canonical_name": "Packer",
+      "skill_uid": "e1fb06a1-1048-4abb-aa08-af29ae3cdd0a"
+    },
+    {
+      "canonical_name": "Pandas",
+      "skill_uid": "b11d1a56-72ed-449f-8997-d77e1bf15316"
+    },
+    {
+      "canonical_name": "Panorama SCADA",
+      "skill_uid": "c57e3a0a-2269-4abb-990b-fe8a2ee4ec1b"
+    },
+    {
+      "canonical_name": "Parquet",
+      "skill_uid": "1d6cf223-6c42-40b2-882a-31265ac36ba9"
+    },
+    {
+      "canonical_name": "Penetration Testing",
+      "skill_uid": "ba347d77-1156-43fc-af87-845f614b011c"
+    },
+    {
+      "canonical_name": "PeopleSoft",
+      "skill_uid": "e31cabd5-e421-48a4-bf14-7bb3886fac65"
+    },
+    {
+      "canonical_name": "Performance Optimization",
+      "skill_uid": "7781e6a7-8b6c-4f09-b708-28dfd4872f9b"
+    },
+    {
+      "canonical_name": "Pinia",
+      "skill_uid": "3fe439af-20ec-4afd-a2d1-d1cdd9571996"
+    },
+    {
+      "canonical_name": "Playwright",
+      "skill_uid": "5a7144c1-a6c0-4c98-8d92-4fc23a5002b0"
+    },
+    {
+      "canonical_name": "PostgreSQL",
+      "skill_uid": "ea57a1b4-572a-45f9-a048-d85c5d922d4f"
+    },
+    {
+      "canonical_name": "Postman",
+      "skill_uid": "dc2b3c03-c06f-4b44-b9a8-43d81713780f"
+    },
+    {
+      "canonical_name": "Power Automate",
+      "skill_uid": "527acb6b-5ea1-4d05-9ac7-565fad772150"
+    },
+    {
+      "canonical_name": "Power BI",
+      "skill_uid": "94c51cfe-98db-4a7d-98c1-6ab811cd105b"
+    },
+    {
+      "canonical_name": "Power Platform",
+      "skill_uid": "dc992bce-1030-43cd-a55a-db5a7652f208"
+    },
+    {
+      "canonical_name": "PowerShell",
+      "skill_uid": "2f9a9ab7-17fe-4e87-abf0-b4dd49b39126"
+    },
+    {
+      "canonical_name": "PrestaShop",
+      "skill_uid": "2ec66f6f-086a-4041-bafd-3d4be155dda9"
+    },
+    {
+      "canonical_name": "Prettier",
+      "skill_uid": "f846b1f6-3220-43b5-9bc2-ad07d4d6f21e"
+    },
+    {
+      "canonical_name": "Preventive Maintenance",
+      "skill_uid": "1ea20924-f3c7-4e7f-986d-28c14d3bae47"
+    },
+    {
+      "canonical_name": "Prisma",
+      "skill_uid": "9cb504ff-644a-4435-bfbf-e6fb9e4c2a41"
+    },
+    {
+      "canonical_name": "Problem Solving",
+      "skill_uid": "6f69331a-dd9c-439d-ad47-0560071e215a"
+    },
+    {
+      "canonical_name": "Prometheus",
+      "skill_uid": "92d4013d-09cb-4941-9ec9-6ef195b24157"
+    },
+    {
+      "canonical_name": "Prompt Engineering",
+      "skill_uid": "cbc87786-cebc-4549-9c68-0a17d27e46e3"
+    },
+    {
+      "canonical_name": "Protobuf",
+      "skill_uid": "1526268e-4c12-4c64-b476-c612722b64d4"
+    },
+    {
+      "canonical_name": "Puppet",
+      "skill_uid": "8e1404f0-6594-4ec9-a8b3-a692c4b98340"
+    },
+    {
+      "canonical_name": "PySpark",
+      "skill_uid": "ea2e889e-1825-4a7e-bdd8-34d95ea0eee9"
+    },
+    {
+      "canonical_name": "PyTest",
+      "skill_uid": "8602e33a-c261-4c71-830a-3a16c5b35c71"
+    },
+    {
+      "canonical_name": "PyTorch",
+      "skill_uid": "7d4a7dde-6e7c-451f-aac3-1dc5e4062612"
+    },
+    {
+      "canonical_name": "Python",
+      "skill_uid": "d165a0a1-83a6-42b3-a437-6650ea6d21a3"
+    },
+    {
+      "canonical_name": "Qlik",
+      "skill_uid": "2a92e366-f8b5-4bf5-b13f-192550e08173"
+    },
+    {
+      "canonical_name": "Quarkus",
+      "skill_uid": "18b855f9-bded-4269-a29c-291fb880781e"
+    },
+    {
+      "canonical_name": "R",
+      "skill_uid": "ccb662c6-61b4-454c-b4a6-1ce6a94e4e2d"
+    },
+    {
+      "canonical_name": "RAG",
+      "skill_uid": "73a2ef51-2639-474a-a342-bc097d079087"
+    },
+    {
+      "canonical_name": "REST API",
+      "skill_uid": "5bb4377c-bec0-4686-bf26-290467c8dbde"
+    },
+    {
+      "canonical_name": "RPA",
+      "skill_uid": "7181773b-8cdf-4326-8916-d8da7d8f74e5"
+    },
+    {
+      "canonical_name": "RSpec",
+      "skill_uid": "dfafecf2-f46c-4e5f-b0f7-43345b5bf014"
+    },
+    {
+      "canonical_name": "RTOS",
+      "skill_uid": "edf33fbd-a990-4dca-8d47-54f29e76505e"
+    },
+    {
+      "canonical_name": "RabbitMQ",
+      "skill_uid": "40b737e0-5ae0-440d-94f6-84afac88ea31"
+    },
+    {
+      "canonical_name": "RapidMiner",
+      "skill_uid": "0f22ea41-296d-4fa9-a030-363139558541"
+    },
+    {
+      "canonical_name": "React",
+      "skill_uid": "2e9b4196-6dfd-4e4f-b0fb-170f78d6603a"
+    },
+    {
+      "canonical_name": "React Native",
+      "skill_uid": "c8766cdf-224e-4894-ac39-435fde462e69"
+    },
+    {
+      "canonical_name": "React Router",
+      "skill_uid": "3553e45f-77b2-427e-85e5-8381cf71bff2"
+    },
+    {
+      "canonical_name": "Red Hat",
+      "skill_uid": "d4cd67c2-f485-4b2f-b32b-743c27dfc41e"
+    },
+    {
+      "canonical_name": "Redis",
+      "skill_uid": "cd4f1d28-0b0d-4380-b5e8-0a601176e14d"
+    },
+    {
+      "canonical_name": "Redisearch",
+      "skill_uid": "97eef28e-e2ba-4c22-8e67-11c730b58e48"
+    },
+    {
+      "canonical_name": "Redshift",
+      "skill_uid": "950478d9-3c8f-4afe-ab3f-a93f4ef5fa9a"
+    },
+    {
+      "canonical_name": "Redux",
+      "skill_uid": "73819310-33ed-43ee-9dc9-3cb0b4e16581"
+    },
+    {
+      "canonical_name": "Refactoring",
+      "skill_uid": "e5db7ed8-8332-48f3-8bc7-cc793291adda"
+    },
+    {
+      "canonical_name": "Requirements Analysis",
+      "skill_uid": "1abee223-2c24-4140-bf48-fa8b5e51252f"
+    },
+    {
+      "canonical_name": "Risk Analysis",
+      "skill_uid": "0d7d0519-74f7-4448-8cec-f7052356bdce"
+    },
+    {
+      "canonical_name": "Rollbar",
+      "skill_uid": "d8a7f33d-b2d7-4d43-870b-8e49c772965e"
+    },
+    {
+      "canonical_name": "Root Cause Analysis",
+      "skill_uid": "e6bc306f-6244-4d0e-8172-43493e7ed019"
+    },
+    {
+      "canonical_name": "Ruby",
+      "skill_uid": "7cab135f-5eba-45e4-9884-53461c05aec1"
+    },
+    {
+      "canonical_name": "Ruby on Rails",
+      "skill_uid": "f04620c3-29db-45b8-9913-6226f125a4b6"
+    },
+    {
+      "canonical_name": "Rust",
+      "skill_uid": "e50ce1fd-f375-4c6b-8b8c-1e962a066658"
+    },
+    {
+      "canonical_name": "RxJS",
+      "skill_uid": "d18d1ba2-39b1-4ac6-8f4d-27bd1cb94d56"
+    },
+    {
+      "canonical_name": "SAP BusinessObjects",
+      "skill_uid": "a6447dec-74a1-41e7-815d-b4d24b3c6161"
+    },
+    {
+      "canonical_name": "SAP ECC6",
+      "skill_uid": "1d8c5009-61d1-4d1c-8590-79b6037fabcd"
+    },
+    {
+      "canonical_name": "SAP ERP",
+      "skill_uid": "314c2e3f-9f00-42e4-a723-4ded3b1ff84f"
+    },
+    {
+      "canonical_name": "SAP Fiori",
+      "skill_uid": "0631796b-b00e-4219-aa0f-c474a1bb2fd8"
+    },
+    {
+      "canonical_name": "SAP S/4HANA",
+      "skill_uid": "99f7d5ce-1a5a-4748-8f31-241c79bbe33c"
+    },
+    {
+      "canonical_name": "SAP UI5",
+      "skill_uid": "2eb9824c-9c30-4d3f-ad02-85a186dfffe1"
+    },
+    {
+      "canonical_name": "SAS",
+      "skill_uid": "720ccbfe-c810-47e7-a603-1727b2bb5fc5"
+    },
+    {
+      "canonical_name": "SIEM",
+      "skill_uid": "d437a285-3265-4e6a-b645-6c9a6422fc62"
+    },
+    {
+      "canonical_name": "SIL4",
+      "skill_uid": "f192fb70-f7ef-4536-813e-92618f3158bc"
+    },
+    {
+      "canonical_name": "SLA Management",
+      "skill_uid": "f63584c5-5bbc-45fb-90dd-15dd41115f6b"
+    },
+    {
+      "canonical_name": "SOAP",
+      "skill_uid": "c70f306f-3317-40e5-a6a1-c8852b27ac92"
+    },
+    {
+      "canonical_name": "SOP Development",
+      "skill_uid": "f9868c06-ace0-4cb1-9fca-56bc45d0c90e"
+    },
+    {
+      "canonical_name": "SPI",
+      "skill_uid": "c47dcd39-2d72-4b6b-8388-6a396589dd42"
+    },
+    {
+      "canonical_name": "SPSS",
+      "skill_uid": "a5654d80-167e-455f-9ff4-1549e156f30c"
+    },
+    {
+      "canonical_name": "SQL",
+      "skill_uid": "cb79072c-8409-44ff-bd6d-fd4b478bdf69"
+    },
+    {
+      "canonical_name": "SQL Server",
+      "skill_uid": "27f198a3-cdca-43e0-ba6a-7b3f0919f1cc"
+    },
+    {
+      "canonical_name": "SQLAlchemy",
+      "skill_uid": "76007e55-909b-4bf5-9f99-09e1fcf0a5ca"
+    },
+    {
+      "canonical_name": "SQLite",
+      "skill_uid": "92f52a3a-12e6-4f46-8da5-ade5d890f654"
+    },
+    {
+      "canonical_name": "SaaS",
+      "skill_uid": "f364bd84-215e-4ec9-b4fa-b69ee359c16b"
+    },
+    {
+      "canonical_name": "Safety Procedures",
+      "skill_uid": "f751f86e-d57c-4a53-9589-6fb5a487bf5e"
+    },
+    {
+      "canonical_name": "Sage X3",
+      "skill_uid": "6b9aee68-77b3-4953-bcb9-63fc11c08b43"
+    },
+    {
+      "canonical_name": "Salesforce",
+      "skill_uid": "e8f01e58-0275-4650-9bb1-3cace59cd653"
+    },
+    {
+      "canonical_name": "Sass",
+      "skill_uid": "1fba60fd-4ff5-42bd-8aa6-86e88aefb3ed"
+    },
+    {
+      "canonical_name": "Scala",
+      "skill_uid": "0aaaf55a-2320-4080-a87f-5edfb2b78460"
+    },
+    {
+      "canonical_name": "Schneider Electric Industrial Automation",
+      "skill_uid": "65255b74-e8cd-4f42-be26-91dfdc6210a2"
+    },
+    {
+      "canonical_name": "Scikit-Learn",
+      "skill_uid": "8fda8bbc-5927-45a6-b7fb-96cea4ab0f4a"
+    },
+    {
+      "canonical_name": "Scripting",
+      "skill_uid": "c0d9e9b2-3100-40b3-9e38-ee40a94d396f"
+    },
+    {
+      "canonical_name": "Scrum",
+      "skill_uid": "ad78d632-0993-4823-9d86-84cf5ceb8883"
+    },
+    {
+      "canonical_name": "Security Audit",
+      "skill_uid": "96aedc15-640a-428d-978a-292b7b918cd3"
+    },
+    {
+      "canonical_name": "Security Implementation",
+      "skill_uid": "8df71ef8-6b82-440d-9e0b-da00bc516a12"
+    },
+    {
+      "canonical_name": "Security Planning",
+      "skill_uid": "74db1a4d-3178-4d6c-bde0-2c0bd6ae1e9c"
+    },
+    {
+      "canonical_name": "Selenium",
+      "skill_uid": "1c7c53c1-9942-4d7e-900d-116207761701"
+    },
+    {
+      "canonical_name": "Semantic UI",
+      "skill_uid": "c2871cd6-e258-4c1a-a9d1-507e44541a60"
+    },
+    {
+      "canonical_name": "SendGrid",
+      "skill_uid": "701def16-3ed9-452a-88eb-ebfc73871e6c"
+    },
+    {
+      "canonical_name": "Sentry",
+      "skill_uid": "2fbd0d1e-f3c1-40df-af28-26a0b77bf4be"
+    },
+    {
+      "canonical_name": "Sequelize",
+      "skill_uid": "87010322-cabb-492b-91ac-56211a26db56"
+    },
+    {
+      "canonical_name": "ServiceNow",
+      "skill_uid": "e4d99f58-3cf7-4969-8cdb-6f69d54dd275"
+    },
+    {
+      "canonical_name": "SharePoint",
+      "skill_uid": "1edede03-5d56-4d1d-9d81-5819f5dcc208"
+    },
+    {
+      "canonical_name": "Shell Scripting",
+      "skill_uid": "fb7f28a9-6e62-4a47-a519-8f97132fdcd3"
+    },
+    {
+      "canonical_name": "Shopify",
+      "skill_uid": "acc45526-39a3-44b2-8537-2bf32eec09f4"
+    },
+    {
+      "canonical_name": "Siemens Industrial Automation",
+      "skill_uid": "ef682774-9f25-4a82-a9b8-899919badb43"
+    },
+    {
+      "canonical_name": "SignalR",
+      "skill_uid": "8b5a0460-8f04-40bd-b424-b9f4d10cb2e1"
+    },
+    {
+      "canonical_name": "Slack",
+      "skill_uid": "d37f33c4-c03f-46c3-b595-602dc13cd920"
+    },
+    {
+      "canonical_name": "Snowflake",
+      "skill_uid": "907ab4ea-d4bd-41ae-b76a-ec3861cbc84d"
+    },
+    {
+      "canonical_name": "Software Analysis",
+      "skill_uid": "ca9e4b7a-8a3a-4b07-a10c-0d73d8f9b832"
+    },
+    {
+      "canonical_name": "Software Architecture",
+      "skill_uid": "9578ed37-f009-40cb-a0de-865d529d1c1c"
+    },
+    {
+      "canonical_name": "Software Deployment",
+      "skill_uid": "3957cd9a-9cf4-4965-8b7b-7ff06b5ccc39"
+    },
+    {
+      "canonical_name": "Software Development",
+      "skill_uid": "8e4ea480-2a7a-42e9-b5cf-6a4fe42a3892"
+    },
+    {
+      "canonical_name": "Software Installation",
+      "skill_uid": "372a1f4e-1aeb-4cb7-a5e4-770a0bb4037d"
+    },
+    {
+      "canonical_name": "Software Quality",
+      "skill_uid": "8a3f8dd9-a5dd-4b6a-a9da-57bad74e55ab"
+    },
+    {
+      "canonical_name": "Software Testing",
+      "skill_uid": "01d10e74-0e79-408e-9e22-8ec2d4fab613"
+    },
+    {
+      "canonical_name": "Solr",
+      "skill_uid": "555934a0-2b38-4d83-85c7-10ecb303f13d"
+    },
+    {
+      "canonical_name": "SonarQube",
+      "skill_uid": "a78071b7-3b5f-4942-9428-f32cd108bf77"
+    },
+    {
+      "canonical_name": "Spacy",
+      "skill_uid": "75748fe7-2c1b-4d17-9d80-ce669176a013"
+    },
+    {
+      "canonical_name": "Spark",
+      "skill_uid": "d7bc5b06-f361-422b-bc21-dee87ac1fb9c"
+    },
+    {
+      "canonical_name": "Specifications Writing",
+      "skill_uid": "cf49a535-ffcd-4347-a4bc-e99de622009f"
+    },
+    {
+      "canonical_name": "Sphinx",
+      "skill_uid": "2f67266d-9845-4a8c-8056-ae089d55c123"
+    },
+    {
+      "canonical_name": "Splunk",
+      "skill_uid": "4fd8a890-c246-4e67-ada4-06aab1e66a3b"
+    },
+    {
+      "canonical_name": "Spring AOP",
+      "skill_uid": "9059b227-ce25-472f-bcc9-dae3bbf61c2d"
+    },
+    {
+      "canonical_name": "Spring Boot",
+      "skill_uid": "1c6e4cd0-3739-4205-9c10-db0280c9b7c5"
+    },
+    {
+      "canonical_name": "Stata",
+      "skill_uid": "b9501138-78c3-481c-9f81-46149313d956"
+    },
+    {
+      "canonical_name": "Storybook",
+      "skill_uid": "e8f401eb-f1ef-4f31-a4b2-20f58a48b2d2"
+    },
+    {
+      "canonical_name": "Streamlit",
+      "skill_uid": "c8bc46c9-4d44-4ce1-a75b-4b4a2c77ee72"
+    },
+    {
+      "canonical_name": "Stripe API",
+      "skill_uid": "60b1be9b-0205-4d2c-aaa9-3ecf3c265da8"
+    },
+    {
+      "canonical_name": "Styled Components",
+      "skill_uid": "fd089298-8764-4c27-bb48-a4e166c553d1"
+    },
+    {
+      "canonical_name": "Stylus",
+      "skill_uid": "6a2fc25c-f42a-447c-93a3-997d6ccaaaff"
+    },
+    {
+      "canonical_name": "Supabase",
+      "skill_uid": "f20c0ef6-de68-4a65-a60a-11310a66cca8"
+    },
+    {
+      "canonical_name": "Superset",
+      "skill_uid": "738b01ec-0aa0-4d54-a91d-76e9015e4b33"
+    },
+    {
+      "canonical_name": "Svelte",
+      "skill_uid": "6ceebf50-36d6-4428-ab19-b2d372a0bbd2"
+    },
+    {
+      "canonical_name": "Swagger",
+      "skill_uid": "1991e603-9e23-47d9-9f1a-67d09c951e8a"
+    },
+    {
+      "canonical_name": "Swift",
+      "skill_uid": "2d3dcd38-18ad-4192-8bf4-75580bbe9aed"
+    },
+    {
+      "canonical_name": "Symfony",
+      "skill_uid": "2b4b0bcf-6b5d-4014-8e89-4aa6ce4c05e3"
+    },
+    {
+      "canonical_name": "System and Network Administration",
+      "skill_uid": "4cf1508d-0100-4433-8d2d-d9ce2f9f5b01"
+    },
+    {
+      "canonical_name": "TCP/IP",
+      "skill_uid": "ec17e018-084f-40e2-a64d-d0581c6e9305"
+    },
+    {
+      "canonical_name": "Tableau",
+      "skill_uid": "9f1459e3-31a3-4e72-878f-32ec491bf0ab"
+    },
+    {
+      "canonical_name": "Tailwind CSS",
+      "skill_uid": "8df563fe-babf-4adb-b617-52e9fe0df722"
+    },
+    {
+      "canonical_name": "Teamwork",
+      "skill_uid": "dab57f83-6cdb-416c-8646-6b69acca9619"
+    },
+    {
+      "canonical_name": "Technical Documentation",
+      "skill_uid": "9dafa582-09b0-45d5-a569-916e3d216e94"
+    },
+    {
+      "canonical_name": "Technical Watch",
+      "skill_uid": "ecfbff77-eb38-4840-be96-dcb4f6d35ab9"
+    },
+    {
+      "canonical_name": "Technology Selection",
+      "skill_uid": "77c767b6-4623-4139-9231-9a0a090d84bd"
+    },
+    {
+      "canonical_name": "TensorFlow",
+      "skill_uid": "950c519d-a3b6-4cfe-87d0-4c3a0eeff6e6"
+    },
+    {
+      "canonical_name": "Terraform",
+      "skill_uid": "8bc17a8d-3fe0-4151-8085-24a7584147b8"
+    },
+    {
+      "canonical_name": "Three.js",
+      "skill_uid": "81524fc6-ae9d-4545-bd36-02a0f19eeb21"
+    },
+    {
+      "canonical_name": "Thrift",
+      "skill_uid": "f4567793-72e3-4a80-8cc4-a2a9d8c1b643"
+    },
+    {
+      "canonical_name": "Time Management",
+      "skill_uid": "2fa5de35-6c38-4f58-beca-a4a642d79b95"
+    },
+    {
+      "canonical_name": "Tomcat",
+      "skill_uid": "5fe6c4f8-732d-4bfd-9a39-67d9d6d618c8"
+    },
+    {
+      "canonical_name": "Travis CI",
+      "skill_uid": "f7a4281d-4c51-49eb-ba45-1c1f3b305af0"
+    },
+    {
+      "canonical_name": "Trello",
+      "skill_uid": "67e1ccd1-347e-4322-8ca1-041383a53d31"
+    },
+    {
+      "canonical_name": "Troubleshooting",
+      "skill_uid": "2fdb9fb6-7422-4eb0-9dc9-5a4aae00eaa5"
+    },
+    {
+      "canonical_name": "Turborepo",
+      "skill_uid": "8181caf2-b21e-4f84-99ff-84ddb750f1a3"
+    },
+    {
+      "canonical_name": "Twilio API",
+      "skill_uid": "1d2571e0-6dd5-4357-9976-cc122e0b9798"
+    },
+    {
+      "canonical_name": "TypeORM",
+      "skill_uid": "b7c5033d-dccb-478e-bbfe-91691b179272"
+    },
+    {
+      "canonical_name": "TypeScript",
+      "skill_uid": "8b18fde8-7eaa-4f1c-ad94-bdd24baf7e4b"
+    },
+    {
+      "canonical_name": "Typesense",
+      "skill_uid": "62c77607-b9b7-4315-9a98-9d91cb14f1e2"
+    },
+    {
+      "canonical_name": "UDP",
+      "skill_uid": "bf455253-c7a4-4ea9-aa8f-cc16c8f275fb"
+    },
+    {
+      "canonical_name": "UML",
+      "skill_uid": "1894d27f-cb61-4373-bf4d-7a092e0239f7"
+    },
+    {
+      "canonical_name": "UPS Systems",
+      "skill_uid": "1e32cac3-2760-496f-9486-831413782805"
+    },
+    {
+      "canonical_name": "Ubuntu",
+      "skill_uid": "d275dabe-091a-4440-8858-28dfb5399e9f"
+    },
+    {
+      "canonical_name": "Unit Testing",
+      "skill_uid": "4453bc0b-5b2e-47f8-8b21-36fd91d061a0"
+    },
+    {
+      "canonical_name": "VBA",
+      "skill_uid": "c80e65d4-72c4-4be3-a535-fc05a0c68bee"
+    },
+    {
+      "canonical_name": "VLAN",
+      "skill_uid": "cd84479e-e755-4c71-bd90-6a4d93a03d25"
+    },
+    {
+      "canonical_name": "VMware",
+      "skill_uid": "58480634-4aff-4cf6-9790-60f7b2497c12"
+    },
+    {
+      "canonical_name": "VPN",
+      "skill_uid": "ee1416a5-0721-4f13-aba9-f61edb55e4e1"
+    },
+    {
+      "canonical_name": "Vagrant",
+      "skill_uid": "16c55cdc-d16b-4bca-ab4b-80b75b285242"
+    },
+    {
+      "canonical_name": "Vault",
+      "skill_uid": "85e362a6-7143-4799-9aac-693c4a096503"
+    },
+    {
+      "canonical_name": "Vercel",
+      "skill_uid": "92917876-a3fd-41f6-823b-534f76cca158"
+    },
+    {
+      "canonical_name": "Vite",
+      "skill_uid": "3f37ea51-61bf-4f0c-8b3b-12003d2f1bcb"
+    },
+    {
+      "canonical_name": "Vue Router",
+      "skill_uid": "dbc36124-4ac7-48ee-9e97-5c534bbcb58b"
+    },
+    {
+      "canonical_name": "Vue.js",
+      "skill_uid": "63743020-0fb3-4e31-a6a0-312958b630c7"
+    },
+    {
+      "canonical_name": "Vuex",
+      "skill_uid": "866482d6-03b2-438c-bca7-06de0fbd2efc"
+    },
+    {
+      "canonical_name": "Vulnerability Management",
+      "skill_uid": "d4475deb-2a48-43fe-898d-0371c0239562"
+    },
+    {
+      "canonical_name": "WAN",
+      "skill_uid": "243cdedd-f0ea-401c-9724-ab89b2dea0fb"
+    },
+    {
+      "canonical_name": "WebLogic",
+      "skill_uid": "01f18599-5d69-4490-b391-0f7a13c1bdb2"
+    },
+    {
+      "canonical_name": "WebRTC",
+      "skill_uid": "91600efb-2fbe-4d1b-9b65-9aa900a5a2f6"
+    },
+    {
+      "canonical_name": "WebSockets",
+      "skill_uid": "ea6876f1-7fe8-4aaa-9d67-16b1423e6240"
+    },
+    {
+      "canonical_name": "WebSphere",
+      "skill_uid": "91ce2faa-daac-4c3e-ba8d-b80dcdb1e94d"
+    },
+    {
+      "canonical_name": "Webpack",
+      "skill_uid": "bc1d9d93-2d37-44d1-9218-0873a8f9c105"
+    },
+    {
+      "canonical_name": "WildFly",
+      "skill_uid": "ad10ef60-9694-40be-b076-8ffa4586a5a1"
+    },
+    {
+      "canonical_name": "WinDev",
+      "skill_uid": "0e38b814-1438-43f4-9e8b-9b1b92f4f3d1"
+    },
+    {
+      "canonical_name": "Windows",
+      "skill_uid": "866c4dd0-207b-4222-8a6c-105353a9b16e"
+    },
+    {
+      "canonical_name": "Windows Server",
+      "skill_uid": "d20e4fb9-48aa-40e2-bdd9-47d2993db309"
+    },
+    {
+      "canonical_name": "WooCommerce",
+      "skill_uid": "986c6b07-45f7-405d-95d1-77bfbdba67d2"
+    },
+    {
+      "canonical_name": "WordPress",
+      "skill_uid": "367d66df-9277-40a3-af37-1b01c481014e"
+    },
+    {
+      "canonical_name": "Workstation Deployment",
+      "skill_uid": "361a25d1-0c44-498c-b3a5-8f732322e5ec"
+    },
+    {
+      "canonical_name": "XML",
+      "skill_uid": "ce4a58f2-45de-47cc-8ba5-ee82b85fa522"
+    },
+    {
+      "canonical_name": "Xamarin",
+      "skill_uid": "82d9145e-41f9-4f8f-ae76-dcb0a01e0911"
+    },
+    {
+      "canonical_name": "YAML",
+      "skill_uid": "0a3e513c-104c-402d-b561-244f8cc976db"
+    },
+    {
+      "canonical_name": "Yocto Project",
+      "skill_uid": "becb73a2-2f5d-4b51-b809-3bc60acc0a80"
+    },
+    {
+      "canonical_name": "Zabbix",
+      "skill_uid": "27851df4-249a-4b92-932d-eb6b0ef1fecf"
+    },
+    {
+      "canonical_name": "Zendesk",
+      "skill_uid": "5a112b08-a222-4649-b6c2-65ec1ef9187d"
+    },
+    {
+      "canonical_name": "Zeppelin",
+      "skill_uid": "2bd74f05-ec2d-4a1e-88e9-33294ceaee92"
+    },
+    {
+      "canonical_name": "ZeroMQ",
+      "skill_uid": "1fd7f0c0-7786-4e2e-9cd6-12b089475a0e"
+    },
+    {
+      "canonical_name": "Zoho",
+      "skill_uid": "14d23d5d-b2c6-4378-b455-810b4387d141"
+    },
+    {
+      "canonical_name": "Zookeeper",
+      "skill_uid": "32d4540d-aab8-44a6-a9ce-3b1b90f661d3"
+    },
+    {
+      "canonical_name": "dbt",
+      "skill_uid": "cb245044-e7a0-4c11-aed3-8984498fd82a"
+    },
+    {
+      "canonical_name": "gRPC",
+      "skill_uid": "1f6ac48d-2b20-4427-a503-00414ea78ffc"
+    },
+    {
+      "canonical_name": "iOS Development",
+      "skill_uid": "ce5de7f9-5435-4a04-8b1b-87da810f2e44"
+    },
+    {
+      "canonical_name": "jQuery",
+      "skill_uid": "cee9a043-117b-412f-9d73-47f7516b6a61"
+    },
+    {
+      "canonical_name": "macOS",
+      "skill_uid": "cc398c4f-abbf-4ebd-96e2-733f837ec96a"
+    },
+    {
+      "canonical_name": "n8n",
+      "skill_uid": "d2fbbec8-83d5-466b-a101-e7243e722b03"
+    }
+  ]
+}

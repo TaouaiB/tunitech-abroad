@@ -4,6 +4,10 @@ from apps.skills.models import Skill, SkillAlias, SkillCategory
 from typing import TypedDict, List, Tuple
 from apps.skills.services.normalizer import normalize_skill_text
 from apps.skills.services.phase_15d_decisions import approved_taxonomy_decisions
+from apps.skills.services.skill_uid_registry import (
+    get_skill_uid,
+    has_skill_uid,
+)
 
 class SkillSeedItem(TypedDict):
     canonical: str
@@ -608,16 +612,36 @@ class SkillSeedService:
                 if not slug:
                     slug = normalize_skill_text(canonical).replace(' ', '-')
 
+                if not has_skill_uid(canonical):
+                    raise ValueError(
+                        "Skill UID registry is missing an entry for the seeded "
+                        f"canonical skill {canonical!r}. Add a UUIDv4 entry to "
+                        "apps/skills/data/skill_uid_registry_v1.json before "
+                        "running the seed again."
+                    )
+                skill_uid = get_skill_uid(canonical)
+
                 skill, created = Skill.objects.get_or_create(
                     canonical_name=canonical,
                     defaults={
                         'slug': slug,
                         'category': item["category"],
-                        'source': 'seed'
+                        'source': 'seed',
+                        'skill_uid': skill_uid,
                     }
                 )
                 if created:
                     skills_created += 1
+                else:
+                    # Existing row: align skill_uid with the committed registry
+                    # for the canonical identity. The save() immutability check
+                    # protects against accidental rotation; the rename helper
+                    # below is the only authorized path to update skill_uid on
+                    # an existing row, and it is only used here to converge an
+                    # environment-specific legacy UUID onto the registry UUID
+                    # for the same canonical_name.
+                    if skill.skill_uid != skill_uid:
+                        Skill.set_skill_uid_for_rename(skill, skill_uid)
 
                 aliases: List[str] = item["aliases"]
                 for alias_text in aliases:
@@ -676,6 +700,14 @@ class SkillSeedService:
             old_skill.slug = new_slug
             old_skill.source = old_skill.source or "seed"
             old_skill.save(update_fields=["canonical_name", "slug", "source", "updated_at"])
+            # After the rename, align skill_uid with the committed registry for
+            # the new canonical identity. Use the controlled rename helper
+            # because the in-place rename is an identity migration, not a
+            # rotation of the existing skill_uid.
+            if has_skill_uid(new_name):
+                target_uid = get_skill_uid(new_name)
+                if old_skill.skill_uid != target_uid:
+                    Skill.set_skill_uid_for_rename(old_skill, target_uid)
             return
 
         for alias in old_skill.aliases.all():

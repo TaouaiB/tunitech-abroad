@@ -5,11 +5,11 @@ from apps.skills.services.review import UnmatchedSkillReviewService
 
 @admin.register(Skill)
 class SkillAdmin(admin.ModelAdmin):
-    list_display = ('canonical_name', 'category', 'source', 'is_active', 'created_at')
-    search_fields = ('canonical_name', 'slug')
+    list_display = ('canonical_name', 'category', 'source', 'is_active', 'skill_uid', 'created_at')
+    search_fields = ('canonical_name', 'slug', 'skill_uid')
     list_filter = ('category', 'source', 'is_active')
     prepopulated_fields = {'slug': ('canonical_name',)}
-    readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('skill_uid', 'created_at', 'updated_at')
 
 @admin.register(SkillAlias)
 class SkillAliasAdmin(admin.ModelAdmin):
