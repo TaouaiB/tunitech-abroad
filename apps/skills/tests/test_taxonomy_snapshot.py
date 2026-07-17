@@ -26,6 +26,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from typing import Dict, List, Tuple
+from unittest import mock
 
 from django.core.management import call_command, CommandError
 from django.test import SimpleTestCase, TestCase
@@ -206,6 +207,13 @@ class TaxonomySnapshotExportTests(TestCase):
             digest, name = line.split("  ", 1)
             sums[name] = digest
         return sums
+
+    def _assert_no_staging_directory(self):
+        for child in self.tmp.iterdir():
+            self.assertFalse(
+                child.name.startswith(".taxonomy-snapshot-staging-"),
+                f"staging directory left behind: {child}",
+            )
 
     # ------------------------------------------------------------------
     # Content / contract
@@ -580,20 +588,83 @@ class TaxonomySnapshotExportTests(TestCase):
                 f"staging directory left behind after rename failure: {child}",
             )
 
-    def test_concurrent_identical_target_resolves_idempotently(self):
-        first = self._export()
-        # Forge a copy of the published directory in a separate
-        # location, then drop it back at the same path. The exporter
-        # must treat it as idempotent.
-        version_dir = Path(first.snapshot_dir)
-        backup = self.tmp / "backup"
-        shutil.copytree(version_dir, backup)
-        shutil.rmtree(version_dir)
-        shutil.copytree(backup, version_dir)
-        shutil.rmtree(backup)
-        second = self._export()
-        self.assertTrue(second.idempotent)
-        self.assertEqual(first.taxonomy_version, second.taxonomy_version)
+    def test_publish_race_identical_target_resolves_idempotently(self):
+        race_state = {}
+
+        def _publish_identical_then_fail(src, dst):
+            source = Path(src)
+            target = Path(dst)
+            shutil.copytree(source, target)
+            race_state["target"] = target
+            race_state["bytes"] = self._read_snapshot_files(target)
+            raise OSError("simulated rename race after identical publish")
+
+        with mock.patch(
+            "apps.skills.services.taxonomy_snapshot.os.replace",
+            side_effect=_publish_identical_then_fail,
+        ):
+            result = self._export()
+
+        target = race_state["target"]
+        self.assertTrue(result.idempotent)
+        self.assertEqual(Path(result.snapshot_dir), target)
+        self.assertEqual(self._read_snapshot_files(target), race_state["bytes"])
+        self._assert_no_staging_directory()
+
+    def test_publish_race_differing_complete_target_fails_closed(self):
+        race_state = {}
+
+        def _publish_differing_then_fail(src, dst):
+            target = Path(dst)
+            shutil.copytree(Path(src), target)
+            taxonomy_path = target / SNAPSHOT_FILENAME
+            taxonomy_path.write_bytes(taxonomy_path.read_bytes() + b" ")
+            race_state["target"] = target
+            race_state["bytes"] = self._read_snapshot_files(target)
+            raise OSError("simulated rename race after differing publish")
+
+        with mock.patch(
+            "apps.skills.services.taxonomy_snapshot.os.replace",
+            side_effect=_publish_differing_then_fail,
+        ):
+            with self.assertRaises(TaxonomySnapshotPublishError):
+                self._export()
+
+        target = race_state["target"]
+        self.assertEqual(self._read_snapshot_files(target), race_state["bytes"])
+        self._assert_no_staging_directory()
+
+    def test_publish_race_incomplete_target_fails_closed(self):
+        race_state = {}
+
+        def _publish_incomplete_then_fail(src, dst):
+            source = Path(src)
+            target = Path(dst)
+            target.mkdir()
+            shutil.copy2(source / SNAPSHOT_FILENAME, target / SNAPSHOT_FILENAME)
+            race_state["target"] = target
+            race_state["taxonomy_bytes"] = (
+                target / SNAPSHOT_FILENAME
+            ).read_bytes()
+            raise OSError("simulated rename race after incomplete publish")
+
+        with mock.patch(
+            "apps.skills.services.taxonomy_snapshot.os.replace",
+            side_effect=_publish_incomplete_then_fail,
+        ):
+            with self.assertRaises(TaxonomySnapshotPublishError):
+                self._export()
+
+        target = race_state["target"]
+        self.assertEqual(
+            sorted(path.name for path in target.iterdir()),
+            [SNAPSHOT_FILENAME],
+        )
+        self.assertEqual(
+            (target / SNAPSHOT_FILENAME).read_bytes(),
+            race_state["taxonomy_bytes"],
+        )
+        self._assert_no_staging_directory()
 
     def test_concurrent_differing_target_fails(self):
         first = self._export()

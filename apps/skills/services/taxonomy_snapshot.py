@@ -794,14 +794,34 @@ class TaxonomySnapshotService:
             try:
                 os.replace(str(staging_dir), str(target_dir))
             except OSError as exc:
-                self._cleanup_staging(staging_dir)
-                # If the target appeared during the rename, fail closed
-                # rather than overwriting or leaving a partial state.
+                # Keep staging intact until a target that appeared during
+                # the rename race has been inspected byte-for-byte. A
+                # concurrent writer may have published the exact same
+                # complete snapshot, which is an idempotent success.
                 if target_dir.exists():
-                    raise TaxonomySnapshotPublishError(
-                        f"Refusing to overwrite snapshot that appeared during publish: "
-                        f"{target_dir}"
-                    ) from exc
+                    try:
+                        existing = self._read_complete_target(target_dir)
+                    except OSError as inspect_exc:
+                        self._cleanup_staging(staging_dir)
+                        raise TaxonomySnapshotPublishError(
+                            "Could not inspect snapshot that appeared during "
+                            f"publish: {target_dir}: {inspect_exc}"
+                        ) from inspect_exc
+                    if existing is None:
+                        self._cleanup_staging(staging_dir)
+                        raise TaxonomySnapshotPublishError(
+                            "Refusing incomplete snapshot that appeared during "
+                            f"publish: {target_dir}"
+                        ) from exc
+                    if existing != files:
+                        self._cleanup_staging(staging_dir)
+                        raise TaxonomySnapshotPublishError(
+                            "Refusing differing snapshot that appeared during "
+                            f"publish: {target_dir}"
+                        ) from exc
+                    self._cleanup_staging(staging_dir)
+                    return True
+                self._cleanup_staging(staging_dir)
                 raise TaxonomySnapshotPublishError(
                     f"Atomic rename of staging to {target_dir} failed: {exc}"
                 ) from exc
