@@ -23,10 +23,17 @@ The exporter MUST:
   replacement pointing to ``.NET``;
 * never embed internal database integer IDs;
 * produce deterministic JSON output for an unchanged taxonomy;
-* write through a staging directory and publish the final directory
-  atomically;
+* prove the source-state invariants (registry coverage, invalid
+  artifact state, deprecated identity state, exact counts) before any
+  staging write;
+* write and verify every file only inside a staging directory that
+  lives under the final output root, on the same filesystem;
+* publish the complete four-file directory with a single atomic
+  filesystem rename/replace operation;
 * treat an existing byte-identical snapshot as idempotent success;
-* refuse to overwrite a differing existing snapshot version;
+* refuse to overwrite a differing or incomplete existing snapshot;
+* never leave a partial target directory or a stale staging directory
+  on failure;
 * return only sanitized metadata.
 """
 
@@ -35,13 +42,14 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 from django.db import transaction
 
@@ -59,8 +67,21 @@ SHASUMS_FILENAME = "SHA256SUMS"
 EXPORTER_CONTRACT_VERSION = "ml0-v1"
 
 INVALID_ARTIFACT_CANONICAL_NAME = "Langues non précisées"
+# Tombstone UUID for the invalid artifact row. The contract pins this
+# exact value so that downstream consumers and tests can recognize the
+# row even when it is excluded from the snapshot payload.
+INVALID_ARTIFACT_TOMBSTONE_UUID = uuid.UUID("0b71fefd-ea81-42e1-a4e1-2d84d3497960")
 DEPRECATED_DOTNET_CORE_CANONICAL_NAME = ".NET Core"
 DOTNET_CANONICAL_NAME = ".NET"
+
+# Expected ML-0 source-state counts. These are exact: any deviation
+# (missing registry row, extra non-registry row, extra deprecated row,
+# unexpected invalid-artifact state) must fail the exporter before any
+# staging write.
+EXPECTED_REGISTRY_COUNT = 522
+EXPECTED_ACTIVE_SKILL_COUNT = EXPECTED_REGISTRY_COUNT
+EXPECTED_DEPRECATED_SKILL_COUNT = 1
+EXPECTED_TOTAL_SKILL_COUNT = EXPECTED_ACTIVE_SKILL_COUNT + EXPECTED_DEPRECATED_SKILL_COUNT
 
 REQUIRED_SKILL_FIELDS = (
     "skill_uid",
@@ -84,6 +105,7 @@ REQUIRED_MANIFEST_FIELDS = (
     "manifest_format",
     "manifest_version",
     "taxonomy_version",
+    "taxonomy_content_sha256",
     "snapshot_filename",
     "snapshot_sha256",
     "source_product",
@@ -117,6 +139,11 @@ EXCLUDED_INVALID_ARTIFACTS = (INVALID_ARTIFACT_CANONICAL_NAME,)
 REQUIRED_SOURCE_MIGRATION = "skills.0004_skill_skill_uid_finalize"
 REQUIRED_SOURCE_MIGRATION_APP = "skills"
 
+STAGING_DIR_PREFIX = ".taxonomy-snapshot-staging-"
+
+# Source commit shape: lowercase hex SHA-1 of exactly 40 characters.
+SOURCE_COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+
 
 class TaxonomySnapshotError(Exception):
     """Base class for exporter errors."""
@@ -145,7 +172,8 @@ class TaxonomySnapshotResult:
 
     taxonomy_version: str
     snapshot_dir: str
-    taxonomy_sha256: str
+    taxonomy_content_sha256: str
+    snapshot_file_sha256: str
     manifest_sha256: str
     readme_sha256: str
     skill_count: int
@@ -162,7 +190,8 @@ class TaxonomySnapshotResult:
         return {
             "taxonomy_version": self.taxonomy_version,
             "snapshot_dir": self.snapshot_dir,
-            "taxonomy_sha256": self.taxonomy_sha256,
+            "taxonomy_content_sha256": self.taxonomy_content_sha256,
+            "snapshot_file_sha256": self.snapshot_file_sha256,
             "manifest_sha256": self.manifest_sha256,
             "readme_sha256": self.readme_sha256,
             "skill_count": self.skill_count,
@@ -222,30 +251,36 @@ class TaxonomySnapshotService:
             )
 
         source_commit = git_commit or self._source_commit_resolver()
+        _validate_source_commit(source_commit)
 
+        # Build everything before any staging write so the source-state
+        # validation cannot be bypassed by a partial export.
         skills = self._collect_exportable_skills()
+
         # First: build the deterministic skills array and hash it to
         # derive the taxonomy_version. The hash is computed over the
         # canonical ``skills`` array bytes, NOT over the full payload.
         skills_array = self._build_skills_array(skills)
         skills_bytes = _serialize_json_deterministically(skills_array)
-        taxonomy_sha = hashlib.sha256(skills_bytes).hexdigest()
-        taxonomy_version = f"sha256:{taxonomy_sha}"
+        taxonomy_content_sha = hashlib.sha256(skills_bytes).hexdigest()
+        taxonomy_version = f"sha256:{taxonomy_content_sha}"
 
         # Second: build the full taxonomy payload including the version
         # and recompute its bytes. The payload is what gets written to
-        # disk.
+        # disk, so its file digest is the manifest ``snapshot_sha256``.
         taxonomy = self._build_taxonomy_payload(
             skills=skills,
             skills_array=skills_array,
             taxonomy_version=taxonomy_version,
         )
         taxonomy_bytes = _serialize_json_deterministically(taxonomy)
+        snapshot_file_sha = hashlib.sha256(taxonomy_bytes).hexdigest()
 
         manifest = self._build_manifest_payload(
             taxonomy=taxonomy,
             taxonomy_version=taxonomy_version,
-            taxonomy_sha256=taxonomy_sha,
+            taxonomy_content_sha256=taxonomy_content_sha,
+            snapshot_file_sha256=snapshot_file_sha,
             source_commit=source_commit,
         )
         manifest_bytes = _serialize_json_deterministically(manifest)
@@ -266,7 +301,8 @@ class TaxonomySnapshotService:
         version_dir_name = _safe_version_dir_name(taxonomy_version)
         target_dir = output_root / version_dir_name
 
-        idempotent = self._publish_if_matches(
+        idempotent = self._publish_atomically(
+            output_root=output_root,
             target_dir=target_dir,
             files={
                 SNAPSHOT_FILENAME: taxonomy_bytes,
@@ -279,7 +315,8 @@ class TaxonomySnapshotService:
         return TaxonomySnapshotResult(
             taxonomy_version=taxonomy_version,
             snapshot_dir=str(target_dir),
-            taxonomy_sha256=taxonomy_sha,
+            taxonomy_content_sha256=taxonomy_content_sha,
+            snapshot_file_sha256=snapshot_file_sha,
             manifest_sha256=manifest_sha,
             readme_sha256=readme_sha,
             skill_count=taxonomy["skill_count"],
@@ -298,65 +335,119 @@ class TaxonomySnapshotService:
     # ------------------------------------------------------------------
 
     def _collect_exportable_skills(self) -> List[Skill]:
-        registry_names = set(skill_uid_registry.registry_canonical_names())
+        # 1) Verify every registry canonical row exists in the database
+        #    with the right UUID. Fail closed before any other work.
+        registry_entries = list(skill_uid_registry.registry_entries())
+        registry_names = {name for name, _ in registry_entries}
+        registry_uuids = {uuid.UUID(uid) for _, uid in registry_entries}
+
+        for canonical, uid in registry_entries:
+            if not Skill.objects.filter(canonical_name=canonical).exists():
+                raise TaxonomySnapshotContractError(
+                    f"Registry canonical row missing: {canonical!r}"
+                )
 
         deprecated_dotnet_core_uuid = self._registry_uuid_for(
-            DOTNET_CANONICAL_NAME, required=False
+            DOTNET_CANONICAL_NAME, required=True
         )
 
         # The deprecated `.NET Core` row is the *only* additional row we
         # export that is not part of the current canonical registry. It
-        # must exist in the database and must carry a UUIDv4.
-        deprecated_dotnet_core: Optional[Skill] = None
+        # must exist in the database, be unique, and must carry a UUIDv4
+        # that does not collide with the canonical `.NET` registry UUID.
         deprecated_dotnet_core_qs = Skill.objects.filter(
             canonical_name=DEPRECATED_DOTNET_CORE_CANONICAL_NAME
         )
-        for row in deprecated_dotnet_core_qs:
-            if deprecated_dotnet_core is not None:
-                raise TaxonomySnapshotContractError(
-                    "Multiple `.NET Core` rows detected; expected at most one."
-                )
-            deprecated_dotnet_core = row
+        deprecated_count = deprecated_dotnet_core_qs.count()
+        if deprecated_count > 1:
+            raise TaxonomySnapshotContractError(
+                f"Multiple `.NET Core` rows detected: {deprecated_count}."
+            )
+        if deprecated_count == 0:
+            raise TaxonomySnapshotContractError(
+                "Deprecated `.NET Core` row missing."
+            )
+        deprecated_dotnet_core = deprecated_dotnet_core_qs.get()
+        if deprecated_dotnet_core.is_active:
+            raise TaxonomySnapshotContractError(
+                "Deprecated `.NET Core` row must be inactive."
+            )
+        if deprecated_dotnet_core.skill_uid is None:
+            raise TaxonomySnapshotContractError(
+                "Deprecated `.NET Core` row has no skill_uid."
+            )
+        deprecated_dotnet_core_uid = deprecated_dotnet_core.skill_uid
+        if deprecated_dotnet_core_uid.version != 4:
+            raise TaxonomySnapshotContractError(
+                f"Deprecated `.NET Core` skill_uid is not UUIDv4: "
+                f"{deprecated_dotnet_core_uid}"
+            )
+        if deprecated_dotnet_core_uid == deprecated_dotnet_core_uuid:
+            raise TaxonomySnapshotContractError(
+                "Deprecated `.NET Core` skill_uid collides with the "
+                "canonical `.NET` registry UUID."
+            )
+        if deprecated_dotnet_core_uid in registry_uuids:
+            raise TaxonomySnapshotContractError(
+                "Deprecated `.NET Core` skill_uid collides with a "
+                "registry UUID."
+            )
 
-        deprecated_dotnet_core_uid: Optional[uuid.UUID] = None
-        if deprecated_dotnet_core is not None:
-            if deprecated_dotnet_core.is_active:
+        # 2) Verify the invalid artifact state when it is present in
+        #    the database. The exporter never mutates taxonomy data,
+        #    so the row may already be cleaned up; if it remains, its
+        #    state must match the contract exactly.
+        invalid_qs = Skill.objects.filter(
+            canonical_name=INVALID_ARTIFACT_CANONICAL_NAME
+        )
+        invalid_count = invalid_qs.count()
+        if invalid_count > 1:
+            raise TaxonomySnapshotContractError(
+                f"Invalid artifact row appears {invalid_count} times; expected at most one."
+            )
+        if invalid_count == 1:
+            invalid_row = invalid_qs.get()
+            if invalid_row.is_active:
                 raise TaxonomySnapshotContractError(
-                    "Deprecated `.NET Core` row must be inactive."
+                    f"Invalid artifact row {INVALID_ARTIFACT_CANONICAL_NAME!r} "
+                    "is active; expected inactive."
                 )
-            if deprecated_dotnet_core.skill_uid is None:
+            if invalid_row.skill_uid != INVALID_ARTIFACT_TOMBSTONE_UUID:
                 raise TaxonomySnapshotContractError(
-                    "Deprecated `.NET Core` row has no skill_uid."
+                    f"Invalid artifact row tombstone mismatch: expected "
+                    f"{INVALID_ARTIFACT_TOMBSTONE_UUID} got {invalid_row.skill_uid}."
                 )
-            deprecated_dotnet_core_uid = deprecated_dotnet_core.skill_uid
-            if deprecated_dotnet_core.skill_uid.version != 4:
-                raise TaxonomySnapshotContractError(
-                    f"Deprecated `.NET Core` skill_uid is not UUIDv4: "
-                    f"{deprecated_dotnet_core.skill_uid}"
-                )
-            if (
-                deprecated_dotnet_core_uuid is not None
-                and deprecated_dotnet_core.skill_uid == deprecated_dotnet_core_uuid
-            ):
-                raise TaxonomySnapshotContractError(
-                    "Deprecated `.NET Core` skill_uid collides with the "
-                    "canonical `.NET` registry UUID."
-                )
-            if (
-                deprecated_dotnet_core_uuid is None
-                and deprecated_dotnet_core_uid is None
-            ):
-                raise TaxonomySnapshotContractError(
-                    "Missing canonical `.NET` registry UUID for `.NET Core` "
-                    "deprecation replacement."
-                )
+
+        # 3) Refuse any unknown non-registry, non-deprecated,
+        #    non-invalid-artifact row. This is the strict "no foreign
+        #    identity" guard.
+        allowed_non_registry_uuids = {
+            deprecated_dotnet_core_uid,
+            *(uuid.UUID(uid) for _, uid in registry_entries),
+        }
+        if invalid_count == 1:
+            allowed_non_registry_uuids.add(INVALID_ARTIFACT_TOMBSTONE_UUID)
+        unknown_rows = (
+            Skill.objects.exclude(skill_uid__in=allowed_non_registry_uuids)
+        )
+        unknown_names = sorted(
+            unknown_rows.values_list("canonical_name", flat=True)
+        )
+        if unknown_names:
+            raise TaxonomySnapshotContractError(
+                "Unknown non-registry Skill rows detected: "
+                + ", ".join(repr(n) for n in unknown_names)
+            )
 
         selected: List[Skill] = []
         seen_uuids: set = set()
         seen_names: set = set()
         seen_slugs: set = set()
 
-        # 1) All current canonical registry skills.
+        # 4) All current canonical registry skills, in registry name
+        #    order. The slug uniqueness check below is run after
+        #    fallback derivation so that a real database collision on
+        #    the derived slug is still caught.
         for skill in (
             Skill.objects.filter(canonical_name__in=sorted(registry_names))
             .order_by("canonical_name")
@@ -370,43 +461,54 @@ class TaxonomySnapshotService:
             )
             selected.append(skill)
 
-        # 2) Deprecated legacy rows (only `.NET Core` for this gate).
-        if deprecated_dotnet_core is not None:
-            self._check_skill_for_export(
-                deprecated_dotnet_core,
-                registry_names=registry_names,
-                seen_uuids=seen_uuids,
-                seen_names=seen_names,
-                seen_slugs=seen_slugs,
-                allow_non_registry=True,
-            )
-            selected.append(deprecated_dotnet_core)
+        # 5) Deprecated legacy rows (only `.NET Core` for this gate).
+        self._check_skill_for_export(
+            deprecated_dotnet_core,
+            registry_names=registry_names,
+            seen_uuids=seen_uuids,
+            seen_names=seen_names,
+            seen_slugs=seen_slugs,
+            allow_non_registry=True,
+        )
+        selected.append(deprecated_dotnet_core)
 
-        # 3) Refuse any unknown non-registry row that slipped in.
-        expected_uuids = {s.skill_uid for s in selected}
-        unknown = (
-            Skill.objects.exclude(skill_uid__in=expected_uuids)
-            .exclude(canonical_name=INVALID_ARTIFACT_CANONICAL_NAME)
-        )
-        unknown_names = sorted(
-            unknown.values_list("canonical_name", flat=True)
-        )
-        if unknown_names:
+        # 6) Validate the post-fallback slug uniqueness using the
+        #    exact same derivation logic the payload uses. A real
+        #    collision after fallback would otherwise be invisible to
+        #    a raw-database uniqueness check.
+        derived_slugs: List[str] = []
+        for skill in selected:
+            slug = skill.slug or _derive_slug_fallback(skill.canonical_name)
+            derived_slugs.append(slug)
+        if len(set(derived_slugs)) != len(derived_slugs):
+            seen: set = set()
+            duplicates = sorted(
+                s for s in derived_slugs if s in seen or seen.add(s)
+            )
             raise TaxonomySnapshotContractError(
-                "Unknown non-registry Skill rows detected: "
-                + ", ".join(repr(n) for n in unknown_names)
+                "Duplicate derived slugs after fallback: "
+                + ", ".join(repr(s) for s in duplicates)
             )
 
-        # 4) Refuse the invalid artifact if it is still present.
-        invalid_present = Skill.objects.filter(
-            canonical_name=INVALID_ARTIFACT_CANONICAL_NAME
-        ).exists()
-        if not invalid_present:
-            # No-op: invalid artifact was previously cleaned up.
-            pass
-
-        # Sort by skill_uid string for determinism.
+        # 7) Sort by skill_uid string for determinism.
         selected.sort(key=lambda s: str(s.skill_uid))
+        if len(selected) != EXPECTED_TOTAL_SKILL_COUNT:
+            raise TaxonomySnapshotContractError(
+                f"Snapshot skill count mismatch: expected "
+                f"{EXPECTED_TOTAL_SKILL_COUNT} got {len(selected)}."
+            )
+        active = sum(1 for s in selected if s.is_active)
+        deprecated = sum(1 for s in selected if not s.is_active)
+        if active != EXPECTED_ACTIVE_SKILL_COUNT:
+            raise TaxonomySnapshotContractError(
+                f"Active skill count mismatch: expected "
+                f"{EXPECTED_ACTIVE_SKILL_COUNT} got {active}."
+            )
+        if deprecated != EXPECTED_DEPRECATED_SKILL_COUNT:
+            raise TaxonomySnapshotContractError(
+                f"Deprecated skill count mismatch: expected "
+                f"{EXPECTED_DEPRECATED_SKILL_COUNT} got {deprecated}."
+            )
         return selected
 
     def _check_skill_for_export(
@@ -449,22 +551,25 @@ class TaxonomySnapshotService:
             raise TaxonomySnapshotContractError(
                 f"Duplicate canonical_name encountered: {skill.canonical_name!r}"
             )
-        if skill.slug in seen_slugs:
+        slug = skill.slug or _derive_slug_fallback(skill.canonical_name)
+        if slug in seen_slugs:
             raise TaxonomySnapshotContractError(
-                f"Duplicate slug encountered: {skill.slug!r}"
+                f"Duplicate derived slug encountered: {slug!r}"
             )
         seen_uuids.add(skill.skill_uid)
         seen_names.add(skill.canonical_name)
-        seen_slugs.add(skill.slug)
+        seen_slugs.add(slug)
 
     @staticmethod
-    def _registry_uuid_for(canonical_name: str, *, required: bool) -> Optional[uuid.UUID]:
+    def _registry_uuid_for(canonical_name: str, *, required: bool) -> uuid.UUID:
         if not skill_uid_registry.has_skill_uid(canonical_name):
             if required:
                 raise TaxonomySnapshotContractError(
                     f"Canonical skill {canonical_name!r} is missing from the registry."
                 )
-            return None
+            raise TaxonomySnapshotContractError(
+                f"Canonical skill {canonical_name!r} is missing from the registry."
+            )
         return skill_uid_registry.get_skill_uid(canonical_name)
 
     # ------------------------------------------------------------------
@@ -536,6 +641,7 @@ class TaxonomySnapshotService:
             )
         )
         seen_norm: set = set()
+        seen_inside: set = set()
         entries: List[dict] = []
         for alias in aliases:
             if alias.normalized_alias in seen_norm:
@@ -543,7 +649,18 @@ class TaxonomySnapshotService:
                     f"Duplicate normalized alias {alias.normalized_alias!r} "
                     f"on skill {skill.canonical_name!r}."
                 )
+            if alias.normalized_alias in seen_inside:
+                # Defensive guard: the database constraint already
+                # prevents the same skill from carrying two aliases
+                # with the same normalized form, but a future
+                # refactor or fixture could regress. The exporter
+                # fails closed in that case.
+                raise TaxonomySnapshotContractError(
+                    f"Duplicate normalized alias {alias.normalized_alias!r} "
+                    f"on skill {skill.canonical_name!r}."
+                )
             seen_norm.add(alias.normalized_alias)
+            seen_inside.add(alias.normalized_alias)
             entries.append(
                 {
                     "alias": alias.alias,
@@ -571,7 +688,8 @@ class TaxonomySnapshotService:
         *,
         taxonomy: dict,
         taxonomy_version: str,
-        taxonomy_sha256: str,
+        taxonomy_content_sha256: str,
+        snapshot_file_sha256: str,
         source_commit: str,
     ) -> dict:
         alias_count = sum(
@@ -581,8 +699,9 @@ class TaxonomySnapshotService:
             "manifest_format": "tuniatlas_taxonomy_snapshot_manifest",
             "manifest_version": 1,
             "taxonomy_version": taxonomy_version,
+            "taxonomy_content_sha256": taxonomy_content_sha256,
             "snapshot_filename": SNAPSHOT_FILENAME,
-            "snapshot_sha256": taxonomy_sha256,
+            "snapshot_sha256": snapshot_file_sha256,
             "source_product": self.source_product,
             "source_repository": self.source_repository,
             "source_branch": self.source_branch,
@@ -627,69 +746,134 @@ class TaxonomySnapshotService:
     # Publish
     # ------------------------------------------------------------------
 
-    def _publish_if_matches(
+    def _publish_atomically(
         self,
         *,
+        output_root: Path,
         target_dir: Path,
         files: Dict[str, bytes],
     ) -> bool:
         """Atomically publish ``files`` to ``target_dir``.
 
-        Returns ``True`` if an existing identical snapshot was reused,
-        ``False`` if a new snapshot was written.
-
-        Raises ``TaxonomySnapshotPublishError`` if an existing snapshot
-        with a different content hash is found.
+        The staging directory is created under ``output_root`` so the
+        final ``rename`` is on the same filesystem. Every file is
+        written and verified inside staging only; the final target is
+        produced by a single atomic rename. If the target already
+        exists, it is read back and verified: a complete identical
+        directory is treated as idempotent success, anything else fails
+        closed. Returns ``True`` when an existing identical snapshot
+        was reused, ``False`` when a new snapshot was published.
         """
-        if target_dir.exists():
-            existing = self._read_existing(target_dir)
-            if existing is not None and existing == files:
-                return True
-            if existing is not None:
-                raise TaxonomySnapshotPublishError(
-                    f"Refusing to overwrite differing snapshot at {target_dir}."
-                )
-
-        staging_dir = Path(tempfile.mkdtemp(prefix="taxonomy-snapshot-"))
+        staging_dir: Optional[Path] = None
         try:
-            for name, data in files.items():
-                path = staging_dir / name
-                path.write_bytes(data)
-            # Verify staging contents before publishing.
-            verified = {n: (staging_dir / n).read_bytes() for n in files}
-            if verified != files:
-                raise TaxonomySnapshotPublishError(
-                    "Staging verification failed: written bytes differ."
-                )
-            target_dir.parent.mkdir(parents=True, exist_ok=True)
+            staging_dir = Path(
+                tempfile.mkdtemp(prefix=STAGING_DIR_PREFIX, dir=str(output_root))
+            )
+        except (FileNotFoundError, NotADirectoryError, PermissionError) as exc:
+            raise TaxonomySnapshotPublishError(
+                f"Could not create staging directory under {output_root}: {exc}"
+            ) from exc
+
+        try:
+            self._write_staging(staging_dir, files)
+            self._verify_staging(staging_dir, files)
+            if target_dir.exists():
+                existing = self._read_complete_target(target_dir)
+                if existing is None:
+                    self._cleanup_staging(staging_dir)
+                    raise TaxonomySnapshotPublishError(
+                        f"Refusing to overwrite incomplete target: {target_dir}"
+                    )
+                if existing != files:
+                    self._cleanup_staging(staging_dir)
+                    raise TaxonomySnapshotPublishError(
+                        f"Refusing to overwrite differing snapshot: {target_dir}"
+                    )
+                self._cleanup_staging(staging_dir)
+                return True
             try:
-                target_dir.mkdir(exist_ok=False)
-            except FileExistsError:
+                os.replace(str(staging_dir), str(target_dir))
+            except OSError as exc:
+                self._cleanup_staging(staging_dir)
+                # If the target appeared during the rename, fail closed
+                # rather than overwriting or leaving a partial state.
+                if target_dir.exists():
+                    raise TaxonomySnapshotPublishError(
+                        f"Refusing to overwrite snapshot that appeared during publish: "
+                        f"{target_dir}"
+                    ) from exc
                 raise TaxonomySnapshotPublishError(
-                    f"Target directory {target_dir} already exists."
-                )
-            for name, data in files.items():
-                (target_dir / name).write_bytes(data)
-        except Exception:
-            shutil.rmtree(staging_dir, ignore_errors=True)
-            if target_dir.exists() and not any(target_dir.iterdir()):
-                target_dir.rmdir()
+                    f"Atomic rename of staging to {target_dir} failed: {exc}"
+                ) from exc
+            return False
+        except BaseException:
+            self._cleanup_staging(staging_dir)
             raise
-        else:
-            shutil.rmtree(staging_dir, ignore_errors=True)
-        return False
 
     @staticmethod
-    def _read_existing(target_dir: Path) -> Optional[Dict[str, bytes]]:
+    def _write_staging(staging_dir: Path, files: Dict[str, bytes]) -> None:
+        for name, data in files.items():
+            path = staging_dir / name
+            with open(path, "wb") as fp:
+                fp.write(data)
+                fp.flush()
+                try:
+                    os.fsync(fp.fileno())
+                except OSError:
+                    # fsync is best-effort; some filesystems do not
+                    # support it. Continue without failing the export.
+                    pass
+        try:
+            dir_fd = os.open(str(staging_dir), os.O_RDONLY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+        except OSError:
+            pass
+
+    @staticmethod
+    def _verify_staging(staging_dir: Path, files: Dict[str, bytes]) -> None:
+        for name, data in files.items():
+            path = staging_dir / name
+            if not path.is_file():
+                raise TaxonomySnapshotPublishError(
+                    f"Staging file missing after write: {name}"
+                )
+            actual = path.read_bytes()
+            if actual != data:
+                raise TaxonomySnapshotPublishError(
+                    f"Staging verification failed for {name}: written bytes differ."
+                )
+
+    @staticmethod
+    def _read_complete_target(target_dir: Path) -> Optional[Dict[str, bytes]]:
         if not target_dir.is_dir():
             return None
         existing: Dict[str, bytes] = {}
-        for name in (SNAPSHOT_FILENAME, MANIFEST_FILENAME, README_FILENAME, SHASUMS_FILENAME):
+        required = (
+            SNAPSHOT_FILENAME,
+            MANIFEST_FILENAME,
+            README_FILENAME,
+            SHASUMS_FILENAME,
+        )
+        for name in required:
             path = target_dir / name
             if not path.is_file():
                 return None
             existing[name] = path.read_bytes()
+        # Refuse to silently reuse a directory that also carries extra
+        # regular files or subdirectories.
+        for child in target_dir.iterdir():
+            if child.name not in required:
+                return None
         return existing
+
+    @staticmethod
+    def _cleanup_staging(staging_dir: Optional[Path]) -> None:
+        if staging_dir is None:
+            return
+        shutil.rmtree(staging_dir, ignore_errors=True)
 
 
 # ----------------------------------------------------------------------
@@ -749,6 +933,14 @@ def _safe_version_dir_name(taxonomy_version: str) -> str:
             f"Invalid taxonomy version digest: {taxonomy_version!r}"
         )
     return f"sha256-{digest}"
+
+
+def _validate_source_commit(source_commit: str) -> None:
+    if not isinstance(source_commit, str) or not SOURCE_COMMIT_RE.fullmatch(source_commit):
+        raise TaxonomySnapshotContractError(
+            f"Source commit must be a 40-character lowercase hex SHA-1: "
+            f"{source_commit!r}"
+        )
 
 
 def _default_source_commit_resolver() -> str:
