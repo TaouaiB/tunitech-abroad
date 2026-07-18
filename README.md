@@ -207,3 +207,14 @@ git commit -m "Complete Phase 0 repository foundation"
 - All secrets are read from environment variables.
 - No secrets are hardcoded anywhere in the codebase.
 - CV files (future phases) will be private and never publicly exposed.
+
+## ML-0 deterministic CPU benchmark
+
+`scripts/run_ml0_deterministic_benchmark.py` measures one synthetic-only
+deterministic service domain per process in an isolated Django test database.
+It reuses the frozen deterministic-v2 cases for job extraction, CV extraction,
+canonicalization, matching/recommendation, and the complete 91-case suite.
+LLM and network calls fail closed, generated CV files are temporary, execution
+is CPU-only and non-root, and output is limited to case IDs, timings, memory,
+and correctness digests beneath the private ML workspace. This harness changes
+no product behavior.
