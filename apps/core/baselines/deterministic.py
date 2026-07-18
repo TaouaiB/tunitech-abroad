@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import ctypes
+import errno
 import json
 import math
 import os
@@ -45,15 +47,18 @@ from apps.recommendations.models import JobRecommendation, RecommendationRun
 from apps.recommendations.services.recommendation import RecommendationService
 from apps.skills.models import Skill, UnmatchedSkillCandidate
 from apps.skills.services.normalizer import SkillNormalizerService, normalize_skill_text
-from apps.skills.services.seed import SkillSeedService
+from apps.core.baselines.taxonomy_snapshot import (
+    TAXONOMY_MANIFEST_SHA256,
+    TAXONOMY_SNAPSHOT_SHA256,
+    TAXONOMY_VERSION,
+    SnapshotRegistry,
+    populate_test_database,
+)
 
 
 BASELINE_FORMAT = "tuniatlas_ml_deterministic_baseline"
-BASELINE_VERSION = "deterministic-v1"
-EXPORTER_CONTRACT_VERSION = "1.0"
-TAXONOMY_VERSION = "sha256:d6d5aebf5e4b958f163d2f33b8d441a36e6d638ac8c92379f18e6ebd40e2fc05"
-TAXONOMY_SNAPSHOT_SHA256 = "f71e1a67420bebe00fe45ccb01ae508e5605178ce78bd9e5305780a0a93a002d"
-TAXONOMY_MANIFEST_SHA256 = "0d410a706a19f05fa73b234bcd262ec8f85bf330c26fa3032295391e3ac09045"
+BASELINE_VERSION = "deterministic-v2"
+EXPORTER_CONTRACT_VERSION = "2.0"
 
 EXPECTED_FILES = (
     "README.txt",
@@ -89,6 +94,7 @@ SERVICE_MODULES = (
     "apps/matching/services/match_result.py",
     "apps/recommendations/services/recommendation.py",
     "apps/recommendations/services/query.py",
+    "apps/core/baselines/taxonomy_snapshot.py",
     "apps/core/baselines/deterministic.py",
 )
 
@@ -805,46 +811,56 @@ def _metrics(cases: list[dict[str, Any]], outputs_by_domain: dict[str, list[dict
     }
 
 
-def _known_failures(
+def _failure_ledger(
     cases: list[dict[str, Any]],
     outputs_by_domain: dict[str, list[dict[str, Any]]],
     skills: dict[str, Skill],
-) -> list[dict[str, str]]:
-    outputs = {output["case_id"]: output for output in outputs_by_domain["job_extraction"]}
-    entries: list[dict[str, str]] = []
-    known_specs = (
-        ("job_017", "React", True, "hard_negative_false_positive", "Ordinary verb usage materialized the React framework."),
-        ("job_021", "Go", False, "catalog_positive_false_negative", "The catalog-positive Go language context was not materialized."),
-        ("job_023", "R", False, "catalog_positive_false_negative", "The catalog-positive R language context was not materialized."),
-        ("job_033", "Tableau", True, "hard_negative_false_positive", "The ordinary French noun materialized the Tableau product."),
-    )
-    for case_id, skill_name, failure_when_present, category, summary in known_specs:
-        observed = _skill_uid(skills[skill_name]) in _observed_uids(outputs[case_id])
-        failed = observed if failure_when_present else not observed
-        if failed:
-            entries.append(
-                {
-                    "case_id": case_id,
-                    "classification": "OBVIOUS_GOLD",
-                    "current_observation": summary,
-                    "domain": "job_extraction",
-                    "failure_category": category,
-                    "policy_status": "known_failure",
-                    "safe_summary": summary,
-                }
-            )
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    outputs = {
+        output["case_id"]: output
+        for domain_outputs in outputs_by_domain.values()
+        for output in domain_outputs
+    }
+    names_by_uid = {_skill_uid(skill): skill.canonical_name for skill in skills.values()}
+    failures: list[dict[str, Any]] = []
+    pending: list[dict[str, str]] = []
     for case in cases:
+        if case["classification"] == "OBVIOUS_GOLD":
+            observed = _observed_uids(outputs[case["case_id"]])
+            missing = sorted(set(case.get("expected_present_skill_uids", [])) - observed)
+            forbidden = sorted(set(case.get("expected_absent_skill_uids", [])) & observed)
+            for skill_uid, expected_presence, category in (
+                *((uid, True, "missing_expected_present") for uid in missing),
+                *((uid, False, "observed_expected_absent") for uid in forbidden),
+            ):
+                canonical_name = names_by_uid[skill_uid]
+                observed_presence = not expected_presence
+                failures.append(
+                    {
+                        "canonical_name": canonical_name,
+                        "case_id": case["case_id"],
+                        "classification": "OBVIOUS_GOLD",
+                        "current_observation": (
+                            f"{canonical_name} was absent from current output."
+                            if expected_presence
+                            else f"{canonical_name} was present in current output."
+                        ),
+                        "domain": case["domain"],
+                        "expected_presence": expected_presence,
+                        "failure_category": category,
+                        "failure_id": f"{case['case_id']}:{category}:{skill_uid}",
+                        "observed_presence": observed_presence,
+                        "policy_status": "known_failure",
+                        "safe_summary": "Current service output differs from one obvious-gold skill-presence assertion.",
+                        "skill_uid": skill_uid,
+                    }
+                )
         if case["classification"] != "POLICY_PENDING":
             continue
-        output = next(
-            output
-            for domain_outputs in outputs_by_domain.values()
-            for output in domain_outputs
-            if output["case_id"] == case["case_id"]
-        )
+        output = outputs[case["case_id"]]
         observed_names = [item["canonical_name"] for item in output.get("canonical_skills", [])]
         observation = "Current canonical skills: " + (", ".join(sorted(observed_names)) if observed_names else "none")
-        entries.append(
+        pending.append(
             {
                 "case_id": case["case_id"],
                 "classification": "POLICY_PENDING",
@@ -855,7 +871,10 @@ def _known_failures(
                 "safe_summary": "The current output is recorded without selecting a desired final ambiguity policy.",
             }
         )
-    return sorted(entries, key=lambda item: item["case_id"])
+    return (
+        sorted(failures, key=lambda item: item["failure_id"]),
+        sorted(pending, key=lambda item: item["case_id"]),
+    )
 
 
 def _module_hashes() -> dict[str, str]:
@@ -903,7 +922,13 @@ def external_calls_forbidden():
         yield
 
 
-def build_bundle(output_dir: Path, *, django_commit: str, django_branch: str = "dev") -> dict[str, Any]:
+def build_bundle(
+    output_dir: Path,
+    *,
+    django_commit: str,
+    taxonomy_snapshot_dir: Path,
+    django_branch: str = "dev",
+) -> dict[str, Any]:
     output_dir = output_dir.resolve()
     if output_dir.exists():
         raise BaselineError("bundle build target already exists")
@@ -920,7 +945,7 @@ def build_bundle(output_dir: Path, *, django_commit: str, django_branch: str = "
     workspace = Path(tempfile.mkdtemp(prefix="tuniatlas-baseline-work-"))
     try:
         reset_synthetic_state()
-        SkillSeedService.seed_initial_taxonomy()
+        taxonomy: SnapshotRegistry = populate_test_database(taxonomy_snapshot_dir)
         skills = _skill_map()
         source = _make_source()
         with external_calls_forbidden():
@@ -936,12 +961,19 @@ def build_bundle(output_dir: Path, *, django_commit: str, django_branch: str = "
             "canonicalization": sorted(canonical_outputs, key=lambda item: item["case_id"]),
             "matching_recommendation": sorted(matching_outputs, key=lambda item: item["case_id"]),
         }
-        known_failures = _known_failures(cases, outputs_by_domain, skills)
+        failed_assertions, policy_pending = _failure_ledger(cases, outputs_by_domain, skills)
         metrics = _metrics(cases, outputs_by_domain)
-        metrics["known_failure_count"] = sum(item["policy_status"] == "known_failure" for item in known_failures)
+        metrics["known_failure_count"] = len(failed_assertions)
+        if len(failed_assertions) != (
+            metrics["obvious_gold_skill_assertions"]["false_positives"]
+            + metrics["obvious_gold_skill_assertions"]["false_negatives"]
+        ):
+            raise BaselineError("failure ledger does not reconcile with obvious-gold metrics")
+        if len(policy_pending) != metrics["policy_pending_count"]:
+            raise BaselineError("policy-pending ledger does not reconcile with metrics")
 
         readme = (
-            "TuniAtlas ML-0 deterministic baseline\n"
+            "TuniAtlas ML-0 deterministic baseline v2\n"
             "\n"
             "Synthetic fixtures only. Current service observations are frozen without changing product behavior.\n"
             "POLICY_PENDING cases are excluded from obvious-gold metrics. No latency or hardware claim is included.\n"
@@ -954,7 +986,13 @@ def build_bundle(output_dir: Path, *, django_commit: str, django_branch: str = "
             "canonicalization.json": canonical_json_bytes({"baseline_version": BASELINE_VERSION, "domain": "canonicalization", "outputs": outputs_by_domain["canonicalization"]}),
             "matching_recommendation.json": canonical_json_bytes({"baseline_version": BASELINE_VERSION, "domain": "matching_recommendation", "outputs": outputs_by_domain["matching_recommendation"]}),
             "metrics.json": canonical_json_bytes(metrics),
-            "known_failures.json": canonical_json_bytes({"baseline_version": BASELINE_VERSION, "entries": known_failures}),
+            "known_failures.json": canonical_json_bytes(
+                {
+                    "baseline_version": BASELINE_VERSION,
+                    "failed_assertions": failed_assertions,
+                    "policy_pending": policy_pending,
+                }
+            ),
         }
         payload_hashes = {name: sha256_bytes(value) for name, value in payloads.items()}
         bundle_content_sha256 = _content_digest(payload_hashes)
@@ -975,7 +1013,12 @@ def build_bundle(output_dir: Path, *, django_commit: str, django_branch: str = "
             "output_counts": {domain: len(outputs) for domain, outputs in outputs_by_domain.items()},
             "service_module_hashes": _module_hashes(),
             "source_product": "TuniAtlas Jobs",
+            "taxonomy_active_count": taxonomy.active_count,
+            "taxonomy_alias_count": taxonomy.alias_count,
+            "taxonomy_inactive_count": taxonomy.inactive_count,
             "taxonomy_manifest_sha256": TAXONOMY_MANIFEST_SHA256,
+            "taxonomy_registry_count": taxonomy.registry_count,
+            "taxonomy_registry_digest": taxonomy.registry_digest,
             "taxonomy_snapshot_sha256": TAXONOMY_SNAPSHOT_SHA256,
             "taxonomy_version": TAXONOMY_VERSION,
         }
@@ -1001,7 +1044,41 @@ def compare_bundles(left: Path, right: Path) -> bool:
     return left_files == right_files == sorted(EXPECTED_FILES) and all((left / name).read_bytes() == (right / name).read_bytes() for name in left_files)
 
 
-def publish_bundle(target: Path, builder: Callable[[Path], dict[str, Any]]) -> tuple[dict[str, Any], str]:
+def _rename_noreplace(source: Path, target: Path) -> None:
+    """Atomically publish ``source`` without ever replacing ``target``."""
+
+    libc = ctypes.CDLL(None, use_errno=True)
+    try:
+        renameat2 = libc.renameat2
+    except AttributeError as exc:
+        raise BaselineError("atomic no-replace publication is unavailable") from exc
+    renameat2.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    renameat2.restype = ctypes.c_int
+    at_fdcwd = -100
+    rename_noreplace = 1
+    result = renameat2(
+        at_fdcwd,
+        os.fsencode(source),
+        at_fdcwd,
+        os.fsencode(target),
+        rename_noreplace,
+    )
+    if result == 0:
+        return
+    error = ctypes.get_errno()
+    if error == errno.EEXIST:
+        raise FileExistsError(error, os.strerror(error), str(target))
+    if error in {errno.ENOSYS, errno.EINVAL, errno.ENOTSUP}:
+        raise BaselineError("atomic no-replace publication is unavailable")
+    raise OSError(error, os.strerror(error), str(target))
+
+
+def publish_bundle(
+    target: Path,
+    builder: Callable[[Path], dict[str, Any]],
+    *,
+    rename_noreplace: Callable[[Path, Path], None] = _rename_noreplace,
+) -> tuple[dict[str, Any], str]:
     target = target.resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix=f".{target.name}-", dir=target.parent))
@@ -1013,7 +1090,13 @@ def publish_bundle(target: Path, builder: Callable[[Path], dict[str, Any]]) -> t
                 raise BaselineError("existing baseline target is incomplete, has extras, or differs")
             shutil.rmtree(staging)
             return manifest, "idempotent"
-        os.replace(staging, target)
+        try:
+            rename_noreplace(staging, target)
+        except FileExistsError:
+            if not target.is_dir() or not compare_bundles(staging, target):
+                raise BaselineError("concurrent baseline target was not replaced")
+            shutil.rmtree(staging)
+            return manifest, "idempotent"
         return manifest, "published"
     except Exception:
         shutil.rmtree(staging, ignore_errors=True)

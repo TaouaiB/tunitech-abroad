@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import shutil
 import tempfile
 import urllib.request
 import uuid
@@ -21,8 +22,20 @@ from apps.core.baselines.deterministic import (
     canonical_json_bytes,
     compare_bundles,
     external_calls_forbidden,
+    _rename_noreplace,
     publish_bundle,
     reset_synthetic_state,
+)
+from apps.core.baselines.taxonomy_snapshot import (
+    EXPECTED_ACTIVE_COUNT,
+    EXPECTED_ALIAS_COUNT,
+    EXPECTED_INACTIVE_COUNT,
+    EXPECTED_REGISTRY_COUNT,
+    EXPECTED_SNAPSHOT_SKILL_COUNT,
+    SnapshotTaxonomyError,
+    populate_test_database,
+    prove_database_equality,
+    read_approved_snapshot,
 )
 from apps.cvs.services.deterministic_extractor import CVDeterministicExtractorService
 from apps.jobs.services.skill_extraction import JobSkillExtractionService
@@ -33,6 +46,11 @@ from scripts.export_deterministic_baseline import APPROVED_ROOT, validate_output
 
 
 COMMIT = "1b7252a6cb9c229140385c4147384c5fbd7dccdb"
+SNAPSHOT_DIR = (
+    Path(__file__).resolve().parents[3].parent
+    / "tuniatlas-ml/data/private/taxonomy/snapshots"
+    / "sha256-d6d5aebf5e4b958f163d2f33b8d441a36e6d638ac8c92379f18e6ebd40e2fc05"
+)
 
 
 def load_json(root: Path, name: str):
@@ -101,7 +119,11 @@ class DeterministicBundleBuildTests(TransactionTestCase):
         for service_patch in cls.service_patches:
             cls.mocks.append(service_patch.start())
         try:
-            cls.manifest = build_bundle(cls.bundle, django_commit=COMMIT)
+            cls.manifest = build_bundle(
+                cls.bundle,
+                django_commit=COMMIT,
+                taxonomy_snapshot_dir=SNAPSHOT_DIR,
+            )
         finally:
             for service_patch in reversed(cls.service_patches):
                 service_patch.stop()
@@ -139,6 +161,16 @@ class DeterministicBundleBuildTests(TransactionTestCase):
         self.assertGreater(metrics["case_counts_by_classification"]["POLICY_PENDING"], 0)
         self.assertFalse(metrics["runtime_benchmarks_included"])
 
+    def test_exact_approved_snapshot_populates_and_equals_test_database(self):
+        snapshot = populate_test_database(SNAPSHOT_DIR)
+        prove_database_equality(snapshot)
+        self.assertEqual(self.manifest["taxonomy_registry_count"], EXPECTED_REGISTRY_COUNT)
+        self.assertEqual(self.manifest["taxonomy_active_count"], EXPECTED_ACTIVE_COUNT)
+        self.assertEqual(self.manifest["taxonomy_inactive_count"], EXPECTED_INACTIVE_COUNT)
+        self.assertEqual(self.manifest["taxonomy_alias_count"], EXPECTED_ALIAS_COUNT)
+        self.assertEqual(len(snapshot.skills), EXPECTED_SNAPSHOT_SKILL_COUNT)
+        self.assertEqual(self.manifest["taxonomy_registry_digest"], snapshot.registry_digest)
+
     def test_fixed_public_and_skill_uuids_and_no_internal_ids(self):
         cases = load_json(self.bundle, "cases.json")["cases"]
         all_json = [load_json(self.bundle, name) for name in EXPECTED_FILES if name.endswith(".json")]
@@ -171,11 +203,18 @@ class DeterministicBundleBuildTests(TransactionTestCase):
         self.assertFalse(any(path.suffix == ".pdf" for path in self.bundle.iterdir()))
 
     def test_known_hard_negative_observations_are_not_silently_passing(self):
-        entries = load_json(self.bundle, "known_failures.json")["entries"]
-        known = {entry["case_id"] for entry in entries if entry["policy_status"] == "known_failure"}
-        pending = [entry for entry in entries if entry["policy_status"] == "policy_pending"]
-        self.assertEqual(known, {"job_017", "job_021", "job_023", "job_033"})
-        self.assertTrue(pending)
+        ledger = load_json(self.bundle, "known_failures.json")
+        metrics = load_json(self.bundle, "metrics.json")
+        failures = ledger["failed_assertions"]
+        pending = ledger["policy_pending"]
+        failed_metric_count = (
+            metrics["obvious_gold_skill_assertions"]["false_positives"]
+            + metrics["obvious_gold_skill_assertions"]["false_negatives"]
+        )
+        self.assertEqual(len(failures), failed_metric_count)
+        self.assertEqual(len({entry["failure_id"] for entry in failures}), len(failures))
+        self.assertEqual(len(pending), metrics["policy_pending_count"])
+        self.assertTrue({"job_017", "job_021", "job_023", "job_033"}.issubset({entry["case_id"] for entry in failures}))
         for entry in pending:
             self.assertNotIn("desired", entry)
             self.assertNotIn("expected", entry)
@@ -214,10 +253,21 @@ class DeterministicReproductionTests(TransactionTestCase):
             root = Path(temporary)
             first = root / "first"
             second = root / "second"
-            build_bundle(first, django_commit=COMMIT)
+            build_bundle(first, django_commit=COMMIT, taxonomy_snapshot_dir=SNAPSHOT_DIR)
             reset_synthetic_state()
-            build_bundle(second, django_commit=COMMIT)
+            build_bundle(second, django_commit=COMMIT, taxonomy_snapshot_dir=SNAPSHOT_DIR)
             self.assertTrue(compare_bundles(first, second))
+
+
+class SnapshotContractTests(SimpleTestCase):
+    def test_modified_private_snapshot_is_rejected_before_database_use(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            copy = Path(temporary) / "snapshot"
+            shutil.copytree(SNAPSHOT_DIR, copy)
+            with (copy / "taxonomy.json").open("ab") as handle:
+                handle.write(b"changed")
+            with self.assertRaisesRegex(SnapshotTaxonomyError, "checksum"):
+                read_approved_snapshot(copy)
 
 
 class AtomicPublicationTests(SimpleTestCase):
@@ -250,6 +300,46 @@ class AtomicPublicationTests(SimpleTestCase):
             (target / "manifest.json").unlink()
             with self.assertRaises(BaselineError):
                 publish_bundle(target, self._builder())
+
+    def test_concurrent_empty_target_is_not_replaced(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary) / "target"
+
+            def race(source, destination):
+                destination.mkdir()
+                _rename_noreplace(source, destination)
+
+            with self.assertRaisesRegex(BaselineError, "concurrent"):
+                publish_bundle(target, self._builder(), rename_noreplace=race)
+            self.assertTrue(target.is_dir())
+            self.assertEqual(list(target.iterdir()), [])
+            self.assertEqual([path.name for path in Path(temporary).iterdir()], ["target"])
+
+    def test_concurrent_nonempty_target_is_not_replaced(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary) / "target"
+
+            def race(source, destination):
+                destination.mkdir()
+                (destination / "owner-marker").write_text("other", encoding="utf-8")
+                _rename_noreplace(source, destination)
+
+            with self.assertRaisesRegex(BaselineError, "concurrent"):
+                publish_bundle(target, self._builder(), rename_noreplace=race)
+            self.assertEqual((target / "owner-marker").read_text(encoding="utf-8"), "other")
+            self.assertEqual([path.name for path in Path(temporary).iterdir()], ["target"])
+
+    def test_unsupported_no_replace_primitive_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary) / "target"
+
+            def unavailable(source, destination):
+                raise BaselineError("atomic no-replace publication is unavailable")
+
+            with self.assertRaisesRegex(BaselineError, "unavailable"):
+                publish_bundle(target, self._builder(), rename_noreplace=unavailable)
+            self.assertFalse(target.exists())
+            self.assertEqual(list(Path(temporary).iterdir()), [])
 
     def test_failed_build_cleans_staging(self):
         with tempfile.TemporaryDirectory() as temporary:

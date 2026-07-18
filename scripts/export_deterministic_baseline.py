@@ -12,6 +12,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ML_ROOT = ROOT.parent / "tuniatlas-ml"
 APPROVED_ROOT = ML_ROOT / "data/private/baselines/ml0"
+APPROVED_TAXONOMY_SNAPSHOT = (
+    ML_ROOT
+    / "data/private/taxonomy/snapshots"
+    / "sha256-d6d5aebf5e4b958f163d2f33b8d441a36e6d638ac8c92379f18e6ebd40e2fc05"
+)
 
 
 def _git(*args: str) -> str:
@@ -90,7 +95,12 @@ def main() -> int:
             raise RuntimeError("Django test-database isolation could not be proven")
         manifest, publication = publish_bundle(
             target,
-            lambda staging: build_bundle(staging, django_commit=commit, django_branch=branch),
+            lambda staging: build_bundle(
+                staging,
+                django_commit=commit,
+                django_branch=branch,
+                taxonomy_snapshot_dir=APPROVED_TAXONOMY_SNAPSHOT,
+            ),
         )
     finally:
         runner.teardown_databases(old_config)
