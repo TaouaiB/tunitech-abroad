@@ -212,3 +212,39 @@ When the phase is complete, provide:
 - Terminal output of checks/tests
 - Errors encountered and fixes applied
 - Remaining risks/manual steps
+
+## Automatic skill routing
+
+At the start of every task, inspect the available project and global skills.
+Automatically load only the skills relevant to the task. The user does not
+need to name skills explicitly.
+
+Required routing:
+
+- Bugs, failing tests, unexpected behaviour, or unclear root causes:
+  use `systematic-debugging`.
+- Django models, views, forms, services, middleware, ORM, Celery, migrations,
+  authentication, permissions, or Django tests:
+  use `django-expert`.
+- PostgreSQL queries, indexes, query plans, transactions, locking, pagination,
+  schema design, or database performance:
+  use `supabase-postgres-best-practices`, but ignore Supabase-specific advice
+  unless explicitly relevant.
+- Creating or substantially redesigning frontend pages or components:
+  use `frontend-design`.
+- Reviewing existing UI, accessibility, responsiveness, visual hierarchy,
+  usability, or design consistency:
+  use `web-design-guidelines`.
+- Testing complete user flows in a browser:
+  use `webapp-testing`.
+- Authentication, authorization, private files, CV uploads, OAuth, secrets,
+  user input, dependencies, or other security-sensitive changes:
+  use `code-security`.
+- Dashboards, charts, KPI visualisation, and analytical presentation:
+  use `data-visualization`.
+- Before declaring any code-changing task complete:
+  use `verification-before-completion` and run fresh relevant checks.
+
+Do not load irrelevant skills merely because they are available.
+Project architecture and instructions in this AGENTS.md override third-party
+skill recommendations.
