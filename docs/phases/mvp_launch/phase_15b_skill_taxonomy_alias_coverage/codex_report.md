@@ -138,7 +138,7 @@ Note: Tailwind emitted the existing Browserslist freshness warning.
 
 ```text
 python manage.py collectstatic --dry-run --noinput --settings=config.settings.local
-2 static files copied to '/home/bahaedinetaouai/Projects/tunitech-abroad/staticfiles', 134 unmodified.
+2 static files copied to '<DJANGO_REPO>/staticfiles', 134 unmodified.
 ```
 
 ```text

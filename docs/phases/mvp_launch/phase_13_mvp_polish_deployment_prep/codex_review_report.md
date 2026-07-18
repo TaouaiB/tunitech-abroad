@@ -61,7 +61,7 @@ Preflight:
 
 ```text
 pwd
-=> /home/bahaedinetaouai/Projects/tunitech-abroad
+=> <DJANGO_REPO>
 
 git status --short --branch
 => ## dev...origin/dev

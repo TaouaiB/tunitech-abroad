@@ -39,7 +39,7 @@ Existing Phase 12 changes also remain in:
 
 ```text
 pwd
-PASS: /home/bahaedinetaouai/Projects/tunitech-abroad
+PASS: <DJANGO_REPO>
 
 rg --files -g 'AGENTS.md' -g 'docs/phases/phase_12_admin_observability/**' -g 'docs/planning/**'
 PASS

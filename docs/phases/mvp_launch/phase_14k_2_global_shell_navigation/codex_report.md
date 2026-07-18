@@ -96,7 +96,7 @@ python manage.py collectstatic --dry-run --noinput --settings=config.settings.lo
 Result:
 
 ```text
-136 static files copied to '/home/bahaedinetaouai/Projects/tunitech-abroad/staticfiles'.
+136 static files copied to '<DJANGO_REPO>/staticfiles'.
 ```
 
 ```bash
