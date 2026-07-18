@@ -215,6 +215,9 @@ deterministic service domain per process in an isolated Django test database.
 It reuses the frozen deterministic-v2 cases for job extraction, CV extraction,
 canonicalization, matching/recommendation, and the complete 91-case suite.
 LLM and network calls fail closed, generated CV files are temporary, execution
-is CPU-only and non-root, and output is limited to case IDs, timings, memory,
+is CPU-only and non-root. The v2 child output separates operation timing from
+parent-observed harness-inclusive process wall time, reports current RSS for an
+external peak-RSS monitor, and records its path-free Django Python runtime.
+Output remains limited to case IDs, timings, memory diagnostics,
 and correctness digests beneath the private ML workspace. This harness changes
 no product behavior.

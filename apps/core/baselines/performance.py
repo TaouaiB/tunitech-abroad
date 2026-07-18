@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import os
+import platform
 import resource
 import statistics
 import tempfile
@@ -31,7 +32,7 @@ from apps.core.baselines.deterministic import (
 )
 
 
-BENCHMARK_CONTRACT_VERSION = "ml0-hardware-cpu-memory-v1"
+BENCHMARK_CONTRACT_VERSION = "ml0-hardware-cpu-memory-v2"
 EXPECTED_PROFILE_COUNTS = {
     "job_extraction": 43,
     "cv_extraction": 8,
@@ -114,6 +115,15 @@ def current_rss_bytes() -> int:
         return int(fields[1]) * os.sysconf("SC_PAGE_SIZE")
     except (OSError, ValueError, IndexError) as exc:
         raise PerformanceBenchmarkError("current RSS is unavailable") from exc
+
+
+def runtime_identity() -> dict[str, str]:
+    """Return a path-free identity probed by the active Python runtime."""
+
+    return {
+        "python_version": platform.python_version(),
+        "python_implementation": platform.python_implementation(),
+    }
 
 
 def validate_controlled_environment() -> dict[str, str]:
@@ -229,7 +239,6 @@ class DeterministicPerformanceRunner:
 
         gc.collect()
         rss_before = current_rss_bytes()
-        peak_before = normalize_ru_maxrss(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         tracemalloc.start()
         try:
             for _ in range(warmups):
@@ -255,13 +264,12 @@ class DeterministicPerformanceRunner:
             "case_count": len(case_ids),
             "case_ids": case_ids,
             "warmup_count": warmups,
-            "samples_ns": samples,
-            "summary": summarize_samples(samples),
+            "operation_samples_ns": samples,
+            "operation_summary": summarize_samples(samples),
             "memory": {
                 "rss_before_bytes": rss_before,
                 "rss_after_bytes": rss_after,
-                "peak_rss_bytes": peak_rss,
-                "peak_rss_delta_bytes": max(0, peak_rss - peak_before),
+                "diagnostic_ru_maxrss_bytes": peak_rss,
                 "python_allocation_peak_bytes": python_peak,
                 "python_allocation_current_end_bytes": python_current,
             },
@@ -269,6 +277,7 @@ class DeterministicPerformanceRunner:
             "process_exit_code": 0,
             "cpu_only": os.environ.get("CUDA_VISIBLE_DEVICES") == "",
             "controlled_environment": validate_controlled_environment(),
+            "runtime": runtime_identity(),
         }
 
 

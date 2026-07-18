@@ -10,10 +10,12 @@ from unittest.mock import patch
 from django.test import SimpleTestCase, TransactionTestCase, override_settings
 
 from apps.core.baselines.performance import (
+    BENCHMARK_CONTRACT_VERSION,
     CONTROLLED_ENVIRONMENT,
     PerformanceBenchmarkError,
     normalize_ru_maxrss,
     percentile_r7,
+    runtime_identity,
     run_with_runner,
     summarize_samples,
     validate_controlled_environment,
@@ -50,6 +52,12 @@ class PerformanceStatisticsTests(SimpleTestCase):
     def test_linux_ru_maxrss_is_normalized_from_kibibytes(self):
         self.assertEqual(normalize_ru_maxrss(123, platform_name="linux"), 125_952)
         self.assertEqual(normalize_ru_maxrss(123, platform_name="darwin"), 123)
+
+    def test_runtime_identity_has_version_and_implementation_without_path(self):
+        identity = runtime_identity()
+        self.assertEqual(set(identity), {"python_version", "python_implementation"})
+        self.assertRegex(identity["python_version"], r"^\d+\.\d+\.\d+$")
+        self.assertNotIn("/", json.dumps(identity))
 
     def test_controlled_environment_is_exact(self):
         with patch.dict(os.environ, CONTROLLED_ENVIRONMENT, clear=False):
@@ -97,6 +105,16 @@ class PerformanceSmokeTests(TransactionTestCase):
         self.assertEqual(len(result["case_ids"]), 30)
         self.assertEqual(len(result["output_digest"]), 64)
         self.assertTrue(result["cpu_only"])
+        self.assertEqual(result["benchmark_contract_version"], BENCHMARK_CONTRACT_VERSION)
+        self.assertEqual(len(result["operation_samples_ns"]), 1)
+        self.assertNotIn("samples_ns", result)
+        self.assertNotIn("peak_rss_bytes", result["memory"])
+        self.assertNotIn("peak_rss_delta_bytes", result["memory"])
+        self.assertIn("diagnostic_ru_maxrss_bytes", result["memory"])
+        self.assertEqual(
+            set(result["runtime"]),
+            {"python_version", "python_implementation"},
+        )
         serialized = json.dumps(result)
         self.assertNotIn(str(Path.home()), serialized)
         self.assertNotIn("Synthetic Candidate", serialized)
